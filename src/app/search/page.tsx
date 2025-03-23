@@ -1,6 +1,6 @@
 "use client";
 
-import Search from "./seach"; // Adjust the path if necessary
+import Search from "./search"; // Adjust the path if necessary
 
 export default function Team() {
   return <Search />;
