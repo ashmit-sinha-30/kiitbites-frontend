@@ -2,70 +2,62 @@
 
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./styles/global.css";
 import styles from "./styles/CollegePage.module.scss";
 import { useEffect, useRef, useState } from "react";
-
-interface FoodItem {
-  id: string;
-  title: string;
-  image: string;
-  category: string;
-  type: string;
-  isSpecial: string;
-  collegeId?: string;
-  price: number;
-}
-
-interface FavoriteItem {
-  _id: string;
-  name: string;
-  type: string;
-  uniId: string;
-  price: number;
-  image: string;
-  isSpecial: string;
-  kind: string;
-}
-
-interface ApiItem {
-  _id: string;
-  name: string;
-  image: string;
-  type: string;
-  isSpecial: string;
-  collegeId?: string;
-  category?: string;
-  price: number;
-}
-
-interface College {
-  _id: string;
-  name: string;
-}
-
-interface ApiFavoritesResponse {
-  favourites: FavoriteItem[];
-}
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import FavoritesSection from "./components/FavoritesSection";
+import SpecialOffersSection from "./components/SpecialOffersSection";
+import CategorySection from "./components/CategorySection";
+import { CartProvider } from "./context/CartContext";
+import {
+  FoodItem,
+  FavoriteItem,
+  College,
+  ApiFavoritesResponse,
+  ApiItem,
+} from "./types";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 const categories = {
-  produce: ["combos-veg", "combos-nonveg", "veg", "shakes", "juices", "soups", "non-veg"],
-  retail: ["biscuits", "chips", "icecream", "drinks", "snacks", "sweets", "nescafe"],
+  produce: [
+    "combos-veg",
+    "combos-nonveg",
+    "veg",
+    "shakes",
+    "juices",
+    "soups",
+    "non-veg",
+  ],
+  retail: [
+    "biscuits",
+    "chips",
+    "icecream",
+    "drinks",
+    "snacks",
+    "sweets",
+    "nescafe",
+  ],
 };
 
 const CustomPrevArrow = (props: { onClick?: () => void }) => (
-  <button onClick={props.onClick} className={`${styles.carouselButton} ${styles.prevButton}`}>
+  <button
+    onClick={props.onClick}
+    className={`${styles.carouselButton} ${styles.prevButton}`}
+  >
     <ChevronLeft size={20} />
   </button>
 );
 
 const CustomNextArrow = (props: { onClick?: () => void }) => (
-  <button onClick={props.onClick} className={`${styles.carouselButton} ${styles.nextButton}`}>
+  <button
+    onClick={props.onClick}
+    className={`${styles.carouselButton} ${styles.nextButton}`}
+  >
     <ChevronRight size={20} />
   </button>
 );
@@ -74,6 +66,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
   const searchParams = useSearchParams();
 
   const [uniId, setUniId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userFullName, setUserFullName] = useState<string>("");
   const [items, setItems] = useState<{ [key: string]: FoodItem[] }>({});
   const [loading, setLoading] = useState(true);
@@ -84,26 +77,32 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
 
   // Normalize college name for matching
   const normalizeName = (name: string) =>
-    name?.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-") || "";
+    name
+      ?.toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
+      .replace(/-+/g, "-") || "";
 
   // Update URL with college ID
   const updateUrlWithCollegeId = (collegeId: string) => {
     const currentPath = window.location.pathname;
     const newUrl = `${currentPath}?cid=${collegeId}`;
-    window.history.replaceState({}, '', newUrl);
+    window.history.replaceState({}, "", newUrl);
   };
 
   // Get college list and match collegeName to get actual college id
   const fetchCollegesAndSetUniId = async (collegeSlug: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/api/user/auth/list`, { credentials: "include" });
+      const response = await fetch(`${BACKEND_URL}/api/user/auth/list`, {
+        credentials: "include",
+      });
       if (!response.ok) throw new Error("Failed to fetch colleges");
       const colleges = (await response.json()) as College[];
-      
+
       // Normalize the input slug
       const normalizedSlug = normalizeName(collegeSlug);
-      
+
       // Find the college that matches the normalized slug
       const matchedCollege = colleges.find((college) => {
         const normalizedCollegeName = normalizeName(college.name);
@@ -143,7 +142,9 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       if (cid) {
         if (cid.length < 10) {
           try {
-            const response = await fetch(`${BACKEND_URL}/api/user/auth/list`, { credentials: "include" });
+            const response = await fetch(`${BACKEND_URL}/api/user/auth/list`, {
+              credentials: "include",
+            });
             if (!response.ok) throw new Error("Failed to fetch colleges");
             const colleges = (await response.json()) as College[];
             const found = colleges.find((c) => c._id.startsWith(cid));
@@ -153,8 +154,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
               updateUrlWithCollegeId(found._id);
               return;
             }
-          } catch {
-          }
+          } catch {}
         } else {
           if (isMounted) {
             setUniId(cid);
@@ -189,7 +189,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       try {
         const token = localStorage.getItem("token");
         if (!token || !uniId) return;
-        
+
         // Fetch user data
         const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
           credentials: "include",
@@ -198,14 +198,19 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
         if (!userResponse.ok) return;
         const userData = await userResponse.json();
         setUserFullName(userData.fullName);
+        setUserId(userData._id);
 
         // Fetch favorites using the new API endpoint
-        const favoritesResponse = await fetch(`${BACKEND_URL}/fav/${userData._id}/${uniId}`, {
-          credentials: "include",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const favoritesResponse = await fetch(
+          `${BACKEND_URL}/fav/${userData._id}/${uniId}`,
+          {
+            credentials: "include",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         if (!favoritesResponse.ok) return;
-        const favoritesData = await favoritesResponse.json() as ApiFavoritesResponse;
+        const favoritesData =
+          (await favoritesResponse.json()) as ApiFavoritesResponse;
         setUserFavorites(favoritesData.favourites);
       } catch (err) {
         console.error("Error fetching user or favorites:", err);
@@ -241,20 +246,23 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                 title: item.name,
                 image: item.image,
                 category: type,
-                type: item.type,
+                type: category,
                 isSpecial: item.isSpecial,
                 collegeId: item.collegeId,
                 price: item.price,
+                vendorId: item.vendorId || null,
               }));
             })
           )
         );
 
         if (requestId === currentRequest.current) {
+          console.log("Fetched items:", allItems);
           setItems(allItems);
           setLoading(false);
         }
-      } catch {
+      } catch (error) {
+        console.error("Error fetching items:", error);
         if (requestId === currentRequest.current) {
           setError("Failed to load items.");
           setLoading(false);
@@ -264,13 +272,6 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
 
     fetchItems();
   }, [uniId]);
-
-  const getFavoriteItems = () => {
-    if (!userFavorites || !Array.isArray(userFavorites)) return [];
-    return userFavorites;
-  };
-
-  const favoriteItems = getFavoriteItems();
 
   const sliderSettings = {
     dots: false,
@@ -290,21 +291,19 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     ],
   };
 
-  const favoritesSliderSettings = {
-    ...sliderSettings,
-    slidesToShow: 5,
-    autoplaySpeed: 2000,
-    responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: 4 } },
-      { breakpoint: 768, settings: { slidesToShow: 3, arrows: false } },
-      { breakpoint: 480, settings: { slidesToShow: 2, arrows: false } },
-    ],
+  const convertFavoriteToFoodItem = (item: FavoriteItem): FoodItem => {
+    const isRetail = categories.retail.includes(item.kind);
+    return {
+      id: item._id,
+      title: item.name,
+      image: item.image,
+      category: item.kind,
+      type: isRetail ? "retail" : "produce",
+      isSpecial: item.isSpecial,
+      price: item.price,
+      vendorId: item.vendorId,
+    };
   };
-
-  const displayName = userFullName ? userFullName.split(" ")[0] : "User";
-  const collegeDisplayName = slug
-    ? slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-    : "College";
 
   if (loading) {
     return (
@@ -326,119 +325,66 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     );
   }
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.content}>
-        <h1 className={styles.greeting}>
-          Hi {displayName}, what are you craving for at {collegeDisplayName}?
-        </h1>
-
-        {userFullName && favoriteItems.length > 0 && (
-          <div className={styles.favoritesSection}>
-            <h2 className={styles.favoritesTitle}>Your favourites</h2>
-            {favoriteItems.length >= 5 ? (
-              <div className={styles.carouselContainer}>
-                <Slider {...favoritesSliderSettings} className={styles.slider}>
-                  {favoriteItems.map((item) => (
-                    <div key={item._id} className={styles.slideWrapper}>
-                      <div className={styles.foodCard}>
-                        <div className={styles.imageContainer}>
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className={styles.foodImage}
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder-image.png";
-                            }}
-                          />
-                        </div>
-                        <h4 className={styles.foodTitle}>{item.name}</h4>
-                        <p className={styles.foodPrice}>₹{item.price}</p>
-                      </div>
-                    </div>
-                  ))}
-                </Slider>
-              </div>
-            ) : (
-              <div className={styles.favoritesGrid}>
-                {favoriteItems.map((item) => (
-                  <div key={item._id} className={styles.foodCard}>
-                    <div className={styles.imageContainer}>
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className={styles.foodImage}
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder-image.png";
-                        }}
-                      />
-                    </div>
-                    <h4 className={styles.foodTitle}>{item.name}</h4>
-                    <p className={styles.foodPrice}>₹{item.price}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {Object.entries(categories).map(([category, types]) =>
-          types.map((type) => {
-            const key = `${category}-${type}`;
-            const categoryItems = items[key] || [];
-            if (categoryItems.length === 0) return null;
-
-            return (
-              <section key={key} className={styles.categorySection}>
-                <div className={styles.categoryHeader}>
-                  <h3 className={styles.categoryTitle}>
-                    {type.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </h3>
-                </div>
-                <div className={styles.carouselContainer}>
-                  <Slider {...sliderSettings} className={styles.slider}>
-                    {categoryItems.map((item) => (
-                      <div key={item.id} className={styles.slideWrapper}>
-                        <div className={styles.foodCard}>
-                          <div className={styles.imageContainer}>
-                            <img src={item.image} alt={item.title} className={styles.foodImage} />
-                          </div>
-                          <h4 className={styles.foodTitle}>{item.title}</h4>
-                          <p className={styles.foodPrice}>₹{item.price}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </Slider>
-                </div>
-              </section>
-            );
-          })
-        )}
-
-        <div className={styles.specialSection}>
-          <h2 className={styles.specialTitle}>Special Offers</h2>
-          <div className={styles.carouselContainer}>
-            <Slider {...sliderSettings} className={styles.slider}>
-              {Object.values(items)
-                .flat()
-                .filter((item) => item.isSpecial === "Y")
-                .map((item) => (
-                  <div key={item.id} className={styles.slideWrapper}>
-                    <div className={styles.foodCard}>
-                      <div className={styles.imageContainer}>
-                        <img src={item.image} alt={item.title} className={styles.foodImage} />
-                      </div>
-                      <h4 className={styles.foodTitle}>{item.title}</h4>
-                      <p className={styles.foodPrice}>₹{item.price}</p>
-                    </div>
-                  </div>
-                ))}
-            </Slider>
-          </div>
+  if (!userId) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <h1 className={styles.greeting}>Please login to continue</h1>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <CartProvider userId={userId}>
+      <div className={styles.container}>
+        <ToastContainer
+          position="bottom-right"
+          autoClose={2000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+        <div className={styles.content}>
+          <h1 className={styles.greeting}>
+            Hi {userFullName.split(" ")[0]}, what are you craving for at{" "}
+            {slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}?
+          </h1>
+
+          {Object.entries(categories).map(([category, types]) =>
+            types.map((type) => {
+              const key = `${category}-${type}`;
+              const categoryItems = items[key] || [];
+
+              return (
+                <CategorySection
+                  key={key}
+                  categoryItems={categoryItems}
+                  categoryTitle={type}
+                  sliderSettings={sliderSettings}
+                />
+              );
+            })
+          )}
+
+          <FavoritesSection
+            favoriteItems={userFavorites}
+            convertFavoriteToFoodItem={convertFavoriteToFoodItem}
+          />
+
+          <SpecialOffersSection 
+            items={items} 
+            sliderSettings={sliderSettings}
+          />
+        </div>
+      </div>
+    </CartProvider>
   );
 };
 
-export default CollegePageClient; 
+export default CollegePageClient;
