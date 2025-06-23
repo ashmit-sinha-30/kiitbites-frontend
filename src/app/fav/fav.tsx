@@ -160,8 +160,7 @@ const FavouriteFoodPageContent: React.FC = () => {
 
         const response = await axios.get(url, getAuthConfig());
         setFavorites(response.data.favourites);
-        setFavoriteIds(response.data.favourites.map((f: FoodItem) => f._id));
-
+        setFavoriteIds(response.data.favourites.map((f: FoodItem) => `${f._id}-${f.vendorId}`));
       } catch (error) {
         console.error("Error fetching favorites:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -182,13 +181,13 @@ const FavouriteFoodPageContent: React.FC = () => {
     const kind = food.kind;
     const itemId = food._id;
     const vendorId = food.vendorId;
-  
-    const isAlreadyFav = favoriteIds.includes(itemId);
+    const favKey = `${itemId}-${vendorId}`;
+    const isAlreadyFav = favoriteIds.includes(favKey);
   
     try {
       // Optimistically update the UI
       setFavoriteIds((prev) =>
-        isAlreadyFav ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+        isAlreadyFav ? prev.filter((id) => id !== favKey) : [...prev, favKey]
       );
   
       // Make PATCH request
@@ -215,7 +214,7 @@ const FavouriteFoodPageContent: React.FC = () => {
   
       // Revert UI if error
       setFavoriteIds((prev) =>
-        isAlreadyFav ? [...prev, itemId] : prev.filter((id) => id !== itemId)
+        isAlreadyFav ? [...prev, favKey] : prev.filter((id) => id !== favKey)
       );
     }
   };
@@ -744,7 +743,8 @@ const FavouriteFoodPageContent: React.FC = () => {
         ) : (
           <div className={styles.foodGrid}>
             {favorites.map((food) => {
-              const isFavorited = favoriteIds.includes(food._id);
+              const favKey = `${food._id}-${food.vendorId}`;
+              const isFavorited = favoriteIds.includes(favKey);
               // Find the cart item with matching itemId and vendorId
               console.log("Current cart items:", cartItems); // Debug log
               console.log("Current food item:", food); // Debug log
