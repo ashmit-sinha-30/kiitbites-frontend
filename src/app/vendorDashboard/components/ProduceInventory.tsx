@@ -42,21 +42,26 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
             `Failed to fetch produce items (status ${res.status})`
           );
         }
-        const json: any = await res.json();
-
-        // Determine items array path as before...
-        let rawItems: any[] = [];
-        if (json.data && Array.isArray(json.data.produceItems)) {
-          rawItems = json.data.produceItems;
-        } else if (Array.isArray(json.items)) {
-          rawItems = json.items;
+        const json = await res.json() as unknown;
+        let rawItems: unknown[] = [];
+        function isObject(val: unknown): val is Record<string, unknown> {
+          return typeof val === 'object' && val !== null;
+        }
+        if (isObject(json)) {
+          const jsonObj = json as Record<string, unknown>;
+          const data = jsonObj.data;
+          if (isObject(data) && Array.isArray((data as { produceItems?: unknown[] }).produceItems)) {
+            rawItems = (data as { produceItems: unknown[] }).produceItems;
+          } else if (Array.isArray((jsonObj as { items?: unknown[] }).items)) {
+            rawItems = (jsonObj as { items: unknown[] }).items;
+          } else {
+            rawItems = [];
+          }
         } else {
-          console.warn("ProduceInventory: items array not found", json);
           rawItems = [];
         }
-
-        const dataItems: ProduceApiItem[] = rawItems.map((it: any) => ({
-          itemId: it.itemId ?? it._id ?? "",
+        const dataItems: ProduceApiItem[] = (rawItems as Partial<ProduceApiItem>[]).map((it) => ({
+          itemId: it.itemId ?? (it as { _id?: string })._id ?? "",
           name: it.name ?? "",
           price:
             typeof it.price === "number"
@@ -70,18 +75,19 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
         }));
         setItems(dataItems);
 
-        // onLoaded for sidebar if needed
+        // --- Type-safe vendorNameFromResp and vendorIdFromResp extraction ---
         let vendorNameFromResp: string | undefined;
         let vendorIdFromResp: string | undefined;
-        if (typeof json.foodCourtName === "string") {
-          vendorNameFromResp = json.foodCourtName;
+        if (isObject(json) && typeof (json as Record<string, unknown>).foodCourtName === "string") {
+          vendorNameFromResp = (json as Record<string, unknown>).foodCourtName as string;
         }
-        if (json.data) {
-          if (typeof json.data.vendorName === "string") {
-            vendorNameFromResp = json.data.vendorName;
+        if (isObject(json) && isObject((json as Record<string, unknown>).data)) {
+          const data = (json as Record<string, unknown>).data as Record<string, unknown>;
+          if (typeof data.vendorName === "string") {
+            vendorNameFromResp = data.vendorName;
           }
-          if (typeof json.data.vendorId === "string") {
-            vendorIdFromResp = json.data.vendorId;
+          if (typeof data.vendorId === "string") {
+            vendorIdFromResp = data.vendorId;
           }
         }
         if (!vendorIdFromResp) {
