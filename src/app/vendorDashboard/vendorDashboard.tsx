@@ -1,76 +1,107 @@
+// page.tsx (VendorDashboardPage)
+
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import StatCard from "./components/StatCard";
 import InventoryTable from "./components/InventoryTable";
 import DateFilter from "./components/DateFilter";
 import DownloadButton from "./components/DownloadButton";
+import { OrderList } from "./components/OrderList";
+
+// Import the new inventory components:
+import { RetailInventory } from "./components/RetailInventory";
+import { ProduceInventory } from "./components/ProduceInventory";
 
 import styles from "./styles/InventoryReport.module.scss";
 import { InventoryReport, transformApiReport } from "./types";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
 
-export default function VendorDashboardPage() {
-  const VENDOR_ID = "683461e610d75a5ba7b773eb";
+const segmentsMap: Record<string, string> = {
+  dashboard: "Dashboard",
+  "inventory-reports": "Inventory Reports",
+  "retail-inventory": "Retail Inventory",
+  "produce-inventory": "Produce Inventory",
+  // ...other segments
+};
 
-  // two pieces of state
+export default function VendorDashboardPage() {
+  const VENDOR_ID = "6834622e10d75a5ba7b7740d";
+
+  const [activeSegment, setActiveSegment] = useState<string>("dashboard");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("activeSegment");
+    if (saved) setActiveSegment(saved);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("activeSegment", activeSegment);
+  }, [activeSegment]);
+
+  // For sidebar vendor display from any loaded data
+  const [vendorNameFromAPI, setVendorNameFromAPI] = useState<
+    string | undefined
+  >();
+  const [vendorIdFromAPI, setVendorIdFromAPI] = useState<string | undefined>();
+
+  // Inventory Reports state:
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().slice(0, 10)
   );
   const [appliedDate, setAppliedDate] = useState(selectedDate);
-
   const [report, setReport] = useState<InventoryReport | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeSegment, setActiveSegment] =
-    useState<string>("inventory-reports");
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [errorReport, setErrorReport] = useState<string | null>(null);
 
-  const segmentsMap: Record<string, string> = {
-    dashboard: "Dashboard",
-    "retail-inventory": "Retail Inventory",
-    "produce-inventory": "Produce Inventory",
-    "raw-materials": "Raw Materials",
-    "inventory-reports": "Inventory Reports",
-    "reorder-requests": "Reorder Requests",
-    settings: "Settings",
-  };
-
-  // fetch helper
   const fetchReport = async (date: string) => {
-    setLoading(true);
-    setError(null);
+    setLoadingReport(true);
+    setErrorReport(null);
     try {
       const res = await fetch(
         `${BACKEND_URL}/inventoryreport/vendor/${VENDOR_ID}?date=${date}`
       );
       const json = await res.json();
-
       if (!json.success) {
         setReport(null);
-        setError("No report found for the selected date.");
+        setErrorReport("No report found for the selected date.");
         return;
       }
-
       setReport(transformApiReport(json.data));
-    } catch (err: any) {
+      // update sidebar vendor info
+      if (
+        json.data.vendor &&
+        json.data.vendor.fullName &&
+        json.data.vendor._id
+      ) {
+        setVendorNameFromAPI(json.data.vendor.fullName);
+        setVendorIdFromAPI(json.data.vendor._id);
+      }
+    } catch (err: unknown) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setErrorReport(err instanceof Error ? err.message : "Unknown error");
       setReport(null);
     } finally {
-      setLoading(false);
+      setLoadingReport(false);
     }
   };
 
-  // on mount, fetch for today's date
   useEffect(() => {
-    fetchReport(appliedDate);
-  }, [appliedDate]);
+    if (activeSegment === "inventory-reports") {
+      fetchReport(appliedDate);
+    }
+  }, [appliedDate, activeSegment]);
 
-  // when the user clicks Filter, we update appliedDate
   const applyFilter = () => {
     setAppliedDate(selectedDate);
+  };
+
+  // Common onLoaded handler for retail/produce/orders to update sidebar
+  const handleOnLoaded = (vendorName: string, vendorId: string) => {
+    setVendorNameFromAPI(vendorName);
+    setVendorIdFromAPI(vendorId);
   };
 
   return (
@@ -78,18 +109,51 @@ export default function VendorDashboardPage() {
       <Sidebar
         active={activeSegment}
         onSegmentChange={setActiveSegment}
-        vendorName={report?.vendorName}
-        vendorId={report?.vendorId}
+        vendorName={report?.vendorName || vendorNameFromAPI}
+        vendorId={report?.vendorId || vendorIdFromAPI}
       />
 
       <main className={styles.main}>
-        {activeSegment === "inventory-reports" ? (
+        {/* Dashboard Segment: Active Orders */}
+        {activeSegment === "dashboard" && (
+          <>
+            <div className={styles.header}>
+              <h1>Active Orders</h1>
+              <p>Manage your incoming orders in real-time</p>
+            </div>
+            <OrderList onLoaded={handleOnLoaded} />
+          </>
+        )}
+
+        {/* Retail Inventory Segment */}
+        {activeSegment === "retail-inventory" && (
+          <>
+            <div className={styles.header}>
+              <h1>Retail Inventory</h1>
+              <p>Manage your packaged items</p>
+            </div>
+            <RetailInventory vendorId={VENDOR_ID} onLoaded={handleOnLoaded} />
+          </>
+        )}
+
+        {/* Produce Inventory Segment */}
+        {activeSegment === "produce-inventory" && (
+          <>
+            <div className={styles.header}>
+              <h1>Produce Inventory</h1>
+              <p>Manage your fresh produce items</p>
+            </div>
+            <ProduceInventory vendorId={VENDOR_ID} onLoaded={handleOnLoaded} />
+          </>
+        )}
+
+        {/* Inventory Reports Segment */}
+        {activeSegment === "inventory-reports" && (
           <>
             <div className={styles.header}>
               <h1>Inventory Reports</h1>
               <p>View and export detailed inventory reports</p>
             </div>
-
             <div className={styles.topBar}>
               <div className={styles.stats}>
                 {report ? (
@@ -112,7 +176,6 @@ export default function VendorDashboardPage() {
                   <div>Loading stats…</div>
                 )}
               </div>
-
               <div className={styles.controls}>
                 <DateFilter
                   date={selectedDate}
@@ -129,11 +192,10 @@ export default function VendorDashboardPage() {
                 )}
               </div>
             </div>
-
-            {loading ? (
+            {loadingReport ? (
               <p>Loading report…</p>
-            ) : error ? (
-              <p className={styles.error}>{error}</p>
+            ) : errorReport ? (
+              <p className={styles.error}>{errorReport}</p>
             ) : report ? (
               <InventoryTable
                 items={report.items ?? []}
@@ -143,12 +205,21 @@ export default function VendorDashboardPage() {
               <p>No report data available.</p>
             )}
           </>
-        ) : (
-          <div className={styles.underConstruction}>
-            🚧 {segmentsMap[activeSegment] || activeSegment.replace(/-/g, " ")}{" "}
-            is under construction.
-          </div>
         )}
+
+        {/* Other segments under construction */}
+        {activeSegment !== "dashboard" &&
+          activeSegment !== "inventory-reports" &&
+          activeSegment !== "retail-inventory" &&
+          activeSegment !== "produce-inventory" && (
+            <div className={styles.underConstruction}>
+              🚧{" "}
+              {segmentsMap[activeSegment]
+                ? segmentsMap[activeSegment]
+                : activeSegment.replace(/-/g, " ")}{" "}
+              is under construction.
+            </div>
+          )}
       </main>
     </div>
   );

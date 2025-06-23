@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -64,6 +64,32 @@ const CustomNextArrow = (props: { onClick?: () => void }) => (
 
 const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  console.log('Original slug:', slug);
+  console.log('Slug type:', typeof slug);
+  console.log('Slug length:', slug.length);
+
+  const formatCollegeName = (name: string) => {
+    if (!name) return '';
+    console.log('Formatting name:', name);
+    // Split by hyphens and capitalize each word
+    const formatted = name
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+    console.log('Formatted result:', formatted);
+    return formatted;
+  };
+
+  // Get college name from URL path
+  const getCollegeNameFromPath = () => {
+    const parts = pathname.split('/');
+    const collegeSlug = parts[parts.length - 1];
+    console.log('College slug from path:', collegeSlug);
+    return collegeSlug;
+  };
+
+  const collegeName = formatCollegeName(getCollegeNameFromPath());
 
   const [uniId, setUniId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -325,16 +351,6 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     );
   }
 
-  if (!userId) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.content}>
-          <h1 className={styles.greeting}>Please login to continue</h1>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <CartProvider userId={userId}>
       <div className={styles.container}>
@@ -352,12 +368,23 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
         />
         <div className={styles.content}>
           <h1 className={styles.greeting}>
-            Hi{" "}
-            <span style={{ color: "#4ea199" }}>
-              {userFullName.split(" ")[0]}
-            </span>
-            , what are you craving for{" "}
-            {slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}?
+            {userId ? (
+              <>
+                Hi{" "}
+                <span style={{ color: "#4ea199" }}>
+                  {userFullName?.split(" ")[0] || "User"}
+                </span>
+                , what are you craving for?
+              </>
+            ) : (
+              <>
+                Welcome to{" "}
+                <span style={{ color: "#4ea199" }}>
+                  {collegeName}
+                </span>
+                , explore our menu
+              </>
+            )}
           </h1>
 
           {Object.entries(categories).map(([category, types]) =>
@@ -371,18 +398,26 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                   categoryItems={categoryItems}
                   categoryTitle={type}
                   sliderSettings={sliderSettings}
+                  userId={userId}
                 />
               );
             })
           )}
 
-          <FavoritesSection
-            favoriteItems={userFavorites}
-            convertFavoriteToFoodItem={convertFavoriteToFoodItem}
-            sliderSettings={sliderSettings}
-          />
+          {userId && (
+            <FavoritesSection
+              favoriteItems={userFavorites}
+              convertFavoriteToFoodItem={convertFavoriteToFoodItem}
+              sliderSettings={sliderSettings}
+              userId={userId}
+            />
+          )}
 
-          <SpecialOffersSection items={items} sliderSettings={sliderSettings} />
+          <SpecialOffersSection 
+            items={items} 
+            sliderSettings={sliderSettings} 
+            userId={userId}
+          />
         </div>
       </div>
     </CartProvider>

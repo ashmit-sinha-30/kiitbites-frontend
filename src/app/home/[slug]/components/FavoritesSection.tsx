@@ -12,12 +12,14 @@ interface FavoritesSectionProps {
   favoriteItems: FavoriteItem[];
   convertFavoriteToFoodItem: (item: FavoriteItem) => FoodItem;
   sliderSettings: Settings;
+  userId?: string | null;
 }
 
 const FavoritesSection = ({
   favoriteItems,
   convertFavoriteToFoodItem,
   sliderSettings,
+  userId,
 }: FavoritesSectionProps) => {
   if (favoriteItems.length === 0) return null;
 
@@ -49,6 +51,7 @@ const FavoritesSection = ({
               key={item._id}
               item={convertFavoriteToFoodItem(item)}
               categories={categories}
+              userId={userId}
             />
           ))}
         </Slider>
