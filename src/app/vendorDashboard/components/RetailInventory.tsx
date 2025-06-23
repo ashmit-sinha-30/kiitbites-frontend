@@ -21,6 +21,10 @@ interface RetailInventoryProps {
   onLoaded?: (vendorName: string, vendorId: string) => void;
 }
 
+function isObject(val: unknown): val is Record<string, unknown> {
+  return typeof val === 'object' && val !== null;
+}
+
 export const RetailInventory: React.FC<RetailInventoryProps> = ({
   vendorId,
   onLoaded,
@@ -43,19 +47,23 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
             `Failed to fetch retail items (status ${res.status})`
           );
         }
-        const json: any = await res.json();
-        // Extract rawItems based on actual response shape
-        let rawItems: any[] = [];
-        if (json.data && Array.isArray(json.data.retailItems)) {
-          rawItems = json.data.retailItems;
-        } else if (Array.isArray(json.items)) {
-          rawItems = json.items;
+        const json = await res.json() as unknown;
+        let rawItems: unknown[] = [];
+        if (isObject(json)) {
+          const jsonObj = json as Record<string, unknown>;
+          const data = jsonObj.data;
+          if (isObject(data) && Array.isArray((data as { retailItems?: unknown[] }).retailItems)) {
+            rawItems = (data as { retailItems: unknown[] }).retailItems;
+          } else if (Array.isArray((jsonObj as { items?: unknown[] }).items)) {
+            rawItems = (jsonObj as { items: unknown[] }).items;
+          } else {
+            rawItems = [];
+          }
         } else {
-          console.warn("RetailInventory: items array not found", json);
           rawItems = [];
         }
-        const dataItems: RetailApiItem[] = rawItems.map((it: any) => ({
-          itemId: it.itemId ?? it._id ?? "",
+        const dataItems: RetailApiItem[] = (rawItems as Partial<RetailApiItem>[]).map((it) => ({
+          itemId: it.itemId ?? (it as { _id?: string })._id ?? "",
           name: it.name ?? "",
           price:
             typeof it.price === "number"
@@ -66,24 +74,23 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
           quantity:
             typeof it.quantity === "number"
               ? it.quantity
-              : parseInt(it.quantity, 10) || 0,
+              : parseInt(it.quantity as unknown as string, 10) || 0,
           type: it.type ?? "",
           isSpecial: it.isSpecial === "Y" ? "Y" : "N",
         }));
         setItems(dataItems);
-
-        // onLoaded for sidebar if needed
         let vendorNameFromResp: string | undefined;
         let vendorIdFromResp: string | undefined;
-        if (typeof json.foodCourtName === "string") {
-          vendorNameFromResp = json.foodCourtName;
+        if (isObject(json) && typeof (json as Record<string, unknown>).foodCourtName === "string") {
+          vendorNameFromResp = (json as Record<string, unknown>).foodCourtName as string;
         }
-        if (json.data) {
-          if (typeof json.data.vendorName === "string") {
-            vendorNameFromResp = json.data.vendorName;
+        if (isObject(json) && isObject((json as Record<string, unknown>).data)) {
+          const data = (json as Record<string, unknown>).data as Record<string, unknown>;
+          if (typeof data.vendorName === "string") {
+            vendorNameFromResp = data.vendorName;
           }
-          if (typeof json.data.vendorId === "string") {
-            vendorIdFromResp = json.data.vendorId;
+          if (typeof data.vendorId === "string") {
+            vendorIdFromResp = data.vendorId;
           }
         }
         if (!vendorIdFromResp) {

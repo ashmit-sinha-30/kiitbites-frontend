@@ -119,7 +119,7 @@ const VendorPage = () => {
           const res = await fetch(`${BACKEND_URL}/fav/${userData._id}/${universityId}`);
           const data = await res.json();
           if (data.favourites) {
-            const favIds = data.favourites.map((fav: FavoriteItem) => fav._id || fav.itemId);
+            const favIds = data.favourites.map((fav: FavoriteItem) => fav.itemId);
             setFavouriteItems(favIds);
           }
         } catch (err) {
