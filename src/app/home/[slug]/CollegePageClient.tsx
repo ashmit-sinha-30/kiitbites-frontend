@@ -409,6 +409,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
               favoriteItems={userFavorites}
               convertFavoriteToFoodItem={convertFavoriteToFoodItem}
               sliderSettings={sliderSettings}
+              userId={userId}
             />
           )}
 
