@@ -20,6 +20,7 @@ interface VendorItem {
   image?: string;
   quantity?: number;
   isAvailable?: string;
+  vendorId?: string;
 }
 
 interface VendorData {
@@ -39,15 +40,22 @@ interface UserData {
     kind: string;
     quantity: number;
   }>;
+  favourites?: Array<{
+    itemId: string;
+    vendorId: string;
+    kind: string;
+  }>;
 }
 
-interface FavoriteItem {
-  _id?: string;
-  itemId?: string;
+interface Favourite {
+  itemId: string;
+  vendorId: string;
+  kind: string;
 }
 
 const VendorPage = () => {
   const { id } = useParams();
+  console.log('[DEBUG] useParams id:', id, 'type:', typeof id);
   const router = useRouter();
   const [vendorData, setVendorData] = useState<VendorData | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -56,8 +64,25 @@ const VendorPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchResults, setSearchResults] = useState<VendorItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [favouriteItems, setFavouriteItems] = useState<string[]>([]);
 
+  // Helper to get the real vendorId from the item or fallback to route id
+  const getRealVendorId = (item: VendorItem) => {
+    return item.vendorId ? String(item.vendorId).trim() : String(id).trim();
+  };
+
+  // Get the current vendor's ObjectId from the first item (retail or produce)
+  const currentVendorId = vendorData?.data?.retailItems?.[0]?.vendorId || vendorData?.data?.produceItems?.[0]?.vendorId || id;
+
+  // Helper to check if an item is favourited by the user for this vendor
+  const isItemFavourited = (item: VendorItem) => {
+    if (!userData?.favourites) return false;
+    return userData.favourites.some(
+      (fav: Favourite) =>
+        String(fav.itemId) === String(item.itemId) &&
+        String(fav.vendorId) === String(currentVendorId) &&
+        fav.kind === (item.type === "retail" ? "Retail" : "Produce")
+    );
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,49 +137,34 @@ const VendorPage = () => {
     fetchData();
   }, [id]);
 
-  useEffect(() => {
-    const fetchFavourites = async () => {
-      if (userData && universityId) {
-        try {
-          const res = await fetch(`${BACKEND_URL}/fav/${userData._id}/${universityId}`);
-          const data = await res.json();
-          if (data.favourites) {
-            const favIds = data.favourites.map((fav: FavoriteItem) => fav._id || fav.itemId);
-            setFavouriteItems(favIds);
-          }
-        } catch (err) {
-          console.error("Failed to fetch favourites:", err);
-        }
-      }
-    };
-  
-    fetchFavourites();
-  }, [userData, universityId]);
-
   const toggleFavourite = async (item: VendorItem) => {
     if (!userData) {
       toast.error("Please login to favourite items");
       return;
     }
-  
     const kind = item.type === "retail" ? "Retail" : "Produce";
-  
     try {
-      const res = await fetch(`${BACKEND_URL}/fav/${userData._id}/${item.itemId}/${kind}/${id}`, {
+      const res = await fetch(`${BACKEND_URL}/fav/${userData._id}/${item.itemId}/${kind}/${getRealVendorId(item)}`, {
         method: "PATCH",
       });
       const data = await res.json();
-  
-      if (res.ok) {
-        const isFav = favouriteItems.includes(item.itemId);
-        const updatedFavs = isFav
-          ? favouriteItems.filter(favId => favId !== item.itemId)
-          : [...favouriteItems, item.itemId];
-  
-        setFavouriteItems(updatedFavs);
-        toast.success(data.message || "Favourites updated.");
-      } else {
+      if (!res.ok) {
         toast.error(data.error || "Failed to update favourites");
+      } else {
+        toast.success(data.message || "Favourites updated.");
+        // Optionally, you can refresh userData here to get updated favourites
+        const token = localStorage.getItem("token");
+        if (token) {
+          const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (userResponse.ok) {
+            const updatedUserData = await userResponse.json();
+            setUserData(updatedUserData);
+          }
+        }
       }
     } catch (err) {
       console.error("Favourite toggle error:", err);
@@ -321,6 +331,8 @@ const VendorPage = () => {
         ) : (
           filteredItems.map(item => {
             const quantity = getItemQuantity(item.itemId, item.type);
+            const isFav = isItemFavourited(item);
+            console.log('[DEBUG] UI itemId:', item.itemId, 'UI vendorId:', getRealVendorId(item), 'isFav:', isFav);
             return (
               <div 
                 key={item.itemId} 
@@ -352,7 +364,7 @@ const VendorPage = () => {
                           toggleFavourite(item);
                         }}
                       >
-                        {favouriteItems.includes(item.itemId) ? <FaHeart color="#4ea199" /> : <FaRegHeart color="#4ea199" />}
+                        {isFav ? <FaHeart color="#4ea199" /> : <FaRegHeart color="#4ea199" />}
                       </button>
                     )}
                   </div>
