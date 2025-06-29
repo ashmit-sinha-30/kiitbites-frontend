@@ -127,7 +127,7 @@ const PaymentPage = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.heading}>🎉 Payment Successful!</h1>
+      <h1 className={styles.heading}>Payment Successful!</h1>
       <p className={styles.message}>Thank you for your order.</p>
       
       {orderDetails && (
@@ -140,10 +140,10 @@ const PaymentPage = () => {
               <strong>Order Date:</strong> {formatDate(orderDetails.createdAt)}
             </p>
             <p className={styles.orderType}>
-              <strong>Order Type:</strong> {orderDetails.orderType}
+              <strong>Order Type:</strong> {orderDetails.orderType.toUpperCase()}
             </p>
             <p className={styles.orderStatus}>
-              <strong>Status:</strong> {orderDetails.status}
+              <strong>Status:</strong> {orderDetails.status.toUpperCase()}
             </p>
           </div>
 
