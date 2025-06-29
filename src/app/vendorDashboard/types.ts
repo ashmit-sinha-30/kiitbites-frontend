@@ -98,6 +98,7 @@ export interface Item {
 
 export interface Order {
   orderId: string;
+  orderNumber: string;
   createdAt: string;
   collectorName: string;
   collectorPhone: string;

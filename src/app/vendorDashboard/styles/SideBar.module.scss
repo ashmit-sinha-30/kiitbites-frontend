@@ -4,7 +4,7 @@
   position: fixed;
   top: 64px; // your header height
   left: 0;
-  bottom: 425px;
+  bottom: 0; // Changed from 425px to 0 to allow full height
   overflow-y: auto;
   background: #fff;
   width: 240px;

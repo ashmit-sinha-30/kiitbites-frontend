@@ -9,6 +9,9 @@ import InventoryTable from "./components/InventoryTable";
 import DateFilter from "./components/DateFilter";
 import DownloadButton from "./components/DownloadButton";
 import { OrderList } from "./components/OrderList";
+import { PastOrdersList } from "./components/PastOrdersList";
+import { DeliveryOrdersList } from "./components/DeliveryOrdersList";
+import { Order } from "./types";
 
 // Import the new inventory components:
 import { RetailInventory } from "./components/RetailInventory";
@@ -24,6 +27,8 @@ const segmentsMap: Record<string, string> = {
   "inventory-reports": "Inventory Reports",
   "retail-inventory": "Retail Inventory",
   "produce-inventory": "Produce Inventory",
+  "delivery-orders": "Delivery Orders",
+  "past-orders": "Past Orders",
   // ...other segments
 };
 
@@ -31,6 +36,24 @@ export default function VendorDashboardPage() {
   const VENDOR_ID = "6834622e10d75a5ba7b7740d";
 
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
+
+  // State for managing order transitions between components
+  const [orderStatusChanges, setOrderStatusChanges] = useState<{
+    orderId: string;
+    newStatus: string;
+    orderData?: Order;
+  }[]>([]);
+
+  // Function to handle order status changes
+  const handleOrderStatusChange = (orderId: string, newStatus: string, orderData?: Order) => {
+    console.log(`Dashboard: Order status change - ID: ${orderId}, Status: ${newStatus}, Type: ${orderData?.orderType}`);
+    setOrderStatusChanges(prev => [...prev, { orderId, newStatus, orderData }]);
+    
+    // Clear the change after a short delay to prevent memory leaks
+    setTimeout(() => {
+      setOrderStatusChanges(prev => prev.filter(change => change.orderId !== orderId));
+    }, 5000);
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem("activeSegment");
@@ -121,7 +144,11 @@ export default function VendorDashboardPage() {
               <h1>Active Orders</h1>
               <p>Manage your incoming orders in real-time</p>
             </div>
-            <OrderList onLoaded={handleOnLoaded} />
+            <OrderList 
+              onLoaded={handleOnLoaded} 
+              onOrderStatusChange={handleOrderStatusChange}
+              orderStatusChanges={orderStatusChanges}
+            />
           </>
         )}
 
@@ -207,11 +234,39 @@ export default function VendorDashboardPage() {
           </>
         )}
 
+        {/* Past Orders Segment */}
+        {activeSegment === "past-orders" && (
+          <>
+            <div className={styles.header}>
+              <h1>Past Orders</h1>
+              <p>View and manage past orders</p>
+            </div>
+            <PastOrdersList onLoaded={handleOnLoaded} />
+          </>
+        )}
+
+        {/* Delivery Orders Segment */}
+        {activeSegment === "delivery-orders" && (
+          <>
+            <div className={styles.header}>
+              <h1>Delivery Orders</h1>
+              <p>Manage your delivery orders</p>
+            </div>
+            <DeliveryOrdersList 
+              onLoaded={handleOnLoaded} 
+              onOrderStatusChange={handleOrderStatusChange}
+              orderStatusChanges={orderStatusChanges}
+            />
+          </>
+        )}
+
         {/* Other segments under construction */}
         {activeSegment !== "dashboard" &&
           activeSegment !== "inventory-reports" &&
           activeSegment !== "retail-inventory" &&
-          activeSegment !== "produce-inventory" && (
+          activeSegment !== "produce-inventory" &&
+          activeSegment !== "past-orders" &&
+          activeSegment !== "delivery-orders" && (
             <div className={styles.underConstruction}>
               🚧{" "}
               {segmentsMap[activeSegment]

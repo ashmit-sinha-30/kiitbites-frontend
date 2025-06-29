@@ -86,7 +86,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         {/* HEADER */}
         <div className={styles.header}>
           <div className={styles.titleBlock}>
-            <h3 className={styles.orderId}>{order.orderId}</h3>
+            <h3 className={styles.orderId}>#{order.orderNumber}</h3>
             <span
               className={styles.typePill}
               style={{ backgroundColor: typeColors[order.orderType] }}
@@ -106,7 +106,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         <div className={styles.meta}>
           <div>Name: {order.collectorName}</div>
           <div>Phone: {order.collectorPhone}</div>
-          {order.address && <div>Address: {order.address}</div>}
+          {order.address && (
+            <div>Address: {order.address}</div>
+          )}
           <div>Ordered at: {formatTime(order.createdAt)}</div>
         </div>
 
