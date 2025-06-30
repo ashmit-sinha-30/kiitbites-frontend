@@ -59,26 +59,28 @@ export const OrderList: React.FC<OrderListProps> = ({ onLoaded, onOrderStatusCha
         return res.json(); // response includes vendorId, vendorName, orders
       };
 
-      const [delRes, takeRes, dineRes] = await Promise.all([
+      const [delRes, takeRes, dineRes, cashRes] = await Promise.all([
         fetchType("delivery"),
         fetchType("takeaway"),
         fetchType("dinein"),
+        fetchType("cash"),
       ]);
 
       // Call onLoaded using any one of the responses
       if (onLoaded) {
         const vendorName =
-          delRes.vendorName || takeRes.vendorName || dineRes.vendorName;
+          delRes.vendorName || takeRes.vendorName || dineRes.vendorName || cashRes.vendorName;
         const vendorId =
-          delRes.vendorId || takeRes.vendorId || dineRes.vendorId;
+          delRes.vendorId || takeRes.vendorId || dineRes.vendorId || cashRes.vendorId;
         if (vendorName && vendorId) onLoaded(vendorName, vendorId);
       }
 
-      // Combine all orders from the three responses
+      // Combine all orders from the four responses
       const allOrders = [
         ...delRes.orders,
         ...takeRes.orders,
         ...dineRes.orders,
+        ...cashRes.orders,
       ];
 
       // Filter out delivery orders that are on the way (they'll be shown in separate delivery section)

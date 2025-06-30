@@ -11,6 +11,7 @@ import DownloadButton from "./components/DownloadButton";
 import { OrderList } from "./components/OrderList";
 import { PastOrdersList } from "./components/PastOrdersList";
 import { DeliveryOrdersList } from "./components/DeliveryOrdersList";
+import { VendorCartComponent } from "./components/VendorCart";
 import { Order } from "./types";
 
 // Import the new inventory components:
@@ -29,6 +30,7 @@ const segmentsMap: Record<string, string> = {
   "produce-inventory": "Produce Inventory",
   "delivery-orders": "Delivery Orders",
   "past-orders": "Past Orders",
+  "vendor-cart": "Vendor Cart",
   // ...other segments
 };
 
@@ -260,13 +262,25 @@ export default function VendorDashboardPage() {
           </>
         )}
 
+        {/* Vendor Cart Segment */}
+        {activeSegment === "vendor-cart" && (
+          <>
+            <div className={styles.header}>
+              <h1>Vendor Cart</h1>
+              <p>Create orders for customers directly</p>
+            </div>
+            <VendorCartComponent vendorId={VENDOR_ID} onLoaded={handleOnLoaded} />
+          </>
+        )}
+
         {/* Other segments under construction */}
         {activeSegment !== "dashboard" &&
           activeSegment !== "inventory-reports" &&
           activeSegment !== "retail-inventory" &&
           activeSegment !== "produce-inventory" &&
           activeSegment !== "past-orders" &&
-          activeSegment !== "delivery-orders" && (
+          activeSegment !== "delivery-orders" &&
+          activeSegment !== "vendor-cart" && (
             <div className={styles.underConstruction}>
               🚧{" "}
               {segmentsMap[activeSegment]

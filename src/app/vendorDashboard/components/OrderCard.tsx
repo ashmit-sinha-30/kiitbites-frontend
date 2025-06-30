@@ -17,6 +17,7 @@ const typeColors: Record<Order["orderType"], string> = {
   delivery: "#4ea199",
   takeaway: "#4ea199",
   dinein: "#4ea199",
+  cash: "#4ea199",
 };
 
 interface OrderCardProps {

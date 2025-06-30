@@ -79,7 +79,7 @@ export interface InventoryReport {
   vendorName: string;
   vendorId: string;
 }
-export type OrderType = "delivery" | "takeaway" | "dinein";
+export type OrderType = "delivery" | "takeaway" | "dinein" | "cash";
 
 export type Status =
   | "pendingPayment"
@@ -107,4 +107,44 @@ export interface Order {
   status: Status;
   items: Item[];
   total: number;
+}
+
+// Vendor Cart Types
+export interface VendorCartItem {
+  itemId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  kind: "Retail" | "Produce";
+  type: string;
+  isSpecial?: "Y" | "N";
+  isAvailable?: "Y" | "N";
+}
+
+export interface VendorCart {
+  items: VendorCartItem[];
+  total: number;
+}
+
+export interface BillingFormData {
+  userName: string;
+  phoneNumber: string;
+}
+
+export interface GuestOrderRequest {
+  vendorId: string;
+  items: VendorCartItem[];
+  total: number;
+  collectorName: string;
+  collectorPhone: string;
+  orderType: "cash";
+  isGuest: boolean;
+}
+
+export interface GuestOrderResponse {
+  success: boolean;
+  orderId?: string;
+  orderNumber?: string;
+  message: string;
+  isNewUser?: boolean;
 }
