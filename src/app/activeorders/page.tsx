@@ -21,6 +21,7 @@ interface OrderItem {
 interface ActiveOrder {
   _id: string;
   orderId: string;
+  orderNumber: string;
   orderType: string;
   status: string;
   createdAt: string;
@@ -210,10 +211,6 @@ const ActiveOrdersPageContent: React.FC = () => {
     });
   };
 
-  const formatOrderId = (orderId: string) => {
-    return orderId.slice(-8).toUpperCase();
-  };
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'delivered':
@@ -319,7 +316,7 @@ const ActiveOrdersPageContent: React.FC = () => {
                 <div key={order._id} className={styles.orderCard}>
                   <div className={styles.orderHeader}>
                     <div className={styles.orderInfo}>
-                      <h3 className={styles.orderId}>Order #{formatOrderId(order.orderId)}</h3>
+                      <h3 className={styles.orderId}>Order #{order.orderNumber}</h3>
                       <p className={styles.orderDate}>{formatDate(order.createdAt)}</p>
                       {order.vendorId && (
                         <div className={styles.orderSource}>
