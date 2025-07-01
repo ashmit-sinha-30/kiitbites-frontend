@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { VendorCartItem, VendorCart as VendorCartType, BillingFormData } from "../types";
+import { VendorCart as VendorCartType, BillingFormData } from "../types";
 import styles from "../styles/VendorCart.module.scss";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -46,9 +46,31 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
   const [billingForm, setBillingForm] = useState<BillingFormData>({
     userName: "",
     phoneNumber: "",
+    paymentMethod: "cash",
   });
+  const [cartLoading, setCartLoading] = useState(false);
 
-  // Fetch vendor items
+  // Fetch vendor cart from backend
+  const fetchVendorCart = async () => {
+    setCartLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/vendorcart/${vendorId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setCart({
+          items: data.data.items || [],
+          total: data.data.total || 0
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching vendor cart:", err);
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
+  // Fetch vendor items and cart
   useEffect(() => {
     const fetchItems = async () => {
       setLoading(true);
@@ -92,59 +114,91 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
     };
 
     fetchItems();
+    fetchVendorCart();
   }, [vendorId, onLoaded]);
 
-  const addToCart = (item: VendorItem) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.items.find(cartItem => cartItem.itemId === item.itemId);
+  const addToCart = async (item: VendorItem) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/vendorcart/${vendorId}/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          item: {
+            itemId: item.itemId,
+            name: item.name,
+            price: item.price,
+            quantity: 1,
+            kind: item.kind,
+            type: item.type,
+            isSpecial: item.isSpecial,
+            isAvailable: item.isAvailable,
+          }
+        }),
+      });
+
+      const data = await response.json();
       
-      if (existingItem) {
-        const updatedItems = prevCart.items.map(cartItem =>
-          cartItem.itemId === item.itemId
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-        const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        return { items: updatedItems, total };
-      } else {
-        const newItem: VendorCartItem = {
-          itemId: item.itemId,
-          name: item.name,
-          price: item.price,
-          quantity: 1,
-          kind: item.kind,
-          type: item.type,
-          isSpecial: item.isSpecial,
-          isAvailable: item.isAvailable,
-        };
-        const updatedItems = [...prevCart.items, newItem];
-        const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        return { items: updatedItems, total };
+      if (data.success) {
+        setCart({
+          items: data.data.items || [],
+          total: data.data.total || 0
+        });
       }
-    });
+    } catch (err) {
+      console.error("Error adding item to cart:", err);
+      setError("Failed to add item to cart");
+    }
   };
 
-  const updateQuantity = (itemId: string, newQuantity: number) => {
+  const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      removeFromCart(itemId);
+      await removeFromCart(itemId);
       return;
     }
 
-    setCart(prevCart => {
-      const updatedItems = prevCart.items.map(item =>
-        item.itemId === itemId ? { ...item, quantity: newQuantity } : item
-      );
-      const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      return { items: updatedItems, total };
-    });
+    try {
+      const response = await fetch(`${BACKEND_URL}/vendorcart/${vendorId}/items/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quantity: newQuantity }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setCart({
+          items: data.data.items || [],
+          total: data.data.total || 0
+        });
+      }
+    } catch (err) {
+      console.error("Error updating item quantity:", err);
+      setError("Failed to update item quantity");
+    }
   };
 
-  const removeFromCart = (itemId: string) => {
-    setCart(prevCart => {
-      const updatedItems = prevCart.items.filter(item => item.itemId !== itemId);
-      const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      return { items: updatedItems, total };
-    });
+  const removeFromCart = async (itemId: string) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/vendorcart/${vendorId}/items/${itemId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setCart({
+          items: data.data.items || [],
+          total: data.data.total || 0
+        });
+      }
+    } catch (err) {
+      console.error("Error removing item from cart:", err);
+      setError("Failed to remove item from cart");
+    }
   };
 
   const getCartQuantity = (itemId: string) => {
@@ -155,8 +209,8 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
   const handleBillingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!billingForm.userName.trim() || !billingForm.phoneNumber.trim()) {
-      setError("Please fill in all required fields");
+    if (!billingForm.userName.trim() || !billingForm.phoneNumber.trim() || !billingForm.paymentMethod) {
+      setError("Please fill in all required fields and select a payment method");
       return;
     }
 
@@ -177,7 +231,7 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
           total: cart.total,
           collectorName: billingForm.userName,
           collectorPhone: billingForm.phoneNumber,
-          orderType: "cash",
+          orderType: billingForm.paymentMethod,
           isGuest: true,
         }),
       });
@@ -185,8 +239,40 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       const result = await response.json();
 
       if (result.success) {
+        // Save billing information
+        try {
+          await fetch(`${BACKEND_URL}/billinginfo`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              vendorId,
+              customerName: billingForm.userName,
+              phoneNumber: billingForm.phoneNumber,
+              paymentMethod: billingForm.paymentMethod,
+              totalAmount: cart.total,
+              orderNumber: result.orderNumber,
+              orderId: result.orderId,
+              items: cart.items,
+              isGuest: true
+            }),
+          });
+        } catch (err) {
+          console.error("Error saving billing info:", err);
+        }
+
+        // Clear cart in backend
+        try {
+          await fetch(`${BACKEND_URL}/vendorcart/${vendorId}`, {
+            method: 'DELETE',
+          });
+        } catch (err) {
+          console.error("Error clearing cart:", err);
+        }
+        
         setCart({ items: [], total: 0 });
-        setBillingForm({ userName: "", phoneNumber: "" });
+        setBillingForm({ userName: "", phoneNumber: "", paymentMethod: "cash" });
         setShowBilling(false);
         alert(`Order placed successfully! Order Number: ${result.orderNumber}`);
       } else {
@@ -305,7 +391,9 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
         <div className={styles.cartSection}>
           <h3>Cart ({cart.items.length} items)</h3>
           
-          {cart.items.length === 0 ? (
+          {cartLoading ? (
+            <p>Loading cart...</p>
+          ) : cart.items.length === 0 ? (
             <p>Your cart is empty</p>
           ) : (
             <>
@@ -370,6 +458,34 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
                   required
                   className={styles.input}
                 />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label>Payment Method *</label>
+                <div className={styles.paymentOptions}>
+                  <label className={styles.paymentOption}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cash"
+                      checked={billingForm.paymentMethod === "cash"}
+                      onChange={(e) => setBillingForm(prev => ({ ...prev, paymentMethod: e.target.value as "cash" | "upi" }))}
+                      required
+                    />
+                    <span>Cash</span>
+                  </label>
+                  <label className={styles.paymentOption}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="upi"
+                      checked={billingForm.paymentMethod === "upi"}
+                      onChange={(e) => setBillingForm(prev => ({ ...prev, paymentMethod: e.target.value as "cash" | "upi" }))}
+                      required
+                    />
+                    <span>UPI</span>
+                  </label>
+                </div>
               </div>
               
               <div className={styles.formActions}>

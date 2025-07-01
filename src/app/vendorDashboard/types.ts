@@ -129,6 +129,7 @@ export interface VendorCart {
 export interface BillingFormData {
   userName: string;
   phoneNumber: string;
+  paymentMethod: "cash" | "upi";
 }
 
 export interface GuestOrderRequest {
@@ -137,7 +138,7 @@ export interface GuestOrderRequest {
   total: number;
   collectorName: string;
   collectorPhone: string;
-  orderType: "cash";
+  orderType: "cash" | "upi";
   isGuest: boolean;
 }
 
