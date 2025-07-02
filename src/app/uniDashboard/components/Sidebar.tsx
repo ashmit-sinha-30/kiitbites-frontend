@@ -1,52 +1,37 @@
 import {
   AiOutlineDashboard,
-  AiOutlineAppstore,
-  AiOutlineApple,
   AiOutlineShopping,
   AiOutlineFileText,
-  AiOutlineSetting,
-  AiOutlineHistory,
-  AiOutlineCar,
-  AiOutlineShoppingCart,
+  AiOutlinePlusCircle,
 } from "react-icons/ai";
 import styles from "../styles/SideBar.module.scss";
 
 const segments = [
-  { key: "dashboard", label: "Dashboard", icon: <AiOutlineDashboard /> },
+  { key: "dashboard", 
+    label: "Dashboard", 
+    icon: <AiOutlineDashboard /> 
+},
   {
-    key: "retail-inventory",
-    label: "Retail Inventory",
-    icon: <AiOutlineAppstore />,
+    key: "add-vendor",
+    label: "Add Vendor",
+    icon: <AiOutlineShopping />,
   },
   {
-    key: "produce-inventory",
-    label: "Produce Inventory",
-    icon: <AiOutlineApple />,
-  },
-  { key: "raw-materials", label: "Raw Materials", icon: <AiOutlineShopping /> },
-  {
-    key: "inventory-reports",
-    label: "Inventory Reports",
+    key: "delete-vendor",
+    label: "Delete Vendor",
     icon: <AiOutlineFileText />,
   },
   {
-    key: "delivery-orders",
-    label: "Delivery Orders",
-    icon: <AiOutlineCar />,
+    key: "addItem",
+    label: "Add Food Item",
+    icon: <AiOutlinePlusCircle />,
   },
   {
-    key: "past-orders",
-    label: "Past Orders",
-    icon: <AiOutlineHistory />,
+    key: "manage-items",
+    label: "Manage Items",
+    icon: <AiOutlineFileText />,
   },
-  {
-    key: "uni-cart",
-    label: "University Cart",
-    icon: <AiOutlineShoppingCart />,
-  },
-  { key: "settings", label: "Settings", icon: <AiOutlineSetting /> },
 ];
-
 
 interface Props {
   active: string;
@@ -82,4 +67,4 @@ export default function Sidebar({
       </div>
     </aside>
   );
-} 
+}

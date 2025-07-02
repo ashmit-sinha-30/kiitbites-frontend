@@ -12,13 +12,13 @@ import "react-toastify/dist/ReactToastify.css";
 import FavoritesSection from "./components/FavoritesSection";
 import SpecialOffersSection from "./components/SpecialOffersSection";
 import CategorySection from "./components/CategorySection";
+import ProductCard from "./components/ProductCard";
 import { CartProvider } from "./context/CartContext";
 import {
   FoodItem,
   FavoriteItem,
   College,
   ApiFavoritesResponse,
-  ApiItem,
 } from "./types";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -32,6 +32,7 @@ const categories = {
     "juices",
     "soups",
     "non-veg",
+    "others",
   ],
   retail: [
     "biscuits",
@@ -41,6 +42,7 @@ const categories = {
     "snacks",
     "sweets",
     "nescafe",
+    "others",
   ],
 };
 
@@ -259,38 +261,53 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       const allItems: { [key: string]: FoodItem[] } = {};
 
       try {
-        await Promise.all(
-          Object.entries(categories).flatMap(([category, types]) =>
-            types.map(async (type) => {
-              const url = `${BACKEND_URL}/items/${category}/${type}/${uniId}`;
-              const response = await fetch(url, { credentials: "include" });
-              if (!response.ok) return;
-              const data = (await response.json()) as ApiItem[];
-              const key = `${category}-${type}`;
-              allItems[key] = data.map((item) => ({
-                id: item._id,
-                title: item.name,
-                image: item.image,
-                category: type,
-                type: category,
-                isSpecial: item.isSpecial,
-                collegeId: item.collegeId,
-                price: item.price,
-                vendorId: item.vendorId || null,
-              }));
-            })
-          )
-        );
-
+        // Fetch all retail and produce items for the university (like uniDashboard)
+        const [retailRes, produceRes] = await Promise.all([
+          fetch(`${BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
+          fetch(`${BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
+        ]);
+        const retailData = await retailRes.json();
+        const produceData = await produceRes.json();
+        if (!retailRes.ok || !produceRes.ok) throw new Error("Failed to fetch items");
+        const retailItems: FoodItem[] = (retailData.items || []).map((item: Record<string, unknown>) => ({
+          id: item._id as string,
+          title: item.name as string,
+          image: item.image as string,
+          category: item.type as string,
+          type: 'retail',
+          isSpecial: item.isSpecial as string,
+          collegeId: uniId,
+          price: item.price as number,
+          vendorId: (item.vendorId as string) || null,
+          quantity: item.quantity as number,
+        }));
+        const produceItems: FoodItem[] = (produceData.items || []).map((item: Record<string, unknown>) => ({
+          id: item._id as string,
+          title: item.name as string,
+          image: item.image as string,
+          category: item.type as string,
+          type: 'produce',
+          isSpecial: item.isSpecial as string,
+          collegeId: uniId,
+          price: item.price as number,
+          vendorId: (item.vendorId as string) || null,
+          isAvailable: item.isAvailable as string,
+        }));
+        // Group by category-type
+        [...retailItems, ...produceItems].forEach(item => {
+          const key = `${item.type}-${item.category}`;
+          if (!allItems[key]) allItems[key] = [];
+          allItems[key].push(item);
+        });
         if (requestId === currentRequest.current) {
-          console.log("Fetched items:", allItems);
+          console.log('DEBUG allItems:', allItems);
           setItems(allItems);
           setLoading(false);
         }
       } catch (error) {
-        console.error("Error fetching items:", error);
+        console.error('Error fetching items:', error);
         if (requestId === currentRequest.current) {
-          setError("Failed to load items.");
+          setError('Failed to load items.');
           setLoading(false);
         }
       }
@@ -330,6 +347,9 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       vendorId: item.vendorId,
     };
   };
+
+  // Aggregate all items for fallback display
+  const allItemsFlat = Object.values(items).flat();
 
   if (loading) {
     return (
@@ -387,19 +407,45 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             )}
           </h1>
 
+          {/* Fallback: Show all items if no category has items */}
+          {allItemsFlat.length > 0 && Object.values(items).every(arr => arr.length === 0) && (
+            <section style={{ marginBottom: 32 }}>
+              <h3 style={{ fontWeight: 600, fontSize: 22, marginBottom: 12 }}>
+                All Items (Fallback)
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                {allItemsFlat.map(item => (
+                  <div key={item.id} style={{ minWidth: 220, maxWidth: 260 }}>
+                    <ProductCard
+                      item={item}
+                      categories={categories}
+                      userId={userId}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {Object.entries(categories).map(([category, types]) =>
             types.map((type) => {
               const key = `${category}-${type}`;
               const categoryItems = items[key] || [];
+              console.log('DEBUG category:', key, 'items:', categoryItems.length);
 
               return (
-                <CategorySection
-                  key={key}
-                  categoryItems={categoryItems}
-                  categoryTitle={type}
-                  sliderSettings={sliderSettings}
-                  userId={userId}
-                />
+                <section key={key} style={{ marginBottom: 32 }}>
+                  {/* <h3 style={{ fontWeight: 600, fontSize: 22, marginBottom: 12 }}>
+                    {type.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                  </h3> */}
+
+                  <CategorySection
+                    categoryItems={categoryItems}
+                    categoryTitle={type}
+                    sliderSettings={sliderSettings}
+                    userId={userId}
+                  />
+                </section>
               );
             })
           )}

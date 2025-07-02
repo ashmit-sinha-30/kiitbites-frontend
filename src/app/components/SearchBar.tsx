@@ -38,6 +38,7 @@ interface VendorItem {
   quantity?: number;
   isAvailable?: string;
   _id?: string;
+  id?: string;
 }
 
 interface VendorData {
@@ -192,8 +193,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
     const fetchPopularFoods = async () => {
       try {
         const [retailRes, produceRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/items/retail/uni/${selectedUniversity}`),
-          fetch(`${BACKEND_URL}/items/produce/uni/${selectedUniversity}`),
+          fetch(`${BACKEND_URL}/api/item/retail/uni/${selectedUniversity}`),
+          fetch(`${BACKEND_URL}/api/item/produce/uni/${selectedUniversity}`),
         ]);
   
         const [retailData, produceData] = await Promise.all([
@@ -216,7 +217,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     // If we're in a vendor page, we don't need university ID
     if (vendorId) {
       try {
-        const response = await fetch(`${BACKEND_URL}/items/getvendors/${vendorId}`);
+        const response = await fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}`);
         
         if (!response.ok) {
           console.error("Vendor search failed:", response.status);
@@ -249,14 +250,23 @@ const SearchBar: React.FC<SearchBarProps> = ({
           ...(data.data.retailItems || []).map((item: VendorItem) => ({
             ...item,
             type: 'retail',
-            itemId: item.itemId || item._id || ''
+            itemId: item.itemId || item._id || item.id || ''
           })),
           ...(data.data.produceItems || []).map((item: VendorItem) => ({
             ...item,
             type: 'produce',
-            itemId: item.itemId || item._id || ''
+            itemId: item.itemId || item._id || item.id || ''
           }))
-        ].filter(item => item.itemId);
+        ].filter(item => item.itemId && item.itemId !== '');
+
+        console.log('DEBUG: Raw vendor data:', data.data);
+        console.log('DEBUG: allVendorItems structure:', allVendorItems.map(item => ({
+          itemId: item.itemId,
+          name: item.name,
+          type: item.type,
+          _id: item._id,
+          id: item.id
+        })));
 
         if (!searchText.trim()) {
           const results = allVendorItems
@@ -276,7 +286,25 @@ const SearchBar: React.FC<SearchBarProps> = ({
             }));
           setSearchResults(results);
           setSuggestedItems([]);
-          if (onSearchResults) onSearchResults(allVendorItems);
+                  // Ensure items have the correct structure for vendor page
+        const vendorItems = allVendorItems
+          .filter(item => item.itemId && item.itemId !== '') // Filter out items without valid itemId
+          .map(item => ({
+            itemId: item.itemId,
+            name: item.name,
+            type: item.type,
+            price: item.price,
+            image: item.image,
+            quantity: item.quantity,
+            isAvailable: item.isAvailable
+            // vendorId intentionally omitted
+          }));
+        console.log('DEBUG: Filtered vendor items:', vendorItems.map(item => ({
+          itemId: item.itemId,
+          name: item.name,
+          type: item.type
+        })));
+        if (onSearchResults) onSearchResults(vendorItems);
           return;
         }
 
@@ -324,7 +352,30 @@ const SearchBar: React.FC<SearchBarProps> = ({
           }));
         setSuggestedItems(suggestedResults);
         
-        if (onSearchResults) onSearchResults(exactMatches);
+        console.log('DEBUG: Passing to vendor page:', exactMatches.map(item => ({
+          itemId: item.itemId,
+          name: item.name,
+          type: item.type
+        })));
+        // Ensure items have the correct structure for vendor page
+        const vendorItems = exactMatches
+          .filter(item => item.itemId && item.itemId !== '') // Filter out items without valid itemId
+          .map(item => ({
+            itemId: item.itemId,
+            name: item.name,
+            type: item.type,
+            price: item.price,
+            image: item.image,
+            quantity: item.quantity,
+            isAvailable: item.isAvailable
+            // vendorId intentionally omitted
+          }));
+        console.log('DEBUG: Filtered vendor items (search):', vendorItems.map(item => ({
+          itemId: item.itemId,
+          name: item.name,
+          type: item.type
+        })));
+        if (onSearchResults) onSearchResults(vendorItems);
       } catch (error) {
         console.error("Error fetching vendor search results:", error);
         setSearchResults([]);
@@ -342,8 +393,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
     try {
       const [itemsRes, vendorsRes] = await Promise.all([
-        fetch(`${BACKEND_URL}/items/search/items?query=${encodeURIComponent(searchText)}&uniID=${selectedUniversity}&searchByType=true`),
-        fetch(`${BACKEND_URL}/items/search/vendors?query=${encodeURIComponent(searchText)}&uniID=${selectedUniversity}`)
+        fetch(`${BACKEND_URL}/api/item/search/items?query=${encodeURIComponent(searchText)}&uniID=${selectedUniversity}&searchByType=true`),
+        fetch(`${BACKEND_URL}/api/item/search/vendors?query=${encodeURIComponent(searchText)}&uniID=${selectedUniversity}`)
       ]);
 
       if (!itemsRes.ok || !vendorsRes.ok) {
@@ -416,41 +467,44 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setSelectedItem(item);
     console.log('Selected item:', item);
 
-    const itemId = item._id;
+    const itemId = item.id || item._id || item.itemId;
     if (!itemId) {
       console.error('Item missing ID:', item);
       toast.error('Invalid item ID');
       return;
     }
 
-    console.log('Using item ID:', itemId);
-    try {
-      // First show the modal
-      setShowVendorModal(true);
-      setSelectedVendor(null);
-      
-      // Then fetch vendors
-      const response = await fetch(`${BACKEND_URL}/items/vendors/${itemId}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const vendors = await response.json();
-      console.log('Received vendors:', vendors);
-      
-      if (!Array.isArray(vendors) || vendors.length === 0) {
-        console.log('No vendors available');
-        toast.error('No vendors available for this item');
-        setShowVendorModal(false);
+    // If in vendor mode, add directly to cart with vendorId and skip modal
+    if (vendorId) {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error('Please login to add items to cart');
         return;
       }
-      
-      console.log('Setting available vendors:', vendors);
-      setAvailableVendors(vendors);
-    } catch (error) {
-      console.error('Error fetching vendors:', error);
-      toast.error('Failed to fetch vendors');
-      setShowVendorModal(false);
+      try {
+        // Get user info
+        const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          toast.error('Failed to get user info');
+          return;
+        }
+        const user = await response.json();
+        if (!user._id) {
+          toast.error('Invalid user data');
+          return;
+        }
+        // Add to cart directly
+        await addToSearchCart(user._id, item, vendorId);
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to add item to cart');
+      }
+      return;
     }
+
+    // ... existing code for showing vendor selection modal ...
   };
 
   const handleVendorSelect = (vendor: Vendor) => {

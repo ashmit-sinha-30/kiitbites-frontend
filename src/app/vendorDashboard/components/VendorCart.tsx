@@ -77,8 +77,8 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       setError(null);
       try {
         const [retailRes, produceRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/items/getvendors/${vendorId}/retail`),
-          fetch(`${BACKEND_URL}/items/getvendors/${vendorId}/produce`)
+          fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}/retail`),
+          fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}/produce`)
         ]);
 
         if (retailRes.ok) {

@@ -18,7 +18,7 @@ const SpecialOffersSection = ({ items, sliderSettings, userId }: SpecialOffersSe
   // Flatten all items and filter for special items
   const specialItems = Object.values(items)
     .flat()
-    .filter((item) => item.isSpecial);
+    .filter((item) => item.isSpecial === 'Y');
 
   if (specialItems.length === 0) return null;
 

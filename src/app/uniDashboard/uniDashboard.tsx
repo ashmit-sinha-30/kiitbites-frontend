@@ -3,6 +3,11 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import { VendorManagement } from "./components/VendorManagement";
+import { AddVendorForm } from "./components/AddVendorForm";
+import { DeleteVendorList } from "./components/DeleteVendorList";
+// import { ImageUploadSection } from "./components/ImageUploadSection";
+import { UploadItemForm } from "./components/UploadItemForm";
+import ManageItems from "./components/ManageItems";
 import styles from "./styles/InventoryReport.module.scss";
 
 const segmentsMap: Record<string, string> = {
@@ -14,6 +19,9 @@ const segmentsMap: Record<string, string> = {
   "past-orders": "Past Orders",
   "uni-cart": "University Cart",
   // ...other segments
+  "add-vendor": "Add Vendor",
+  "delete-vendor": "Delete Vendor",
+  "addItem": "Add Food Item",
 };
 
 export default function UniDashboardPage() {
@@ -45,10 +53,34 @@ export default function UniDashboardPage() {
           <VendorManagement universityId={UNIVERSITY_ID} />
         )}
 
+        {/* Add Vendor Segment */}
+        {activeSegment === "add-vendor" && (
+          <AddVendorForm universityId={UNIVERSITY_ID} />
+        )}
+
+        {/* Delete Vendor Segment */}
+        {activeSegment === "delete-vendor" && (
+          <DeleteVendorList universityId={UNIVERSITY_ID} />
+        )}
+
+        {/* Image Upload Section */}
+        {/* {activeSegment === "dashboard" && (
+          <ImageUploadSection universityId={UNIVERSITY_ID} />
+        )} */}
+
+        {/* Upload Item Segment */}
+        {activeSegment === "addItem" && (
+          <UploadItemForm universityId={UNIVERSITY_ID} />
+        )}
+
+        {/* Manage Items Segment */}
+        {activeSegment === "manage-items" && (
+          <ManageItems universityId={UNIVERSITY_ID} />
+        )}
+
         {/* Other segments under construction */}
-        {activeSegment !== "dashboard" && (
+        {!["dashboard", "add-vendor", "delete-vendor", "addItem", "manage-items"].includes(activeSegment) && (
           <div className={styles.underConstruction}>
-            🚧{" "}
             {segmentsMap[activeSegment]
               ? segmentsMap[activeSegment]
               : activeSegment.replace(/-/g, " ")}{" "}

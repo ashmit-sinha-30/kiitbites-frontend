@@ -10,7 +10,7 @@ export const checkFavoriteItemAvailability = async (
 ): Promise<{ isAvailable: boolean; vendors: Vendor[] | undefined }> => {
   try {
     console.log(`Fetching vendors for favorite item ${item._id}`);
-    const response = await fetch(`${BACKEND_URL}/items/vendors/${item._id}`, {
+    const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item._id}`, {
       credentials: "include",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,

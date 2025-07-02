@@ -36,7 +36,7 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${BASE}/items/getvendors/${vendorId}/produce`);
+        const res = await fetch(`${BASE}/api/item/getvendors/${vendorId}/produce`);
         if (!res.ok) {
           throw new Error(
             `Failed to fetch produce items (status ${res.status})`

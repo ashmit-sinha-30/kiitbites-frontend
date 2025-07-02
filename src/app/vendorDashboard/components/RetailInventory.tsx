@@ -40,7 +40,7 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
       setError(null);
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/items/getvendors/${vendorId}/retail`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}/retail`
         );
         if (!res.ok) {
           throw new Error(
