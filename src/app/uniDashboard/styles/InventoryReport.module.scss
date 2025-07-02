@@ -1,0 +1,101 @@
+/* styles/InventoryReport.module.scss */
+.container {
+  display: flex;
+}
+
+.main {
+  margin-left: 240px; /* sidebar width */
+  flex: 1;
+  padding: 2rem;
+  padding-top: 80px;
+  background: #f9f9fc;
+  min-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.25rem;
+}
+.header p {
+  color: #555;
+  margin-top: 0;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.stats {
+  display: flex;
+  gap: 1rem;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+}
+
+.error {
+  color: #d32f2f;
+  background-color: #fff3f3;
+  padding: 10px 15px;
+  border: 1px solid #f8d7da;
+  border-radius: 6px;
+  margin: 15px 0;
+}
+
+.underConstruction {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.scrollableDates {
+  max-height: 200px;
+  overflow-y: auto;
+  transition: max-height 0.3s;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafbfc;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding: 8px 0;
+}
+
+.scrollableDates.expanded {
+  max-height: 600px;
+}
+
+.showMoreBtn {
+  background: #f1f1f1;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.4rem 1.2rem;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  margin-top: 4px;
+}
+.showMoreBtn:hover {
+  background: #e0e0e0;
+  color: #222;
+}
+
+.dashboardMain {
+  margin-left: 240px;
+  flex: 1;
+  padding: 2.5rem 3rem;
+  padding-top: 80px;
+  background: linear-gradient(135deg, #f9f9fc 60%, #e6f7f6 100%);
+  min-height: calc(100vh - 64px);
+  overflow-y: auto;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 4px 24px 0 rgba(78, 161, 153, 0.07);
+  transition: background 0.3s;
+} 

@@ -1,0 +1,85 @@
+import {
+  AiOutlineDashboard,
+  AiOutlineAppstore,
+  AiOutlineApple,
+  AiOutlineShopping,
+  AiOutlineFileText,
+  AiOutlineSetting,
+  AiOutlineHistory,
+  AiOutlineCar,
+  AiOutlineShoppingCart,
+} from "react-icons/ai";
+import styles from "../styles/SideBar.module.scss";
+
+const segments = [
+  { key: "dashboard", label: "Dashboard", icon: <AiOutlineDashboard /> },
+  {
+    key: "retail-inventory",
+    label: "Retail Inventory",
+    icon: <AiOutlineAppstore />,
+  },
+  {
+    key: "produce-inventory",
+    label: "Produce Inventory",
+    icon: <AiOutlineApple />,
+  },
+  { key: "raw-materials", label: "Raw Materials", icon: <AiOutlineShopping /> },
+  {
+    key: "inventory-reports",
+    label: "Inventory Reports",
+    icon: <AiOutlineFileText />,
+  },
+  {
+    key: "delivery-orders",
+    label: "Delivery Orders",
+    icon: <AiOutlineCar />,
+  },
+  {
+    key: "past-orders",
+    label: "Past Orders",
+    icon: <AiOutlineHistory />,
+  },
+  {
+    key: "uni-cart",
+    label: "University Cart",
+    icon: <AiOutlineShoppingCart />,
+  },
+  { key: "settings", label: "Settings", icon: <AiOutlineSetting /> },
+];
+
+
+interface Props {
+  active: string;
+  onSegmentChange: (key: string) => void;
+  universityName?: string;
+  universityId?: string;
+}
+
+export default function Sidebar({
+  active,
+  onSegmentChange,
+  universityName = "—",
+  universityId = "—",
+}: Props) {
+  return (
+    <aside className={styles.sidebar}>
+      <ul className={styles.menu}>
+        {segments.map((s) => (
+          <li
+            key={s.key}
+            className={active === s.key ? styles.active : ""}
+            onClick={() => onSegmentChange(s.key)}
+          >
+            <span className={styles.icon}>{s.icon}</span>
+            <span className={styles.label}>{s.label}</span>
+          </li>
+        ))}
+      </ul>
+      <div className={styles.footer}>
+        <span className={styles.universityName}>{universityName}</span>
+        <br />
+        <span className={styles.universityId}>ID: {universityId}</span>
+      </div>
+    </aside>
+  );
+} 
