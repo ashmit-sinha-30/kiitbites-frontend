@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "../styles/ProduceInventory.module.scss";
+import * as Switch from '@radix-ui/react-switch';
 
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -157,7 +158,7 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
                 <th>Name</th>
                 <th>Type</th>
                 <th>Price</th>
-                <th>Status</th>
+                <th>Available</th>
                 <th>Special</th>
               </tr>
             </thead>
@@ -168,18 +169,56 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
                   <td>{item.type}</td>
                   <td>{item.price.toFixed(2)}</td>
                   <td>
-                    {item.isAvailable === "Y" ? (
-                      <span className={styles.inStock}>Available</span>
-                    ) : (
-                      <span className={styles.outOfStock}>Unavailable</span>
-                    )}
+                    <Switch.Root
+                      checked={item.isAvailable === 'Y'}
+                      onCheckedChange={async (checked: boolean) => {
+                        const newAvailable = checked ? 'Y' : 'N';
+                        try {
+                          const res = await fetch(`${BASE}/api/vendor/${vendorId}/item/${item.itemId}/produce/available`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ isAvailable: newAvailable }),
+                          });
+                          if (!res.ok) throw new Error('Failed to update available status');
+                          setItems(prev => prev.map(it => it.itemId === item.itemId ? { ...it, isAvailable: newAvailable } : it));
+                        } catch {
+                          alert('Failed to update available status');
+                        }
+                      }}
+                      className={styles.switch}
+                      id={`available-switch-${item.itemId}`}
+                    >
+                      <Switch.Thumb className={styles.switchThumb} />
+                    </Switch.Root>
+                    <label htmlFor={`available-switch-${item.itemId}`} style={{ marginLeft: 8 }}>
+                      {item.isAvailable === 'Y' ? 'Yes' : 'No'}
+                    </label>
                   </td>
                   <td>
-                    {item.isSpecial === "Y" ? (
-                      <span className={styles.specialYes}>Yes</span>
-                    ) : (
-                      <span className={styles.specialNo}>No</span>
-                    )}
+                    <Switch.Root
+                      checked={item.isSpecial === 'Y'}
+                      onCheckedChange={async (checked: boolean) => {
+                        const newSpecial = checked ? 'Y' : 'N';
+                        try {
+                          const res = await fetch(`${BASE}/api/vendor/${vendorId}/item/${item.itemId}/produce/special`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ isSpecial: newSpecial }),
+                          });
+                          if (!res.ok) throw new Error('Failed to update special status');
+                          setItems(prev => prev.map(it => it.itemId === item.itemId ? { ...it, isSpecial: newSpecial } : it));
+                        } catch {
+                          alert('Failed to update special status');
+                        }
+                      }}
+                      className={styles.switch}
+                      id={`special-switch-${item.itemId}`}
+                    >
+                      <Switch.Thumb className={styles.switchThumb} />
+                    </Switch.Root>
+                    <label htmlFor={`special-switch-${item.itemId}`} style={{ marginLeft: 8 }}>
+                      {item.isSpecial === 'Y' ? 'Yes' : 'No'}
+                    </label>
                   </td>
                 </tr>
               ))}

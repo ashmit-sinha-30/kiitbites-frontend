@@ -32,7 +32,6 @@ const categories = {
     "juices",
     "soups",
     "non-veg",
-    "others",
   ],
   retail: [
     "biscuits",
@@ -42,7 +41,6 @@ const categories = {
     "snacks",
     "sweets",
     "nescafe",
-    "others",
   ],
 };
 
@@ -100,6 +98,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userFavorites, setUserFavorites] = useState<FavoriteItem[]>([]);
+  const [vendorSpecialItems, setVendorSpecialItems] = useState<FoodItem[]>([]);
 
   const currentRequest = useRef<number>(0);
 
@@ -316,6 +315,103 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     fetchItems();
   }, [uniId]);
 
+  // Fetch vendor inventories and extract specials
+  useEffect(() => {
+    if (!uniId) return;
+    type VendorInventoryEntry = {
+      itemId: string;
+      isSpecial?: string;
+      quantity?: number;
+      isAvailable?: string;
+    };
+    type Vendor = {
+      _id: string;
+      retailInventory?: VendorInventoryEntry[];
+      produceInventory?: VendorInventoryEntry[];
+    };
+    const fetchVendorSpecials = async () => {
+      try {
+        // Fetch vendors and all items in parallel
+        const [vendorsRes, retailRes, produceRes] = await Promise.all([
+          fetch(`${BACKEND_URL}/api/vendor/list/uni/${uniId}`),
+          fetch(`${BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
+          fetch(`${BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
+        ]);
+        
+        const vendors: Vendor[] = await vendorsRes.json();
+        const retailData = await retailRes.json();
+        const produceData = await produceRes.json();
+        
+        if (!vendorsRes.ok || !retailRes.ok || !produceRes.ok) {
+          throw new Error("Failed to fetch vendor or item data");
+        }
+
+        // Create lookup maps for items
+        const retailItemsMap = new Map<string, Record<string, unknown>>();
+        const produceItemsMap = new Map<string, Record<string, unknown>>();
+        
+        (retailData.items || []).forEach((item: Record<string, unknown>) => {
+          retailItemsMap.set(item._id as string, item);
+        });
+        
+        (produceData.items || []).forEach((item: Record<string, unknown>) => {
+          produceItemsMap.set(item._id as string, item);
+        });
+
+        const specials: FoodItem[] = [];
+        
+        vendors.forEach((vendor) => {
+          // Process retail inventory
+          (vendor.retailInventory || []).forEach((entry) => {
+            if (entry.isSpecial && entry.isSpecial === 'Y') {
+              const itemData = retailItemsMap.get(entry.itemId);
+              if (itemData) {
+                specials.push({
+                  id: entry.itemId,
+                  title: (itemData.name as string) || '',
+                  image: (itemData.image as string) || '',
+                  category: (itemData.type as string) || 'retail',
+                  type: 'retail',
+                  isSpecial: 'Y',
+                  price: (itemData.price as number) || 0,
+                  vendorId: vendor._id,
+                  quantity: entry.quantity || 0,
+                });
+              }
+            }
+          });
+          
+          // Process produce inventory
+          (vendor.produceInventory || []).forEach((entry) => {
+            if (entry.isSpecial && entry.isSpecial === 'Y') {
+              const itemData = produceItemsMap.get(entry.itemId);
+              if (itemData) {
+                specials.push({
+                  id: entry.itemId,
+                  title: (itemData.name as string) || '',
+                  image: (itemData.image as string) || '',
+                  category: (itemData.type as string) || 'produce',
+                  type: 'produce',
+                  isSpecial: 'Y',
+                  price: (itemData.price as number) || 0,
+                  vendorId: vendor._id,
+                  isAvailable: entry.isAvailable || 'N',
+                });
+              }
+            }
+          });
+        });
+        
+        setVendorSpecialItems(specials);
+        console.log('Special items (isSpecial === "Y"):', specials);
+      } catch (error) {
+        console.error('Error fetching vendor specials:', error);
+        setVendorSpecialItems([]);
+      }
+    };
+    fetchVendorSpecials();
+  }, [uniId]);
+
   const sliderSettings = {
     dots: false,
     infinite: true,
@@ -460,8 +556,8 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           )}
 
           <SpecialOffersSection 
-            items={items} 
-            sliderSettings={sliderSettings} 
+            allItems={vendorSpecialItems}
+            sliderSettings={sliderSettings}
             userId={userId}
           />
         </div>

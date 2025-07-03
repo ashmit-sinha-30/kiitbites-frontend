@@ -1,10 +1,11 @@
 import Slider, { Settings } from "react-slick";
 import styles from "../styles/CollegePage.module.scss";
-import { FoodItem } from "../types";
 import ProductCard from "./ProductCard";
+import { useEffect, useState } from 'react';
+import { FoodItem } from '../types';
 
 interface SpecialOffersSectionProps {
-  items: { [key: string]: FoodItem[] };
+  allItems: FoodItem[];
   sliderSettings: Settings;
   userId?: string | null;
 }
@@ -14,13 +15,17 @@ const categories = {
   produce: ["combos-veg", "combos-nonveg", "veg", "shakes", "juices", "soups", "non-veg"]
 };
 
-const SpecialOffersSection = ({ items, sliderSettings, userId }: SpecialOffersSectionProps) => {
-  // Flatten all items and filter for special items
-  const specialItems = Object.values(items)
-    .flat()
-    .filter((item) => item.isSpecial === 'Y');
+const SpecialOffersSection = ({ allItems, sliderSettings, userId }: SpecialOffersSectionProps) => {
+  const [specials, setSpecials] = useState<FoodItem[]>([]);
 
-  if (specialItems.length === 0) return null;
+  useEffect(() => {
+    if (!allItems) return;
+    // Filter for specials
+    const filtered = allItems.filter(item => item.isSpecial === 'Y');
+    setSpecials(filtered);
+  }, [allItems]);
+
+  if (!specials || specials.length === 0) return null;
 
   return (
     <section className={styles.categorySection}>
@@ -29,13 +34,14 @@ const SpecialOffersSection = ({ items, sliderSettings, userId }: SpecialOffersSe
       </div>
       <div className={styles.carouselContainer}>
         <Slider {...sliderSettings} className={styles.slider}>
-          {specialItems.map((item) => (
-            <ProductCard 
-              key={item.id} 
-              item={item} 
-              categories={categories} 
-              userId={userId}
-            />
+          {specials.filter(item => item.isSpecial && item.isSpecial === 'Y').map((item) => (
+            <div key={item.id + '-' + (item.vendorId || '')}>
+              <ProductCard
+                item={item}
+                categories={categories}
+                userId={userId}
+              />
+            </div>
           ))}
         </Slider>
       </div>

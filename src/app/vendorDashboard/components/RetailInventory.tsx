@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "../styles/RetailInventory.module.scss"; // ensure filename matches
+import * as Switch from '@radix-ui/react-switch';
 
 interface RetailApiItem {
   itemId: string;
@@ -11,6 +12,7 @@ interface RetailApiItem {
   quantity: number;
   type: string;
   isSpecial: "Y" | "N";
+  isAvailable: "Y" | "N";
 }
 
 // Added "lowstock" filter option, removed "unavailable"
@@ -77,6 +79,7 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
               : parseInt(it.quantity as unknown as string, 10) || 0,
           type: it.type ?? "",
           isSpecial: it.isSpecial === "Y" ? "Y" : "N",
+          isAvailable: it.isAvailable === "Y" ? "Y" : "N",
         }));
         setItems(dataItems);
         let vendorNameFromResp: string | undefined;
@@ -179,11 +182,30 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
                     )}
                   </td>
                   <td>
-                    {item.isSpecial === "Y" ? (
-                      <span className={styles.specialYes}>Yes</span>
-                    ) : (
-                      <span className={styles.specialNo}>No</span>
-                    )}
+                    <Switch.Root
+                      checked={item.isSpecial === 'Y'}
+                      onCheckedChange={async (checked: boolean) => {
+                        const newSpecial = checked ? 'Y' : 'N';
+                        try {
+                          const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/vendor/${vendorId}/item/${item.itemId}/retail/special`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ isSpecial: newSpecial }),
+                          });
+                          if (!res.ok) throw new Error('Failed to update special status');
+                          setItems(prev => prev.map(it => it.itemId === item.itemId ? { ...it, isSpecial: newSpecial } : it));
+                        } catch {
+                          alert('Failed to update special status');
+                        }
+                      }}
+                      className={styles.switch}
+                      id={`special-switch-${item.itemId}`}
+                    >
+                      <Switch.Thumb className={styles.switchThumb} />
+                    </Switch.Root>
+                    <label htmlFor={`special-switch-${item.itemId}`} style={{ marginLeft: 8 }}>
+                      {item.isSpecial === 'Y' ? 'Yes' : 'No'}
+                    </label>
                   </td>
                 </tr>
               ))}

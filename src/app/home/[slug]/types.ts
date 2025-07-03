@@ -43,6 +43,7 @@ export interface Vendor {
     price: number;
     quantity?: number;
     isAvailable?: string;
+    isSpecial?: string;
   };
 }
 
