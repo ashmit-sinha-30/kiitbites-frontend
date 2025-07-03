@@ -26,7 +26,21 @@ export const addToCart = async (
   vendorId: string
 ): Promise<boolean> => {
   try {
+    // Validate itemId
+    if (!item.itemId || item.itemId === '') {
+      throw new Error('Invalid item ID: itemId is missing or empty');
+    }
+    
     const kind = getItemKind(item);
+    
+    console.log('DEBUG: Cart request data:', {
+      itemId: item.itemId,
+      kind: kind,
+      quantity: 1,
+      vendorId: vendorId,
+      itemName: item.name
+    });
+    
     const response = await fetch(`${BACKEND_URL}/cart/add/${userId}`, {
       method: "POST",
       credentials: "include",
@@ -64,6 +78,11 @@ export const increaseQuantity = async (
   vendorId: string
 ): Promise<boolean> => {
   try {
+    // Validate itemId
+    if (!item.itemId || item.itemId === '') {
+      throw new Error('Invalid item ID: itemId is missing or empty');
+    }
+    
     const kind = getItemKind(item);
     const response = await fetch(`${BACKEND_URL}/cart/add-one/${userId}`, {
       method: "POST",
@@ -101,6 +120,11 @@ export const decreaseQuantity = async (
   vendorId: string
 ): Promise<boolean> => {
   try {
+    // Validate itemId
+    if (!item.itemId || item.itemId === '') {
+      throw new Error('Invalid item ID: itemId is missing or empty');
+    }
+    
     const kind = getItemKind(item);
     const response = await fetch(`${BACKEND_URL}/cart/remove-one/${userId}`, {
       method: "POST",

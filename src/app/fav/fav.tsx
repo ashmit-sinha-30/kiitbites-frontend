@@ -368,7 +368,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       
       console.log('Item category check:', { itemType, isRetail, isProduce });
       
-      const response = await fetch(`${BACKEND_URL}/items/vendors/${itemId}`, {
+      const response = await fetch(`${BACKEND_URL}/api/item/vendors/${itemId}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });

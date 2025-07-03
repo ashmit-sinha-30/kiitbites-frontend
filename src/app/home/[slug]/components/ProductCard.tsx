@@ -45,13 +45,16 @@ const ProductCard = ({ item, categories, userId }: ProductCardProps) => {
     try {
       setLoading(true);
       const { vendors } = await checkItemAvailability(item, null, categories);
-      
-      if (!vendors || vendors.length === 0) {
+      let filteredVendors = vendors || [];
+      // If the item is a special, only show vendors with isSpecial === 'Y'
+      if (item.isSpecial === 'Y') {
+        filteredVendors = filteredVendors.filter(vendor => vendor.inventoryValue?.isSpecial === 'Y');
+      }
+      if (!filteredVendors || filteredVendors.length === 0) {
         toast.error('No vendors have this item available');
         return;
       }
-
-      setAvailableVendors(vendors);
+      setAvailableVendors(filteredVendors);
       setSelectedVendor(null);
       setShowVendorModal(true);
     } catch (error) {
@@ -171,7 +174,9 @@ const ProductCard = ({ item, categories, userId }: ProductCardProps) => {
       <div className={styles.slideWrapper}>
         <div className={styles.foodCard}>
           <div className={styles.imageContainer}>
-            <img src={item.image} alt={item.title} className={styles.foodImage} />
+            {item.image ? (
+              <img src={item.image} alt={item.title} className={styles.foodImage} />
+            ) : null}
           </div>
           <h4 className={styles.foodTitle}>{item.title}</h4>
           <p className={styles.foodPrice}>₹{item.price}</p>
