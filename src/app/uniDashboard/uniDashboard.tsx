@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import { VendorManagement } from "./components/VendorManagement";
 import { AddVendorForm } from "./components/AddVendorForm";
-import { DeleteVendorList } from "./components/DeleteVendorList";
 // import { ImageUploadSection } from "./components/ImageUploadSection";
 import { UploadItemForm } from "./components/UploadItemForm";
 import ManageItems from "./components/ManageItems";
@@ -56,11 +55,6 @@ export default function UniDashboardPage() {
         {/* Add Vendor Segment */}
         {activeSegment === "add-vendor" && (
           <AddVendorForm universityId={UNIVERSITY_ID} />
-        )}
-
-        {/* Delete Vendor Segment */}
-        {activeSegment === "delete-vendor" && (
-          <DeleteVendorList universityId={UNIVERSITY_ID} />
         )}
 
         {/* Image Upload Section */}
