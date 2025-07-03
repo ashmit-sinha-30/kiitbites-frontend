@@ -88,7 +88,7 @@ const VendorPage = () => {
     const fetchData = async () => {
       try {
         // Fetch vendor data
-        const vendorResponse = await fetch(`${BACKEND_URL}/items/getvendors/${id}`);
+        const vendorResponse = await fetch(`${BACKEND_URL}/api/item/getvendors/${id}`);
         const vendorData = await vendorResponse.json();
         if (vendorData.success) {
           // Add type information to items
@@ -206,6 +206,13 @@ const VendorPage = () => {
       return;
     }
 
+    console.log('DEBUG: Adding item to cart:', {
+      itemId: item.itemId,
+      name: item.name,
+      type: item.type,
+      vendorId: id
+    });
+
     const quantity = getItemQuantity(item.itemId, item.type);
     if (quantity === 0) {
       await addToCart(userData._id, item, id as string);
@@ -264,6 +271,11 @@ const VendorPage = () => {
   };
 
   const handleSearch = (results: VendorItem[]) => {
+    console.log('DEBUG: Vendor page received search results:', results.map(item => ({
+      itemId: item.itemId,
+      name: item.name,
+      type: item.type
+    })));
     setIsSearching(true);
     setSearchResults(results);
   };

@@ -1,0 +1,132 @@
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(99,102,241,0.08);
+  padding: 2.5rem 2rem 2.5rem 2rem;
+}
+
+.title {
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #222;
+}
+
+.searchBar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.searchInput {
+  padding: 0.7rem 1.2rem;
+  border: 1.5px solid #6366f1;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 320px;
+  outline: none;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+  background: #f9fafb;
+  transition: border 0.2s;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(99,102,241,0.07);
+  overflow: hidden;
+}
+
+.thead {
+  background: linear-gradient(90deg, #6366f1 0%, #60a5fa 100%);
+  color: #fff;
+}
+
+.th {
+  padding: 12px;
+  border-bottom: 2px solid #e0e7ff;
+  font-weight: 600;
+}
+
+.tr {
+  border-bottom: 1px solid #e0e7ff;
+  background: #fff;
+  transition: background 0.2s;
+}
+
+.trActive {
+  background: #f0f7ff;
+}
+
+.td {
+  padding: 10px;
+  text-align: left;
+}
+
+.img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(99,102,241,0.08);
+}
+
+.input,
+.select {
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid #a5b4fc;
+  font-size: 1rem;
+}
+
+.input[type="number"] {
+  width: 80px;
+}
+
+.actionCell {
+  min-width: 160px;
+}
+
+.button {
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.buttonEdit {
+  background: #6366f1;
+  color: #fff;
+  margin-right: 8px;
+}
+
+.buttonDelete {
+  background: #ef4444;
+  color: #fff;
+}
+
+.buttonCancel {
+  background: #e0e7ff;
+  color: #333;
+}
+
+@media (max-width: 700px) {
+  .container {
+    padding: 1rem 0.2rem;
+  }
+  .table {
+    font-size: 0.95rem;
+  }
+  .searchInput {
+    width: 100%;
+    min-width: 0;
+  }
+} 

@@ -8,6 +8,8 @@ export interface FoodItem {
   collegeId?: string;
   price: number;
   vendorId?: string | null;
+  quantity?: number;
+  isAvailable?: string;
 }
 
 export interface FavoriteItem {
@@ -41,6 +43,7 @@ export interface Vendor {
     price: number;
     quantity?: number;
     isAvailable?: string;
+    isSpecial?: string;
   };
 }
 

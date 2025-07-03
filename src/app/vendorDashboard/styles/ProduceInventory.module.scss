@@ -160,3 +160,33 @@
     }
   }
 }
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  width: 42px;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+  margin-right: 8px;
+}
+.switch[data-state='checked'] {
+  background: #4ade80;
+}
+.switchThumb {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  transition: transform 0.2s;
+  transform: translateX(2px);
+  will-change: transform;
+}
+.switch[data-state='checked'] .switchThumb {
+  transform: translateX(20px);
+}

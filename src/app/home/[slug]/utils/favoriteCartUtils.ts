@@ -26,7 +26,7 @@ export const checkFavoriteItemAvailability = async (
     const userId = (await userRes.json())._id;
 
     const [vendorRes, favRes] = await Promise.all([
-      fetch(`${BACKEND_URL}/items/vendors/${item._id}`, {
+      fetch(`${BACKEND_URL}/api/item/vendors/${item._id}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       }),

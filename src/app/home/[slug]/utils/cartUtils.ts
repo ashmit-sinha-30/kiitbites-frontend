@@ -18,7 +18,7 @@ export const checkItemAvailability = async (
       title: item.title
     });
     
-    const response = await fetch(`${BACKEND_URL}/items/vendors/${item.id}`, {
+    const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id}`, {
       credentials: "include",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
