@@ -31,6 +31,7 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterOption>("all");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const fetchProduce = async () => {
@@ -110,6 +111,8 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
   }, [vendorId, onLoaded]);
 
   const filteredItems = items.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) || item.type.toLowerCase().includes(search.toLowerCase());
+    if (!matchesSearch) return false;
     switch (filter) {
       case "specials":
         return item.isSpecial === "Y";
@@ -126,6 +129,14 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
   return (
     <div className={styles.container}>
       <div className={styles.controls}>
+        <input
+          type="text"
+          placeholder="Search by name or type..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className={styles.searchInput}
+          style={{ marginRight: 16, padding: '0.4rem 0.7rem', borderRadius: 6, border: '1px solid #a5b4fc', fontSize: '1rem' }}
+        />
         <label htmlFor="produce-filter" className={styles.filterLabel}>
           Show:
         </label>

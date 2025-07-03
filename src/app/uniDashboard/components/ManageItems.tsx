@@ -25,6 +25,8 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [search, setSearch] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
 
   // Fetch both Retail and Produce items
   useEffect(() => {
@@ -110,10 +112,16 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
   };
   // Handle delete
   const handleDelete = async (item: Item) => {
-    if (!window.confirm(`Delete item '${item.name}'?`)) return;
-    setDeleteLoading(item._id);
+    setItemToDelete(item);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    setDeleteLoading(itemToDelete._id);
+    setShowDeleteModal(false);
     try {
-      const endpoint = `/api/item/${item.category}/${item._id}`;
+      const endpoint = `/api/item/${itemToDelete.category}/${itemToDelete._id}`;
       const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + endpoint, {
         method: "DELETE",
       });
@@ -123,7 +131,13 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
       alert(err instanceof Error ? err.message : "Failed to delete item");
     } finally {
       setDeleteLoading(null);
+      setItemToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setItemToDelete(null);
   };
 
   // Filtered items based on search
@@ -197,6 +211,19 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
               </tbody>
             </table>
           )}
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && itemToDelete && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+        }}>
+          <div style={{ background: '#fff', padding: 32, borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.15)', minWidth: 320, textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 16 }}>Confirm Deletion</h3>
+            <p style={{ marginBottom: 24 }}>Are you sure you want to delete <b>{itemToDelete.name}</b>?</p>
+            <button onClick={confirmDelete} style={{ marginRight: 16, padding: '0.5rem 1.2rem', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 500 }}>Delete</button>
+            <button onClick={cancelDelete} style={{ padding: '0.5rem 1.2rem', borderRadius: 6, background: '#e0e7ff', color: '#333', border: 'none', fontWeight: 500 }}>Cancel</button>
+          </div>
         </div>
       )}
     </div>
