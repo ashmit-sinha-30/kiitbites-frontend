@@ -17,11 +17,6 @@ const segments = [
     icon: <AiOutlineShopping />,
   },
   {
-    key: "delete-vendor",
-    label: "Delete Vendor",
-    icon: <AiOutlineFileText />,
-  },
-  {
     key: "addItem",
     label: "Add Food Item",
     icon: <AiOutlinePlusCircle />,

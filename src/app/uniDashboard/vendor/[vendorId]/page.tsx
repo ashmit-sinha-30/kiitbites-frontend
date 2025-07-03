@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import styles from "../../styles/VendorManagement.module.scss";
 import * as XLSX from "xlsx";
+import Modal from "react-modal";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -67,6 +68,14 @@ export default function VendorDetailPage() {
   // Show all dates
   const [showAllDates, setShowAllDates] = useState(false);
   const maxVisibleDates = 5;
+
+  // Edit vendor
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editVendor, setEditVendor] = useState<Vendor | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   // Fetch vendor details
   useEffect(() => {
@@ -223,6 +232,57 @@ export default function VendorDetailPage() {
     }
   }
 
+  async function handleDeleteVendor() {
+    setDeleteLoading(true);
+    setSuccessMsg("");
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/vendor/delete/uni/${universityId}/vendor/${vendorId}`,
+        { method: "DELETE" }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete vendor");
+      setSuccessMsg("Vendor deleted successfully.");
+      setShowDeleteModal(false);
+      setTimeout(() => router.push("/uniDashboard"), 1200);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to delete vendor");
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  function handleEditVendor() {
+    setEditVendor(vendor);
+    setShowEditModal(true);
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editVendor) return;
+    setEditLoading(true);
+    setSuccessMsg("");
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/vendor/update/${editVendor._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(editVendor),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update vendor");
+      setSuccessMsg("Vendor updated successfully.");
+      setVendor(editVendor);
+      setShowEditModal(false);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to update vendor");
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.vendorDetailHeader}>
@@ -261,6 +321,12 @@ export default function VendorDetailPage() {
             </div>
           </div>
         ) : null}
+        {vendor && (
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+            <button className={styles.toggleButton} onClick={handleEditVendor}>Edit</button>
+            <button className={styles.toggleButton + ' ' + styles.turnOff} onClick={() => setShowDeleteModal(true)} disabled={deleteLoading}>{deleteLoading ? 'Deleting...' : 'Delete'}</button>
+          </div>
+        )}
       </section>
 
       {/* Orders Section */}
@@ -395,6 +461,55 @@ export default function VendorDetailPage() {
           </table>
         )}
       </section>
+
+      {/* Edit Vendor Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onRequestClose={() => setShowEditModal(false)}
+        contentLabel="Edit Vendor"
+        ariaHideApp={false}
+        className={styles.modal}
+      >
+        <h3>Edit Vendor</h3>
+        {editVendor && (
+          <form onSubmit={handleEditSubmit} className={styles.modalForm}>
+            <label>Name
+              <input type="text" value={editVendor.fullName} onChange={e => setEditVendor({ ...editVendor, fullName: e.target.value })} required />
+            </label>
+            <label>Email
+              <input type="email" value={editVendor.email} onChange={e => setEditVendor({ ...editVendor, email: e.target.value })} required />
+            </label>
+            <label>Phone
+              <input type="text" value={editVendor.phone} onChange={e => setEditVendor({ ...editVendor, phone: e.target.value })} required />
+            </label>
+            <label>Location
+              <input type="text" value={editVendor.location || ""} onChange={e => setEditVendor({ ...editVendor, location: e.target.value })} />
+            </label>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button type="submit" className={styles.toggleButton} disabled={editLoading}>{editLoading ? 'Saving...' : 'Save'}</button>
+              <button type="button" className={styles.toggleButton} onClick={() => setShowEditModal(false)} disabled={editLoading}>Cancel</button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Delete Vendor Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onRequestClose={() => setShowDeleteModal(false)}
+        contentLabel="Delete Vendor"
+        ariaHideApp={false}
+        className={styles.modal}
+      >
+        <h3>Delete Vendor</h3>
+        <p>Are you sure you want to delete this vendor?</p>
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'center' }}>
+          <button className={styles.toggleButton + ' ' + styles.turnOff} onClick={handleDeleteVendor} disabled={deleteLoading}>{deleteLoading ? 'Deleting...' : 'Delete'}</button>
+          <button className={styles.toggleButton} onClick={() => setShowDeleteModal(false)} disabled={deleteLoading}>Cancel</button>
+        </div>
+      </Modal>
+
+      {successMsg && <div style={{ color: 'green', marginTop: 12 }}>{successMsg}</div>}
     </div>
   );
 } 

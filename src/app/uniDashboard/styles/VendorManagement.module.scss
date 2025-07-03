@@ -292,4 +292,47 @@
   .vendorDetailTitle {
     font-size: 1.3rem;
   }
+}
+
+.modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: #fff !important;
+  padding: 2rem 2.5rem !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+  max-width: 420px !important;
+  width: 90vw !important;
+  z-index: 10000 !important;
+  outline: none !important;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.modalForm label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.2rem;
+}
+
+.modalForm input {
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #a5b4fc;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-top: 0.2rem;
+  background: #f8fafc;
+  transition: border 0.2s;
+}
+
+.modalForm input:focus {
+  border-color: #4ea199;
+  outline: none;
 } 
