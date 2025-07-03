@@ -5,8 +5,10 @@ import {
   AiOutlineApple,
   AiOutlineShopping,
   AiOutlineFileText,
-  AiOutlineSync,
   AiOutlineSetting,
+  AiOutlineHistory,
+  AiOutlineCar,
+  AiOutlineShoppingCart,
 } from "react-icons/ai";
 import styles from "../styles/SideBar.module.scss";
 
@@ -29,12 +31,23 @@ const segments = [
     icon: <AiOutlineFileText />,
   },
   {
-    key: "reorder-requests",
-    label: "Reorder Requests",
-    icon: <AiOutlineSync />,
+    key: "delivery-orders",
+    label: "Delivery Orders",
+    icon: <AiOutlineCar />,
+  },
+  {
+    key: "past-orders",
+    label: "Past Orders",
+    icon: <AiOutlineHistory />,
+  },
+  {
+    key: "vendor-cart",
+    label: "Vendor Cart",
+    icon: <AiOutlineShoppingCart />,
   },
   { key: "settings", label: "Settings", icon: <AiOutlineSetting /> },
 ];
+
 
 interface Props {
   active: string;

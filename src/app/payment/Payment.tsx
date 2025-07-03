@@ -16,6 +16,7 @@ interface OrderItem {
 interface OrderDetails {
   _id: string;
   orderId: string;
+  orderNumber: string;
   orderType: string;
   status: string;
   createdAt: string;
@@ -102,10 +103,6 @@ const PaymentPage = () => {
     fetchOrderDetails();
   }, [orderId]);
 
-  const formatOrderId = (orderId: string) => {
-    return orderId.slice(-8).toUpperCase();
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -134,7 +131,7 @@ const PaymentPage = () => {
         <div className={styles.orderDetails}>
           <div className={styles.orderInfo}>
             <p className={styles.orderId}>
-              <strong>Order ID:</strong> #{formatOrderId(orderDetails.orderId)}
+              <strong>Order ID:</strong> #{orderDetails.orderNumber}
             </p>
             <p className={styles.orderDate}>
               <strong>Order Date:</strong> {formatDate(orderDetails.createdAt)}

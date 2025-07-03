@@ -34,7 +34,7 @@ interface ApiOrder {
   }>;
 }
 
-interface OrderListProps {
+interface DeliveryOrdersListProps {
   onLoaded?: (vendorName: string, vendorId: string) => void;
   onOrderStatusChange?: (orderId: string, newStatus: string, orderData?: Order) => void;
   orderStatusChanges?: {
@@ -44,54 +44,30 @@ interface OrderListProps {
   }[];
 }
 
-export const OrderList: React.FC<OrderListProps> = ({ onLoaded, onOrderStatusChange, orderStatusChanges }) => {
+export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ onLoaded, onOrderStatusChange, orderStatusChanges }) => {
   const [list, setList] = useState<OrderState[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchDeliveryOrders = useCallback(async () => {
     setError(null);
     try {
-      const fetchType = async (type: Order["orderType"]) => {
-        const res = await fetch(`${BASE}/order/active/${VENDOR_ID}/${type}`);
-        if (!res.ok) throw new Error(`Failed to load ${type}`);
-        return res.json(); // response includes vendorId, vendorName, orders
-      };
-
-      const [delRes, takeRes, dineRes, cashRes] = await Promise.all([
-        fetchType("delivery"),
-        fetchType("takeaway"),
-        fetchType("dinein"),
-        fetchType("cash"),
-      ]);
-
-      // Call onLoaded using any one of the responses
-      if (onLoaded) {
-        const vendorName =
-          delRes.vendorName || takeRes.vendorName || dineRes.vendorName || cashRes.vendorName;
-        const vendorId =
-          delRes.vendorId || takeRes.vendorId || dineRes.vendorId || cashRes.vendorId;
-        if (vendorName && vendorId) onLoaded(vendorName, vendorId);
+      // Fetch only delivery orders that are on the way
+      const res = await fetch(`${BASE}/order/active/${VENDOR_ID}/delivery`);
+      if (!res.ok) throw new Error('Failed to load delivery orders');
+      const data = await res.json();
+      
+      if (onLoaded && data.vendorName && data.vendorId) {
+        onLoaded(data.vendorName, data.vendorId);
       }
 
-      // Combine all orders from the four responses
-      const allOrders = [
-        ...delRes.orders,
-        ...takeRes.orders,
-        ...dineRes.orders,
-        ...cashRes.orders,
-      ];
+      // Filter only orders that are on the way
+      const deliveryOrders = data.orders.filter((order: ApiOrder) => 
+        order.status === "onTheWay" || order.status === "completed"
+      );
 
-      // Filter out delivery orders that are on the way (they'll be shown in separate delivery section)
-      const filteredOrders = allOrders.filter((order: ApiOrder) => {
-        if (order.orderType === "delivery" && order.status === "onTheWay") {
-          return false; // Exclude delivery orders that are on the way
-        }
-        return true; // Include all other orders
-      });
-
-      const combined: OrderState[] = filteredOrders.map((o) => ({
+      const combined: OrderState[] = deliveryOrders.map((o: ApiOrder) => ({
         order: o,
         localStatus: mapToLocal(o.status),
       }));
@@ -105,18 +81,26 @@ export const OrderList: React.FC<OrderListProps> = ({ onLoaded, onOrderStatusCha
   // Load once + auto-refresh
   useEffect(() => {
     setLoading(true);
-    fetchOrders().finally(() => setLoading(false));
-    const interval = setInterval(fetchOrders, REFRESH_INTERVAL);
+    fetchDeliveryOrders().finally(() => setLoading(false));
+    const interval = setInterval(fetchDeliveryOrders, REFRESH_INTERVAL);
     return () => clearInterval(interval);
-  }, [fetchOrders]);
+  }, [fetchDeliveryOrders]);
 
   // Handle incoming order status changes
   useEffect(() => {
     if (orderStatusChanges && orderStatusChanges.length > 0) {
       orderStatusChanges.forEach(change => {
-        if (change.newStatus === "onTheWay") {
-          console.log(`OrderList: Removing order ${change.orderId} from active orders (status: ${change.newStatus})`);
-          // Remove order from active orders list when it becomes onTheWay
+        if (change.newStatus === "onTheWay" && change.orderData) {
+          console.log(`DeliveryOrdersList: Adding order ${change.orderId} to delivery orders (status: ${change.newStatus})`);
+          // Add new delivery order to the list
+          const newOrder: OrderState = {
+            order: change.orderData,
+            localStatus: "onTheWay"
+          };
+          setList(prev => [newOrder, ...prev]);
+        } else if (change.newStatus === "delivered") {
+          console.log(`DeliveryOrdersList: Removing order ${change.orderId} from delivery orders (status: ${change.newStatus})`);
+          // Remove order from delivery list when it's delivered
           setList(prev => prev.filter(os => os.order.orderId !== change.orderId));
         }
       });
@@ -158,10 +142,10 @@ export const OrderList: React.FC<OrderListProps> = ({ onLoaded, onOrderStatusCha
   const totalPages = Math.ceil(list.length / PAGE_SIZE);
   const currentPageList = list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  if (loading) return <p className={styles.empty}>Loading orders…</p>;
+  if (loading) return <p className={styles.empty}>Loading delivery orders…</p>;
   if (error) return <p className={styles.empty}>Error: {error}</p>;
   if (list.length === 0)
-    return <p className={styles.empty}>No active orders.</p>;
+    return <p className={styles.empty}>No orders out for delivery.</p>;
 
   return (
     <div className={styles.wrap}>
@@ -210,4 +194,4 @@ function mapToLocal(status: string): LocalStatus {
     default:
       return "inProgress";
   }
-}
+} 
