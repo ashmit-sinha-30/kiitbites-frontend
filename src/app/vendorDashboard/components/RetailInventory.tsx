@@ -12,7 +12,7 @@ interface RetailApiItem {
   quantity: number;
   type: string;
   isSpecial: "Y" | "N";
-  isAvailable: "Y" | "N";
+  isAvailable: "Y" | "N" | undefined;
 }
 
 // Added "lowstock" filter option, removed "unavailable"
@@ -79,7 +79,7 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
               : parseInt(it.quantity as unknown as string, 10) || 0,
           type: it.type ?? "",
           isSpecial: it.isSpecial === "Y" ? "Y" : "N",
-          isAvailable: it.isAvailable === "Y" ? "Y" : "N",
+          isAvailable: typeof it.isAvailable === "string" ? (it.isAvailable === "Y" ? "Y" : "N") : undefined,
         }));
         setItems(dataItems);
         let vendorNameFromResp: string | undefined;
@@ -166,6 +166,7 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
                 <th>Price</th>
                 <th>Quantity</th>
                 <th>Special</th>
+                <th>Available</th>
               </tr>
             </thead>
             <tbody>
@@ -206,6 +207,42 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
                     <label htmlFor={`special-switch-${item.itemId}`} style={{ marginLeft: 8 }}>
                       {item.isSpecial === 'Y' ? 'Yes' : 'No'}
                     </label>
+                  </td>
+                  <td>
+                    {/* Determine availability: if isAvailable is missing, use quantity > 0 */}
+                    {(() => {
+                      const isAvailable =
+                        item.isAvailable === 'Y' ||
+                        (item.isAvailable == null && item.quantity > 0);
+                      return (
+                        <>
+                          <Switch.Root
+                            checked={isAvailable}
+                            onCheckedChange={async (checked: boolean) => {
+                              const newAvailable = checked ? 'Y' : 'N';
+                              try {
+                                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/inventory/retail/availability`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ vendorId, itemId: item.itemId, isAvailable: newAvailable }),
+                                });
+                                if (!res.ok) throw new Error('Failed to update availability');
+                                setItems(prev => prev.map(it => it.itemId === item.itemId ? { ...it, isAvailable: newAvailable } : it));
+                              } catch {
+                                alert('Failed to update availability');
+                              }
+                            }}
+                            className={styles.switch}
+                            id={`available-switch-${item.itemId}`}
+                          >
+                            <Switch.Thumb className={styles.switchThumb} />
+                          </Switch.Root>
+                          <label htmlFor={`available-switch-${item.itemId}`} style={{ marginLeft: 8 }}>
+                            {isAvailable ? 'Available' : 'Unavailable'}
+                          </label>
+                        </>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
