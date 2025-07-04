@@ -159,9 +159,23 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         }
       },
       modal: {
-        ondismiss: () => {
+        ondismiss: async () => {
           console.warn("⚠️ Razorpay payment cancelled by user.");
-          toast.info("Payment cancelled.");
+          
+          try {
+            // Cancel the order and release locks
+            await axios.post(
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/order/${orderId}/cancel`,
+              {},
+              { withCredentials: true }
+            );
+            
+            console.log("✅ Order cancelled successfully");
+            toast.success("Payment cancelled. You can try ordering again.");
+          } catch (error) {
+            console.error("❌ Failed to cancel order:", error);
+            toast.error("Payment cancelled, but there was an issue. Please try again in a few minutes.");
+          }
         },
       },
     };
