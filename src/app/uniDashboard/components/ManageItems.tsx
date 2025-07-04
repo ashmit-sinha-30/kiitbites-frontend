@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import * as Switch from "@radix-ui/react-switch";
 import styles from "../styles/ManageItems.module.scss";
 
 interface ManageItemsProps {
@@ -13,6 +14,7 @@ interface Item {
   isSpecial: string;
   image: string;
   category: "retail" | "produce";
+  packable?: boolean;
 }
 
 const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
@@ -59,8 +61,18 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
     setEditData({ ...item });
   };
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setEditData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      setEditData((prev) => ({
+        ...prev,
+        [name]: (e.target as HTMLInputElement).checked
+      }));
+    } else {
+      setEditData((prev) => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
   const handleEditImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -98,6 +110,7 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
           price: parseFloat(String(editData.price ?? "")),
           type: editData.type,
           image: imageUrl,
+          packable: editData.packable,
         }),
       });
       if (!res.ok) throw new Error("Failed to update item");
@@ -168,6 +181,7 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
                   <th className={styles.th}>Name</th>
                   <th className={styles.th}>Type</th>
                   <th className={styles.th}>Price</th>
+                  <th className={styles.th}>Packable</th>
                   <th className={styles.th}>Actions</th>
                 </tr>
               </thead>
@@ -192,6 +206,20 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
                         <input name="price" type="number" value={String(editData.price ?? "")} onChange={handleEditChange} style={{ padding: '0.4rem 0.7rem', borderRadius: 6, border: '1px solid #a5b4fc', fontSize: '1rem', width: 80 }} />
                       ) : item.price}
                     </td>
+                    <td style={{ padding: 10 }}>
+                      {editItem && editItem._id === item._id ? (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                          <span>Packable</span>
+                          <Switch.Root
+                            className="w-[42px] h-[25px] bg-gray-200 rounded-full relative shadow-[0_2px_10px] shadow-gray-400 focus:shadow-[0_0_0_2px] focus:shadow-black data-[state=checked]:bg-blue-600 outline-none cursor-default"
+                            checked={!!editData.packable}
+                            onCheckedChange={(checked) => setEditData(prev => ({ ...prev, packable: checked }))}
+                          >
+                            <Switch.Thumb className="block w-[21px] h-[21px] bg-white rounded-full shadow-[0_2px_2px] shadow-gray-400 transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px]" />
+                          </Switch.Root>
+                        </label>
+                      ) : item.packable ? 'Yes' : 'No'}
+                    </td>
                     <td style={{ padding: 10, minWidth: 160 }}>
                       {editItem && editItem._id === item._id ? (
                         <form onSubmit={handleEditSubmit} style={{ display: 'inline' }}>
@@ -201,8 +229,10 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
                         </form>
                       ) : (
                         <>
-                          <button onClick={() => handleEdit(item)} style={{ marginRight: 8, padding: '0.4rem 1rem', borderRadius: 6, background: '#6366f1', color: '#fff', border: 'none', fontWeight: 500 }}>Edit</button>
-                          <button onClick={() => handleDelete(item)} disabled={deleteLoading === item._id} style={{ padding: '0.4rem 1rem', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 500 }}>{deleteLoading === item._id ? 'Deleting...' : 'Delete'}</button>
+                          <button className={styles.editButton} onClick={() => handleEdit(item)} style={{ marginRight: 8, padding: '0.4rem 1rem', borderRadius: 6, background: '#6366f1', color: '#fff', border: 'none', fontWeight: 500 }}>Edit</button>
+                          <button className={styles.deleteButton} onClick={() => handleDelete(item)} disabled={deleteLoading === item._id} style={{ padding: '0.4rem 1rem', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 500 }}>
+                            {deleteLoading === item._id ? 'Deleting...' : 'Delete'}
+                          </button>
                         </>
                       )}
                     </td>

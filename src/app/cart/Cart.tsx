@@ -28,6 +28,7 @@ interface CartResponse {
     price: number;
     quantity: number;
     kind: string;
+    packable?: boolean;
     totalPrice: number;
   }>;
   vendorName: string;
@@ -200,7 +201,8 @@ export default function Cart() {
             image: c.image,
             vendorName: cartRes.data.vendorName,
             vendorId: cartRes.data.vendorId,
-            category
+            category,
+            packable: c.packable
           };
           return cartItem;
         });
@@ -293,7 +295,8 @@ export default function Cart() {
           image: c.image,
           vendorName: cartRes.data.vendorName,
           vendorId: cartRes.data.vendorId,
-          category
+          category,
+          packable: c.packable
         };
       });
       setCart(updated);
@@ -618,7 +621,9 @@ export default function Cart() {
                 items={cart}
                 onOrder={(orderId) => {
                   console.log("Payment successful! Order ID: " + orderId);
-                  // clear cart, redirect, etc.
+                  // Clear cart and redirect to payment confirmation page
+                  setCart([]);
+                  window.location.href = `/payment?orderId=${orderId}`;
                 }}
               />
             </aside>
