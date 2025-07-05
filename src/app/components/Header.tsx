@@ -347,7 +347,7 @@ const Header: React.FC<HeaderProps> = ({
                       </div>
                       <div
                         className={styles.navItem}
-                        onClick={() => handleNavigation("/favourites")}
+                        onClick={() => handleNavigation("/fav")}
                         style={{ fontSize: "1rem" }}
                       >
                         <span style={{ fontSize: "1rem" }}>Favourites</span>

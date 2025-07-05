@@ -3,6 +3,7 @@ import {
   AiOutlineShopping,
   AiOutlineFileText,
   AiOutlinePlusCircle,
+  AiOutlineDollar,
 } from "react-icons/ai";
 import styles from "../styles/SideBar.module.scss";
 
@@ -25,6 +26,11 @@ const segments = [
     key: "manage-items",
     label: "Manage Items",
     icon: <AiOutlineFileText />,
+  },
+  {
+    key: "manage-charges",
+    label: "Manage Charges",
+    icon: <AiOutlineDollar />,
   },
 ];
 

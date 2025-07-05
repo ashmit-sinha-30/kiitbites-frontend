@@ -25,6 +25,7 @@ export interface CartItem extends FoodItem {
   vendorName: string;
   vendorId: string;
   category: "Retail" | "Produce";
+  packable?: boolean;
 }
 
 export type OrderType = "takeaway" | "delivery" | "dinein";

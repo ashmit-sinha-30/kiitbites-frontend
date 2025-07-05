@@ -7,6 +7,7 @@ import { AddVendorForm } from "./components/AddVendorForm";
 // import { ImageUploadSection } from "./components/ImageUploadSection";
 import { UploadItemForm } from "./components/UploadItemForm";
 import ManageItems from "./components/ManageItems";
+import ManageCharges from "./components/ManageCharges";
 import styles from "./styles/InventoryReport.module.scss";
 
 const segmentsMap: Record<string, string> = {
@@ -21,6 +22,7 @@ const segmentsMap: Record<string, string> = {
   "add-vendor": "Add Vendor",
   "delete-vendor": "Delete Vendor",
   "addItem": "Add Food Item",
+  "manage-charges": "Manage Charges",
 };
 
 export default function UniDashboardPage() {
@@ -72,8 +74,13 @@ export default function UniDashboardPage() {
           <ManageItems universityId={UNIVERSITY_ID} />
         )}
 
+        {/* Manage Charges Segment */}
+        {activeSegment === "manage-charges" && (
+          <ManageCharges universityId={UNIVERSITY_ID} />
+        )}
+
         {/* Other segments under construction */}
-        {!["dashboard", "add-vendor", "delete-vendor", "addItem", "manage-items"].includes(activeSegment) && (
+        {!["dashboard", "add-vendor", "delete-vendor", "addItem", "manage-items", "manage-charges"].includes(activeSegment) && (
           <div className={styles.underConstruction}>
             {segmentsMap[activeSegment]
               ? segmentsMap[activeSegment]
