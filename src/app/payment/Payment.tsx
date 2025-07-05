@@ -44,6 +44,7 @@ const PaymentPage = () => {
   const router = useRouter();
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Get auth token
   const getAuthToken = () => {
@@ -66,35 +67,37 @@ const PaymentPage = () => {
   // Fetch order details
   useEffect(() => {
     const fetchOrderDetails = async () => {
-      if (!orderId) {
+      if (!orderId || orderId === 'undefined') {
+        console.log("No valid orderId provided");
         setLoading(false);
         return;
       }
 
       try {
-        // First get user details to get user ID
-        const userResponse = await axios.get(
-          `${BACKEND_URL}/api/user/auth/user`,
-          getAuthConfig()
-        );
-        const userId = userResponse.data._id;
-
-        // Then fetch order details
+        console.log("Fetching order details for orderId:", orderId);
+        
+        // Fetch order details directly by orderId
         const orderResponse = await axios.get(
-          `${BACKEND_URL}/order/user-active/${userId}`,
+          `${BACKEND_URL}/order/${orderId}`,
           getAuthConfig()
         );
 
-        // Find the specific order
-        const order = orderResponse.data.orders.find(
-          (order: OrderDetails) => order._id === orderId
-        );
+        console.log("Order response:", orderResponse.data);
 
-        if (order) {
-          setOrderDetails(order);
+        if (orderResponse.data.success && orderResponse.data.order) {
+          setOrderDetails(orderResponse.data.order);
+        } else {
+          console.error("Order not found or invalid response");
+          setError("Order not found or invalid response");
         }
       } catch (error) {
         console.error("Error fetching order details:", error);
+        if (axios.isAxiosError(error)) {
+          console.error("Error response:", error.response?.data);
+          setError(error.response?.data?.message || "Failed to fetch order details");
+        } else {
+          setError("Failed to fetch order details");
+        }
       } finally {
         setLoading(false);
       }
@@ -118,6 +121,30 @@ const PaymentPage = () => {
     return (
       <div className={styles.container}>
         <div className={styles.loading}>Loading order details...</div>
+      </div>
+    );
+  }
+
+  if (!orderId || orderId === 'undefined') {
+    return (
+      <div className={styles.container}>
+        <h1 className={styles.heading}>Invalid Order</h1>
+        <p className={styles.error}>No valid order ID provided. Please check your payment confirmation.</p>
+        <button className={styles.button} onClick={() => router.push("/")}>
+          Go to Home
+        </button>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <h1 className={styles.heading}>Error</h1>
+        <p className={styles.error}>{error}</p>
+        <button className={styles.button} onClick={() => router.push("/")}>
+          Go to Home
+        </button>
       </div>
     );
   }

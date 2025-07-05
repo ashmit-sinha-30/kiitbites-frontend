@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { CartItem, OrderType, OrderData } from "../../app/cart/types";
@@ -62,17 +62,94 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [charges, setCharges] = useState({ packingCharge: 5, deliveryCharge: 50 });
 
-  // Calculate totals
+  // Fetch university charges when component mounts
+  useEffect(() => {
+    const fetchCharges = async () => {
+      try {
+        console.log("🔄 Fetching charges for userId:", userId);
+        
+        // Get user's cart to find vendorId
+        const cartResponse = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart/${userId}`,
+          { withCredentials: true }
+        );
+        
+        console.log("📦 Cart response:", cartResponse.data);
+        
+        if (cartResponse.data.vendorId) {
+          // Get vendor to find university
+          const vendorResponse = await axios.get(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${cartResponse.data.vendorId}`,
+            { withCredentials: true }
+          );
+          
+          console.log("🏪 Vendor response:", vendorResponse.data);
+          
+          if (vendorResponse.data.uniID) {
+            // Get university charges
+            const chargesResponse = await axios.get(
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${vendorResponse.data.uniID}`,
+              { withCredentials: true }
+            );
+            
+            console.log("💰 Charges response:", chargesResponse.data);
+            
+            setCharges({
+              packingCharge: chargesResponse.data.packingCharge,
+              deliveryCharge: chargesResponse.data.deliveryCharge,
+            });
+          } else {
+            console.warn("⚠️ No uniID found in vendor response");
+          }
+        } else {
+          console.warn("⚠️ No vendorId found in cart response");
+        }
+      } catch (error) {
+        console.error("❌ Failed to fetch university charges:", error);
+        // Use default charges if fetch fails
+        console.log("🔄 Using default charges:", { packingCharge: 5, deliveryCharge: 50 });
+      }
+    };
+
+    fetchCharges();
+  }, [userId]);
+
+  // Debug logging
+  console.log("🔍 BillBox Debug:", {
+    items: items.map(i => ({ name: i.name, category: i.category, packable: i.packable, quantity: i.quantity })),
+    orderType,
+    charges,
+    packableItems: items.filter(i => i.packable === true)
+  });
+  
+  // More robust packable item detection
+  const packableItems = items.filter((i) => i.packable === true);
+  
+  console.log("📦 Packable items found:", packableItems.map(i => ({ name: i.name, packable: i.packable, quantity: i.quantity })));
+  
+  // Ensure charges are available
+  const packingCharge = charges.packingCharge || 5;
+  const deliveryCharge = charges.deliveryCharge || 50;
+  
   const itemTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const packaging =
     orderType !== "dinein"
-      ? items
-          .filter((i) => i.category === "Produce")
-          .reduce((s, i) => s + 5 * i.quantity, 0)
+      ? packableItems.reduce((s, i) => s + packingCharge * i.quantity, 0)
       : 0;
-  const delivery = orderType === "delivery" ? 50 : 0;
+  const delivery = orderType === "delivery" ? deliveryCharge : 0;
   const grandTotal = itemTotal + packaging + delivery;
+  
+  console.log("💰 BillBox Calculation:", {
+    itemTotal,
+    packaging,
+    delivery,
+    grandTotal,
+    packableItemsCount: packableItems.length,
+    packingChargePerItem: packingCharge,
+    deliveryCharge: deliveryCharge
+  });
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -119,6 +196,12 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
     const { orderId, razorpayOptions } = orderResp.data;
 
+    console.log("💳 Frontend Razorpay options:", {
+      orderId,
+      razorpayOptions,
+      frontendCalculatedTotal: grandTotal
+    });
+
     const options: RazorpayOptions = {
       ...razorpayOptions,
       description: "Complete your payment",
@@ -137,18 +220,21 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
           console.log("📨 Sending for verification:", verifyPayload);
 
-          await axios.post(
+          const verifyResponse = await axios.post(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/payment/verify`,
             verifyPayload,
             { withCredentials: true }
           );
 
-          console.log("✅ Payment verified successfully");
+          console.log("✅ Payment verified successfully:", verifyResponse.data);
           toast.success("Payment successful!");
-          onOrder(orderId);
+          
+          // Use the actual orderId from the verification response
+          const actualOrderId = verifyResponse.data.orderId;
+          onOrder(actualOrderId);
 
-          // 🔁 Redirect to payment confirmation page
-          window.location.href = `/payment?orderId=${orderId}`;
+          // 🔁 Redirect to payment confirmation page with the real orderId
+          window.location.href = `/payment?orderId=${actualOrderId}`;
         } catch (error) {
           if (axios.isAxiosError(error)) {
             console.error("❌ Payment verification failed:", error.response?.data);
@@ -162,19 +248,25 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         ondismiss: async () => {
           console.warn("⚠️ Razorpay payment cancelled by user.");
           
-          try {
-            // Cancel the order and release locks
-            await axios.post(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/order/${orderId}/cancel`,
-              {},
-              { withCredentials: true }
-            );
-            
-            console.log("✅ Order cancelled successfully");
+          // Only cancel order if orderId exists
+          if (orderId) {
+            try {
+              // Cancel the order and release locks
+              await axios.post(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/order/${orderId}/cancel`,
+                {},
+                { withCredentials: true }
+              );
+              
+              console.log("✅ Order cancelled successfully");
+              toast.success("Payment cancelled. You can try ordering again.");
+            } catch (error) {
+              console.error("❌ Failed to cancel order:", error);
+              toast.error("Payment cancelled, but there was an issue. Please try again in a few minutes.");
+            }
+          } else {
+            console.warn("⚠️ No orderId available to cancel");
             toast.success("Payment cancelled. You can try ordering again.");
-          } catch (error) {
-            console.error("❌ Failed to cancel order:", error);
-            toast.error("Payment cancelled, but there was an issue. Please try again in a few minutes.");
           }
         },
       },

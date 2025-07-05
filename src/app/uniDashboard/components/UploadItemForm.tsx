@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import * as Switch from "@radix-ui/react-switch";
 import styles from "../styles/UploadItemForm.module.scss";
 
 interface UploadItemFormProps {
@@ -18,6 +19,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [packable, setPackable] = useState(itemType === "Produce");
 
   useEffect(() => {
     const fetchCloudName = async () => {
@@ -46,6 +48,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
       }
     };
     fetchTypes();
+    setPackable(itemType === "Produce"); // Reset packable default when type changes
   }, [itemType]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,6 +93,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
           isSpecial,
           image: imageUrl,
           uniId: universityId,
+          packable,
         }),
       });
       if (!res.ok) throw new Error("Failed to create item");
@@ -139,6 +143,16 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
             <option value="Y">Yes</option>
             <option value="N">No</option>
           </select>
+        </label>
+        <label className={styles.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span>Packable</span>
+          <Switch.Root
+            className="w-[42px] h-[25px] bg-gray-200 rounded-full relative shadow-[0_2px_10px] shadow-gray-400 focus:shadow-[0_0_0_2px] focus:shadow-black data-[state=checked]:bg-blue-600 outline-none cursor-default"
+            checked={packable}
+            onCheckedChange={setPackable}
+          >
+            <Switch.Thumb className="block w-[21px] h-[21px] bg-white rounded-full shadow-[0_2px_2px] shadow-gray-400 transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px]" />
+          </Switch.Root>
         </label>
         <label className={styles.label}>
           Image
