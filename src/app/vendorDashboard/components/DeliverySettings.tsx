@@ -15,7 +15,7 @@ interface Props {
   onLoaded?: (vendorName: string, vendorId: string) => void;
 }
 
-export function DeliverySettings({ vendorId, onLoaded }: Props) {
+export function DeliverySettings({ vendorId }: Props) {
   const [settings, setSettings] = useState<DeliverySettings>({
     offersDelivery: false,
     deliveryPreparationTime: 30
@@ -81,7 +81,7 @@ export function DeliverySettings({ vendorId, onLoaded }: Props) {
     }
   };
 
-  const handleInputChange = (field: keyof DeliverySettings, value: any) => {
+  const handleInputChange = (field: keyof DeliverySettings, value: boolean | number) => {
     setSettings(prev => ({
       ...prev,
       [field]: value
