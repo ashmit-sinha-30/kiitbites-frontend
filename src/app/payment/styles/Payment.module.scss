@@ -212,6 +212,27 @@
   text-align: center;
 }
 
+.preparationTime {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.preparationTime h3 {
+  font-size: 1.1rem;
+  color: #856404;
+  margin: 0 0 0.5rem 0;
+}
+
+.preparationTimeText {
+  font-size: 1rem;
+  color: #856404;
+  margin: 0;
+}
+
 .orderTotal {
   border-top: 2px solid #d1d5db;
   padding-top: 1rem;

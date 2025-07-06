@@ -43,6 +43,7 @@ const PaymentPage = () => {
   const orderId = searchParams.get("orderId");
   const router = useRouter();
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
+  const [vendorPreparationTime, setVendorPreparationTime] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,6 +87,22 @@ const PaymentPage = () => {
 
         if (orderResponse.data.success && orderResponse.data.order) {
           setOrderDetails(orderResponse.data.order);
+          
+          // Fetch vendor delivery settings to get preparation time
+          try {
+            const vendorId = orderResponse.data.order.vendorId._id;
+            const deliverySettingsResponse = await axios.get(
+              `${BACKEND_URL}/api/vendor/${vendorId}/delivery-settings`
+            );
+            
+            if (deliverySettingsResponse.data.success) {
+              setVendorPreparationTime(deliverySettingsResponse.data.data.deliveryPreparationTime);
+            }
+          } catch (error) {
+            console.error("Failed to fetch vendor preparation time:", error);
+            // Set default preparation time if we can't fetch it
+            setVendorPreparationTime(30);
+          }
         } else {
           console.error("Order not found or invalid response");
           setError("Order not found or invalid response");
@@ -211,6 +228,16 @@ const PaymentPage = () => {
               ))}
             </div>
           </div>
+
+          {/* Estimated Preparation Time */}
+          {vendorPreparationTime && (
+            <div className={styles.preparationTime}>
+              <h3>⏱️ Estimated Preparation Time</h3>
+              <p className={styles.preparationTimeText}>
+                Your order will be ready in approximately <strong>{vendorPreparationTime} minutes</strong>
+              </p>
+            </div>
+          )}
 
           <div className={styles.orderTotal}>
             <p className={styles.totalAmount}>

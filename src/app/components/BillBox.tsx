@@ -63,7 +63,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [charges, setCharges] = useState({ packingCharge: 5, deliveryCharge: 50 });
-  const [vendorDeliverySettings, setVendorDeliverySettings] = useState<{ offersDelivery: boolean } | null>(null);
+  const [vendorDeliverySettings, setVendorDeliverySettings] = useState<{ offersDelivery: boolean; deliveryPreparationTime: number } | null>(null);
 
   // Fetch university charges and vendor delivery settings when component mounts
   useEffect(() => {
@@ -102,7 +102,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           } catch (error) {
             console.error("❌ Failed to fetch delivery settings:", error);
             // If we can't fetch delivery settings, assume delivery is available
-            setVendorDeliverySettings({ offersDelivery: true });
+            setVendorDeliverySettings({ offersDelivery: true, deliveryPreparationTime: 30 });
           }
           
           // Get vendor to find university
@@ -376,6 +376,15 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           </div>
         ))}
         </div>
+        
+        {/* Estimated Preparation Time */}
+        {vendorDeliverySettings && (
+          <div className={styles.preparationTime}>
+            <span>Estimated preparation time</span>
+            <span>{vendorDeliverySettings.deliveryPreparationTime} minutes</span>
+          </div>
+        )}
+        
       <div className={styles.totalPack}>
         {packaging > 0 && (
           <div className={styles.extra}>
