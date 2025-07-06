@@ -9,6 +9,7 @@ import {
   AiOutlineHistory,
   AiOutlineCar,
   AiOutlineShoppingCart,
+  AiOutlineTruck,
 } from "react-icons/ai";
 import styles from "../styles/SideBar.module.scss";
 
@@ -44,6 +45,11 @@ const segments = [
     key: "vendor-cart",
     label: "Vendor Cart",
     icon: <AiOutlineShoppingCart />,
+  },
+  {
+    key: "delivery-settings",
+    label: "Delivery Settings",
+    icon: <AiOutlineTruck />,
   },
   { key: "settings", label: "Settings", icon: <AiOutlineSetting /> },
 ];

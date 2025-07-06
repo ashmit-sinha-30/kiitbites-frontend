@@ -129,6 +129,7 @@ export interface VendorCart {
 export interface BillingFormData {
   userName: string;
   phoneNumber: string;
+  orderType: "dinein" | "takeaway";
   paymentMethod: "cash" | "upi";
 }
 

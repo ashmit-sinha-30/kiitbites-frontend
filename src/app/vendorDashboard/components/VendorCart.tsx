@@ -46,6 +46,7 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
   const [billingForm, setBillingForm] = useState<BillingFormData>({
     userName: "",
     phoneNumber: "",
+    orderType: "takeaway",
     paymentMethod: "cash",
   });
   const [cartLoading, setCartLoading] = useState(false);
@@ -231,7 +232,8 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
           total: cart.total,
           collectorName: billingForm.userName,
           collectorPhone: billingForm.phoneNumber,
-          orderType: billingForm.paymentMethod,
+          orderType: billingForm.orderType,
+          paymentMethod: billingForm.paymentMethod,
           isGuest: true,
         }),
       });
@@ -272,7 +274,7 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
         }
         
         setCart({ items: [], total: 0 });
-        setBillingForm({ userName: "", phoneNumber: "", paymentMethod: "cash" });
+        setBillingForm({ userName: "", phoneNumber: "", orderType: "takeaway", paymentMethod: "cash" });
         setShowBilling(false);
         alert(`Order placed successfully! Order Number: ${result.orderNumber}`);
       } else {
@@ -458,6 +460,34 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
                   required
                   className={styles.input}
                 />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label>Order Type *</label>
+                <div className={styles.orderTypeOptions}>
+                  <label className={styles.orderTypeOption}>
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="takeaway"
+                      checked={billingForm.orderType === "takeaway"}
+                      onChange={(e) => setBillingForm(prev => ({ ...prev, orderType: e.target.value as "dinein" | "takeaway" }))}
+                      required
+                    />
+                    <span>Takeaway</span>
+                  </label>
+                  <label className={styles.orderTypeOption}>
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="dinein"
+                      checked={billingForm.orderType === "dinein"}
+                      onChange={(e) => setBillingForm(prev => ({ ...prev, orderType: e.target.value as "dinein" | "takeaway" }))}
+                      required
+                    />
+                    <span>Dine In</span>
+                  </label>
+                </div>
               </div>
               
               <div className={styles.formGroup}>

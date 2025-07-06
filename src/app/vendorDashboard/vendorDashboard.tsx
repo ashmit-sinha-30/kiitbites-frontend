@@ -12,6 +12,7 @@ import { OrderList } from "./components/OrderList";
 import { PastOrdersList } from "./components/PastOrdersList";
 import { DeliveryOrdersList } from "./components/DeliveryOrdersList";
 import { VendorCartComponent } from "./components/VendorCart";
+import { DeliverySettings } from "./components/DeliverySettings";
 import { Order } from "./types";
 
 // Import the new inventory components:
@@ -31,6 +32,7 @@ const segmentsMap: Record<string, string> = {
   "delivery-orders": "Delivery Orders",
   "past-orders": "Past Orders",
   "vendor-cart": "Vendor Cart",
+  "delivery-settings": "Delivery Settings",
   // ...other segments
 };
 
@@ -273,6 +275,17 @@ export default function VendorDashboardPage() {
           </>
         )}
 
+        {/* Delivery Settings Segment */}
+        {activeSegment === "delivery-settings" && (
+          <>
+            <div className={styles.header}>
+              <h1>Delivery Settings</h1>
+              <p>Configure your delivery preferences and availability</p>
+            </div>
+            <DeliverySettings vendorId={VENDOR_ID} onLoaded={handleOnLoaded} />
+          </>
+        )}
+
         {/* Other segments under construction */}
         {activeSegment !== "dashboard" &&
           activeSegment !== "inventory-reports" &&
@@ -280,7 +293,8 @@ export default function VendorDashboardPage() {
           activeSegment !== "produce-inventory" &&
           activeSegment !== "past-orders" &&
           activeSegment !== "delivery-orders" &&
-          activeSegment !== "vendor-cart" && (
+          activeSegment !== "vendor-cart" &&
+          activeSegment !== "delivery-settings" && (
             <div className={styles.underConstruction}>
               🚧{" "}
               {segmentsMap[activeSegment]
