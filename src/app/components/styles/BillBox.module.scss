@@ -80,7 +80,8 @@
 }
 
 .line,
-.extra {
+.extra,
+.preparationTime {
   display: flex;
   justify-content: space-between;
 }
@@ -88,6 +89,16 @@
 .extra {
   font-style: italic;
   color: #555;
+}
+
+.preparationTime {
+  background: #fff3cd;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid #ffeaa7;
+  font-size: 0.9rem;
+  color: #856404;
+  margin: 0.5rem 0;
 }
 
 .divider {

@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import styles from "../../styles/VendorManagement.module.scss";
 import * as XLSX from "xlsx";
 import Modal from "react-modal";
+import { VendorMenuManagement } from "../../components/VendorMenuManagement";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -18,11 +19,20 @@ interface Vendor {
 }
 
 interface Order {
-  _id: string;
+  _id?: string;
+  orderId?: string;
   orderNumber: string;
   status: string;
   createdAt: string;
-  items: { name: string; quantity: number }[];
+  orderType: string;
+  total: number;
+  items: { 
+    name: string; 
+    quantity: number;
+    price?: number;
+    unit?: string;
+    type?: string;
+  }[];
 }
 
 interface InventoryItem {
@@ -34,10 +44,9 @@ interface InventoryItem {
   itemType: string;
 }
 
-export default function VendorDetailPage() {
+export default function VendorMenuPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const params = useParams();
-  const vendorId = params?.vendorId as string;
+  const { id: vendorId } = React.use(params);
   const universityId = "68320fd75c6f79ec179ad3bb"; // hardcoded, or fetch from context if needed
 
   // Vendor details
@@ -129,6 +138,12 @@ export default function VendorDetailPage() {
         const res = await fetch(`${BACKEND_URL}/order/vendor/${vendorId}/active`);
         if (!res.ok) throw new Error("Failed to fetch orders");
         const data = await res.json();
+        console.log("Orders data received:", data);
+        console.log("Orders array:", data.orders);
+        if (data.orders && data.orders.length > 0) {
+          console.log("First order:", data.orders[0]);
+          console.log("First order total:", data.orders[0].total);
+        }
         setOrders(data.orders || []);
       } catch {
         setOrdersError("Failed to fetch orders");
@@ -343,24 +358,50 @@ export default function VendorDetailPage() {
             <thead>
               <tr>
                 <th>Order #</th>
+                <th>Mode</th>
                 <th>Status</th>
                 <th>Created</th>
                 <th>Items</th>
+                <th>Total</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => (
-                <tr key={order._id}>
+                <tr key={order.orderId || order._id}>
                   <td>{order.orderNumber}</td>
+                  <td>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      textTransform: 'capitalize',
+                      backgroundColor: 
+                        order.orderType === 'delivery' ? '#e3f2fd' :
+                        order.orderType === 'dinein' ? '#f3e5f5' :
+                        order.orderType === 'takeaway' ? '#e8f5e8' :
+                        '#fff3e0',
+                      color: 
+                        order.orderType === 'delivery' ? '#1976d2' :
+                        order.orderType === 'dinein' ? '#7b1fa2' :
+                        order.orderType === 'takeaway' ? '#388e3c' :
+                        '#f57c00'
+                    }}>
+                      {order.orderType}
+                    </span>
+                  </td>
                   <td>{order.status}</td>
                   <td>{new Date(order.createdAt).toLocaleString()}</td>
                   <td>
                     {order.items.map((item, idx) => (
-                      <span key={idx}>
+                      <span key={`${order.orderId || order._id}-${item.name}-${idx}`}>
                         {item.name} × {item.quantity}
                         {idx < order.items.length - 1 ? ", " : ""}
                       </span>
                     ))}
+                  </td>
+                  <td style={{ fontWeight: '600', color: '#4ea199' }}>
+                    ₹{order.total || 0}
                   </td>
                 </tr>
               ))}
@@ -389,7 +430,7 @@ export default function VendorDetailPage() {
                       <span style={{ minWidth: 100 }}>{date}</span>
                       <button
                         onClick={() => downloadReportForDate(date)}
-                        className={styles.download || styles.retryButton}
+                        className={styles.download}
                         style={{ padding: "0.3rem 1rem" }}
                       >
                         Download
@@ -422,7 +463,7 @@ export default function VendorDetailPage() {
           <button
             onClick={downloadReport}
             disabled={downloading}
-            className={styles.download || styles.retryButton}
+            className={styles.download}
             style={{ marginLeft: 8 }}
           >
             {downloading ? "Downloading..." : "Download Report"}
@@ -448,7 +489,7 @@ export default function VendorDetailPage() {
             </thead>
             <tbody>
               {inventory.map((item, idx) => (
-                <tr key={idx}>
+                <tr key={`${item.name}-${item.itemType}-${idx}`}>
                   <td>{item.name}</td>
                   <td>{item.opening}</td>
                   <td>{item.received}</td>
@@ -510,6 +551,14 @@ export default function VendorDetailPage() {
       </Modal>
 
       {successMsg && <div style={{ color: 'green', marginTop: 12 }}>{successMsg}</div>}
+
+      {/* Vendor Menu Management Section */}
+      <section className={styles.section} style={{ marginTop: 32, border: "2px solid #4ea199", padding: "2rem" }}>
+        <h3 style={{ color: "#4ea199", fontSize: "1.5rem", marginBottom: "1rem" }}>Menu Management</h3>
+        <div style={{ minHeight: "200px", border: "1px dashed #ccc", padding: "1rem", background: "#f9f9f9" }}>
+          <VendorMenuManagement vendorId={vendorId} />
+        </div>
+      </section>
     </div>
   );
 } 
