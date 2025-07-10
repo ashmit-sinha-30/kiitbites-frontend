@@ -93,11 +93,6 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
             
             if (deliverySettingsResponse.data.success) {
               setVendorDeliverySettings(deliverySettingsResponse.data.data);
-              
-              // If delivery is disabled, switch to takeaway
-              if (!deliverySettingsResponse.data.data.offersDelivery && orderType === "delivery") {
-                setOrderType("takeaway");
-              }
             }
           } catch (error) {
             console.error("❌ Failed to fetch delivery settings:", error);
@@ -140,7 +135,15 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
     };
 
     fetchChargesAndDeliverySettings();
-  }, [userId, orderType]);
+  }, [userId]);
+
+  // Auto-switch to takeaway if delivery is disabled
+  useEffect(() => {
+    if (vendorDeliverySettings && !vendorDeliverySettings.offersDelivery && orderType === "delivery") {
+      console.log("🔄 Web: Delivery disabled by vendor, switching to takeaway");
+      setOrderType("takeaway");
+    }
+  }, [vendorDeliverySettings, orderType]);
 
   // Debug logging
   console.log("🔍 BillBox Debug:", {
