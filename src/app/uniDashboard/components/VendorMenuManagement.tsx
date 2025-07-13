@@ -62,6 +62,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
   const [types, setTypes] = useState<string[]>([]);
   const [cloudName, setCloudName] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchVendorData = async () => {
     try {
@@ -361,8 +362,25 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
   const currentItems = activeTab === "retail" ? retailItems : produceItems;
   
+  // Filter items based on search query
+  const filteredItems = currentItems.filter(item => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(query) ||
+      item.type.toLowerCase().includes(query) ||
+      item.price.toString().includes(query) ||
+      (item.quantity?.toString() || "").includes(query) ||
+      (item.isSpecial === "Y" ? "special" : "regular").includes(query) ||
+      (item.packable ? "packable" : "not packable").includes(query) ||
+      ((item.isAvailable || item.inventory?.isAvailable) === "Y" ? "available" : "unavailable").includes(query)
+    );
+  });
+  
   // Debug logging
   console.log('Current items:', currentItems);
+  console.log('Filtered items:', filteredItems);
   console.log('Active tab:', activeTab);
   console.log('Retail items:', retailItems);
   console.log('Produce items:', produceItems);
@@ -395,6 +413,23 @@ export function VendorMenuManagement({ vendorId }: Props) {
       </div>
 
       <div className={styles.actions}>
+        <div className={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder={`Search ${activeTab} items by name, type, price, etc...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.searchInput}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className={styles.clearSearchButton}
+            >
+              ✕
+            </button>
+          )}
+        </div>
         <button
           onClick={() => setShowAddModal(true)}
           className={styles.addButton}
@@ -404,15 +439,29 @@ export function VendorMenuManagement({ vendorId }: Props) {
       </div>
 
       <div className={styles.menuGrid}>
-        {currentItems.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className={styles.noItems}>
-            <p>No {activeTab} items found for this vendor.</p>
+            <p>
+              {searchQuery 
+                ? `No ${activeTab} items found matching "${searchQuery}".` 
+                : `No ${activeTab} items found for this vendor.`
+              }
+            </p>
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery("")} 
+                className={styles.clearSearchButton}
+                style={{ marginRight: "8px" }}
+              >
+                Clear Search
+              </button>
+            )}
             <button onClick={() => setShowAddModal(true)} className={styles.addButton}>
               Add First Item
             </button>
           </div>
         ) : (
-          currentItems.map((item, index) => (
+          filteredItems.map((item, index) => (
             <div key={String(item._id ?? item.itemId ?? index ?? '')} className={styles.menuItem}>
               <div className={styles.itemImage}>
                 {item.image ? (

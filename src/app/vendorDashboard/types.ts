@@ -5,6 +5,13 @@ export interface ApiEntry {
   openingQty: number;
   soldQty: number;
   closingQty: number;
+  receivedQty: number;
+}
+
+export interface RawApiEntry {
+  item: { _id: string; name: string; unit?: string };
+  openingQty: number;
+  closingQty: number;
 }
 
 export interface ApiReport {
@@ -13,7 +20,7 @@ export interface ApiReport {
   // entries may be missing when no report exists
   retailEntries?: ApiEntry[];
   produceEntries?: ApiEntry[];
-  // ...you can add rawEntries etc later
+  rawEntries?: RawApiEntry[];
 }
 
 export interface InventoryItem {
@@ -22,7 +29,15 @@ export interface InventoryItem {
   received: number;
   sold: number;
   closing: number;
-  itemType: "Retail" | "Produce";
+  itemType: "Retail" | "Produce" | "Raw";
+  unit?: string;
+}
+
+export interface RawMaterialItem {
+  name: string;
+  openingAmount: number;
+  closingAmount: number;
+  unit: string;
 }
 
 export interface InventoryStats {
@@ -35,14 +50,14 @@ export function transformApiReport(r: ApiReport) {
   // guard against missing arrays
   const retailEntries = r.retailEntries ?? [];
   const produceEntries = r.produceEntries ?? [];
+  const rawEntries = r.rawEntries ?? [];
 
   const retailItems: InventoryItem[] = retailEntries.map((e) => ({
     name: e.item.name,
     opening: e.openingQty,
     sold: e.soldQty,
     closing: e.closingQty,
-    // received = closing − opening + sold
-    received: e.closingQty - e.openingQty + e.soldQty,
+    received: e.receivedQty !== undefined ? e.receivedQty : (e.closingQty - e.openingQty + e.soldQty),
     itemType: "Retail",
   }));
 
@@ -55,7 +70,17 @@ export function transformApiReport(r: ApiReport) {
     itemType: "Produce",
   }));
 
-  const items = [...retailItems, ...produceItems];
+  const rawItems: InventoryItem[] = rawEntries.map((e) => ({
+    name: e.item.name,
+    opening: e.openingQty,
+    sold: 0,
+    closing: e.closingQty,
+    received: 0,
+    itemType: "Raw",
+    unit: e.item.unit,
+  }));
+
+  const items = [...retailItems, ...produceItems, ...rawItems];
 
   const stats: InventoryStats = {
     totalTracked: items.length,

@@ -37,6 +37,12 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
   const [filter, setFilter] = useState<FilterOption>("all");
   const [search, setSearch] = useState("");
 
+  // State for update inventory modal
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updatingItem, setUpdatingItem] = useState<RetailApiItem | null>(null);
+  const [updateQuantity, setUpdateQuantity] = useState(0);
+  const [updateType, setUpdateType] = useState<"add" | "set">("add");
+
   useEffect(() => {
     const fetchRetail = async () => {
       setLoading(true);
@@ -132,6 +138,80 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
     }
   });
 
+  const handleUpdateInventory = (item: RetailApiItem) => {
+    setUpdatingItem(item);
+    setUpdateQuantity(0);
+    setUpdateType("add");
+    setShowUpdateModal(true);
+  };
+
+  const confirmUpdateInventory = async () => {
+    if (!updatingItem) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Calculate new quantity based on update type
+      const newQuantity = updateType === "add" 
+        ? updatingItem.quantity + updateQuantity 
+        : updateQuantity;
+
+      if (newQuantity < 0) {
+        setError("Quantity cannot be negative");
+        return;
+      }
+
+      // Call the inventory update API
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/inventory/add`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            vendorId,
+            itemId: updatingItem.itemId,
+            itemType: "retail",
+            quantity: updateType === "add" ? updateQuantity : newQuantity - updatingItem.quantity,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update inventory");
+      }
+
+      // Refresh the items list
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}/retail`
+      );
+      if (res.ok) {
+        const json = await res.json();
+        const rawItems = json.data?.retailItems || [];
+        setItems(rawItems);
+      }
+
+      setShowUpdateModal(false);
+      setUpdatingItem(null);
+      setUpdateQuantity(0);
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to update inventory");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelUpdateInventory = () => {
+    setShowUpdateModal(false);
+    setUpdatingItem(null);
+    setUpdateQuantity(0);
+    setError(null);
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.controls}>
@@ -161,6 +241,73 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
         </select>
       </div>
 
+      {/* Update Inventory Modal */}
+      {showUpdateModal && updatingItem && (
+        <div className={styles.formOverlay}>
+          <div className={styles.form}>
+            <h3>Update Inventory - {updatingItem.name}</h3>
+            <p>Current Stock: {updatingItem.quantity} units</p>
+            
+            <div className={styles.formGroup}>
+              <label>Update Type:</label>
+              <select
+                value={updateType}
+                onChange={(e) => setUpdateType(e.target.value as "add" | "set")}
+                className={styles.formSelect}
+              >
+                <option value="add">Add to Stock</option>
+                <option value="set">Set Stock Level</option>
+              </select>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>
+                {updateType === "add" ? "Quantity to Add:" : "New Stock Level:"}
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={updateQuantity}
+                onChange={(e) => setUpdateQuantity(parseInt(e.target.value) || 0)}
+                className={styles.formInput}
+                placeholder={updateType === "add" ? "Enter quantity to add" : "Enter new stock level"}
+              />
+            </div>
+
+            {updateType === "set" && (
+              <div className={styles.formGroup}>
+                <p className={styles.preview}>
+                  New Stock Level: {updateQuantity} units
+                </p>
+              </div>
+            )}
+
+            {updateType === "add" && (
+              <div className={styles.formGroup}>
+                <p className={styles.preview}>
+                  New Stock Level: {updatingItem.quantity + updateQuantity} units
+                </p>
+              </div>
+            )}
+
+            <div className={styles.formActions}>
+              <button 
+                onClick={confirmUpdateInventory} 
+                disabled={loading || updateQuantity < 0}
+                className={styles.updateButton}
+              >
+                {loading ? "Updating..." : "Update Inventory"}
+              </button>
+              <button onClick={cancelUpdateInventory} className={styles.cancelButton}>
+                Cancel
+              </button>
+            </div>
+            
+            {error && <div className={styles.error}>{error}</div>}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p className={styles.message}>Loading retail items…</p>
       ) : error ? (
@@ -180,6 +327,7 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
                 <th>Quantity</th>
                 <th>Special</th>
                 <th>Available</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -234,7 +382,7 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
                             onCheckedChange={async (checked: boolean) => {
                               const newAvailable = checked ? 'Y' : 'N';
                               try {
-                                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/inventory/retail/availability`, {
+                                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/inventory/retail/availability`, {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ vendorId, itemId: item.itemId, isAvailable: newAvailable }),
@@ -256,6 +404,14 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
                         </>
                       );
                     })()}
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => handleUpdateInventory(item)}
+                      className={styles.updateInventoryButton}
+                    >
+                      Update Stock
+                    </button>
                   </td>
                 </tr>
               ))}

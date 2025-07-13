@@ -32,17 +32,7 @@ const ManageCharges: React.FC<ManageChargesProps> = ({ universityId }) => {
       setLoading(true);
       setError(null);
       
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Authentication required");
-        return;
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${universityId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${universityId}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch charges");
@@ -69,20 +59,15 @@ const ManageCharges: React.FC<ManageChargesProps> = ({ universityId }) => {
       setError(null);
       setSuccess(null);
       
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Authentication required");
-        return;
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${universityId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${universityId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
