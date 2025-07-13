@@ -18,6 +18,7 @@ import { Order } from "./types";
 // Import the new inventory components:
 import { RetailInventory } from "./components/RetailInventory";
 import { ProduceInventory } from "./components/ProduceInventory";
+import { RawMaterialInventory } from "./components/RawMaterialInventory";
 
 import styles from "./styles/InventoryReport.module.scss";
 import { InventoryReport, transformApiReport } from "./types";
@@ -33,6 +34,7 @@ const segmentsMap: Record<string, string> = {
   "past-orders": "Past Orders",
   "vendor-cart": "Vendor Cart",
   "delivery-settings": "Delivery Settings",
+  "raw-materials": "Raw Materials",
   // ...other segments
 };
 
@@ -178,6 +180,17 @@ export default function VendorDashboardPage() {
           </>
         )}
 
+        {/* Raw Materials Inventory Segment */}
+        {activeSegment === "raw-materials" && (
+          <>
+            <div className={styles.header}>
+              <h1>Raw Materials Inventory</h1>
+              <p>Manage your raw material items with opening and closing amounts</p>
+            </div>
+            <RawMaterialInventory vendorId={VENDOR_ID} onLoaded={handleOnLoaded} />
+          </>
+        )}
+
         {/* Inventory Reports Segment */}
         {activeSegment === "inventory-reports" && (
           <>
@@ -294,7 +307,8 @@ export default function VendorDashboardPage() {
           activeSegment !== "past-orders" &&
           activeSegment !== "delivery-orders" &&
           activeSegment !== "vendor-cart" &&
-          activeSegment !== "delivery-settings" && (
+          activeSegment !== "delivery-settings" &&
+          activeSegment !== "raw-materials" && (
             <div className={styles.underConstruction}>
               🚧{" "}
               {segmentsMap[activeSegment]

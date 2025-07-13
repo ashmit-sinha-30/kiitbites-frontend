@@ -162,11 +162,12 @@
   }
   
   &.turnOn {
-    background: #28a745;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
     color: white;
     
     &:hover:not(:disabled) {
-      background: #218838;
+      background: linear-gradient(90deg, #4ea199, #6fc3bd);
+      opacity: 0.9;
     }
   }
   
@@ -198,7 +199,7 @@
 }
 
 .retryButton {
-  background: #007bff;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -207,7 +208,8 @@
   font-weight: 600;
   
   &:hover {
-    background: #0056b3;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
   }
 }
 
@@ -338,7 +340,7 @@
 }
 
 .download {
-  background: #17a2b8;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -347,7 +349,8 @@
   font-weight: 600;
   
   &:hover {
-    background: #138496;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
   }
   
   &:disabled {
@@ -370,7 +373,7 @@
 }
 
 .showMoreBtn {
-  background: #6c757d;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -379,6 +382,7 @@
   font-size: 0.9rem;
   
   &:hover {
-    background: #5a6268;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
   }
 } 

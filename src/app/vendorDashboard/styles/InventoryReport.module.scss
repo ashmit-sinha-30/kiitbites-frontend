@@ -1,6 +1,7 @@
 /* styles/InventoryReport.module.scss */
 .container {
   display: flex;
+  min-height: 100vh;
 }
 
 .main {
@@ -8,9 +9,12 @@
   flex: 1;
   padding: 2rem;
   padding-top: 80px;
+  padding-bottom: 2rem; /* Add bottom padding to prevent footer overlap */
   background: #f9f9fc;
   min-height: calc(100vh - 64px);
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .header h1 {
@@ -27,16 +31,20 @@
   justify-content: space-between;
   flex-wrap: wrap;
   margin: 1rem 0;
+  gap: 1rem;
 }
 
 .stats {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .controls {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .error {
@@ -46,4 +54,333 @@
   border: 1px solid #f8d7da;
   border-radius: 6px;
   margin: 15px 0;
+}
+
+// Inventory Container Styles
+.inventoryContainer {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.inventoryContainer .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.addButton {
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.2s;
+}
+
+.addButton:hover {
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  opacity: 0.9;
+}
+
+// Form Styles
+.formOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.form {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.form h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.formGroup input,
+.formGroup select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.formActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.formActions button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.formActions button[type="submit"] {
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  color: white;
+}
+
+.formActions button[type="submit"]:hover {
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  opacity: 0.9;
+}
+
+.formActions button[type="button"] {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.formActions button[type="button"]:hover {
+  background: #e0e0e0;
+}
+
+// Search Styles
+.searchContainer {
+  margin-bottom: 1rem;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+// Table Styles
+.tableContainer {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.table th {
+  background: #f5f5f5;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.table td {
+  font-size: 0.875rem;
+}
+
+// Section Headers
+.tableWrap h4 {
+  margin: 2rem 0 1rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+}
+
+// Retail Section
+.tableWrap h4:first-of-type {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  border-left: 4px solid #0d47a1;
+}
+
+.tableWrap .tableContainer:first-of-type .table {
+  border: 2px solid #1976d2;
+}
+
+.tableWrap .tableContainer:first-of-type .table th {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  color: white;
+}
+
+.tableWrap .tableContainer:first-of-type .table tr:hover {
+  background-color: #e3f2fd;
+}
+
+// Produce Section
+.tableWrap h4:nth-of-type(2) {
+  background: linear-gradient(135deg, #388e3c, #2e7d32);
+  border-left: 4px solid #1b5e20;
+}
+
+.tableWrap .tableContainer:nth-of-type(2) .table {
+  border: 2px solid #388e3c;
+}
+
+.tableWrap .tableContainer:nth-of-type(2) .table th {
+  background: linear-gradient(135deg, #388e3c, #2e7d32);
+  color: white;
+}
+
+.tableWrap .tableContainer:nth-of-type(2) .table tr:hover {
+  background-color: #e8f5e8;
+}
+
+// Raw Material Section
+.tableWrap h4:nth-of-type(3) {
+  background: linear-gradient(135deg, #f57c00, #ef6c00);
+  border-left: 4px solid #e65100;
+}
+
+.tableWrap .tableContainer:nth-of-type(3) .table {
+  border: 2px solid #f57c00;
+}
+
+.tableWrap .tableContainer:nth-of-type(3) .table th {
+  background: linear-gradient(135deg, #f57c00, #ef6c00);
+  color: white;
+}
+
+.tableWrap .tableContainer:nth-of-type(3) .table tr:hover {
+  background-color: #fff3e0;
+}
+
+// Special styling for received and sold columns
+.received {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.sold {
+  color: #d32f2f;
+  font-weight: 500;
+}
+
+// Empty state styling
+.tableWrap .tableContainer .table tbody tr td[colspan] {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-style: italic;
+  background-color: #fafafa;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .main {
+    margin-left: 0;
+    padding: 1rem;
+    padding-top: 60px;
+    padding-bottom: 1.5rem;
+  }
+  
+  .topBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .stats {
+    justify-content: center;
+  }
+  
+  .controls {
+    justify-content: center;
+  }
+  
+  .tableContainer {
+    margin-bottom: 1.5rem;
+  }
+  
+  .tableWrap h4 {
+    margin: 1.5rem 0 0.75rem 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+  }
+  
+  .table th,
+  .table td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+.editButton {
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  color: white;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.editButton:hover {
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  opacity: 0.9;
+}
+
+.deleteButton {
+  background: #d32f2f;
+  color: white;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.deleteButton:hover {
+  background: #b71c1c;
+}
+
+.noItems {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-style: italic;
+}
+
+// Under construction styles
+.underConstruction {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  font-size: 1.1rem;
 }

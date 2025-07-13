@@ -24,7 +24,7 @@
 }
 
 .backButton {
-  background: #3498db;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -32,10 +32,11 @@
   font-size: 1rem;
   cursor: pointer;
   margin-bottom: 1rem;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
   
   &:hover {
-    background: #2980b9;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
   }
 }
 
@@ -95,11 +96,62 @@
 .actions {
   margin-bottom: 2rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.searchContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 300px;
+  max-width: 500px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  background: white;
+  
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+  }
+  
+  &::placeholder {
+    color: #95a5a6;
+  }
+}
+
+.clearSearchButton {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #95a5a6;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #ecf0f1;
+    color: #7f8c8d;
+  }
 }
 
 .addButton {
-  background: #27ae60;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -107,10 +159,11 @@
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
   
   &:hover {
-    background: #229954;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
   }
 }
 
@@ -185,17 +238,18 @@
 }
 
 .editButton {
-  background: #3498db;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
   
   &:hover {
-    background: #2980b9;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
   }
 }
 
@@ -280,17 +334,18 @@
 }
 
 .retryButton {
-  background: #3498db;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
   
   &:hover {
-    background: #2980b9;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
   }
 }
 
@@ -389,17 +444,18 @@
 }
 
 .saveButton {
-  background: #27ae60;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
   
-  &:hover {
-    background: #229954;
+  &:hover:not(:disabled) {
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
   }
   
   &:disabled {
@@ -492,6 +548,16 @@
   
   .tabs {
     flex-direction: column;
+  }
+  
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .searchContainer {
+    min-width: auto;
+    max-width: none;
   }
   
   .itemActions {
