@@ -14,7 +14,7 @@ function formatDate(dateString: string): string {
       return 'Invalid Date';
     }
     return date.toDateString();
-  } catch (error) {
+  } catch {
     return 'Invalid Date';
   }
 }
