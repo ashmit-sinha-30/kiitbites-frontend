@@ -5,12 +5,13 @@ import { Order } from "../types";
 import styles from "../styles/OrderCard.module.scss";
 import { ConfirmDialog } from "./ConfirmationDialogue";
 
-export type LocalStatus = "inProgress" | "ready" | "onTheWay";
+export type LocalStatus = "inProgress" | "ready" | "onTheWay" | "completed";
 
 const statusLabels: Record<LocalStatus, string> = {
   inProgress: "Preparing",
-  ready: "Ready to Pickup",
-  onTheWay: "On The Way",
+  ready: "Ready for Pickup",
+  onTheWay: "Out for Delivery",
+  completed: "Ready for Collection",
 };
 
 const typeColors: Record<Order["orderType"], string> = {
@@ -24,6 +25,7 @@ interface OrderCardProps {
   order: Order;
   localStatus: LocalStatus;
   onAdvance: (orderId: string, next: LocalStatus | "delivered") => void;
+  isUpdating?: boolean;
 }
 
 function formatTime(createdAt: string | Date): string {
@@ -47,6 +49,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   order,
   localStatus: workflow,
   onAdvance,
+  isUpdating = false,
 }) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -61,25 +64,41 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       btnLabel = "Start Delivery";
       nextState = "onTheWay";
     } else {
+      // For takeaway and dine-in, show "Mark Delivered" when ready
       btnLabel = "Mark Delivered";
       nextState = "delivered";
     }
+  } else if (workflow === "completed") {
+    if (order.orderType === "delivery") {
+      // Should never happen for delivery, but fallback to onTheWay
+      btnLabel = "Start Delivery";
+      nextState = "onTheWay";
+    } else {
+      // For takeaway and dine-in, show "Mark Delivered" when completed
+      btnLabel = "Mark Delivered";
+      nextState = "delivered";
+    }
+  } else if (workflow === "onTheWay") {
+    btnLabel = "Mark Delivered";
+    nextState = "delivered";
   } else {
     btnLabel = "Mark Delivered";
     nextState = "delivered";
   }
 
   return (
-    <div className={styles.card}>
+    <div className={`${styles.card} ${isUpdating ? styles.updating : ''}`}>
       <div
         className={styles.stripe}
         style={{
           backgroundColor:
             workflow === "inProgress"
-              ? "#fefcbf"
+              ? "#fefcbf" // yellow for preparing
               : workflow === "ready"
-              ? "#c6f6d5"
-              : "#bee3f8",
+              ? "#c6f6d5" // green for ready
+              : workflow === "completed"
+              ? "#bee3f8" // blue for completed
+              : "#9ae6b4", // darker green for onTheWay
         }}
       />
 
@@ -130,10 +149,18 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         <div className={styles.footer}>
           <button
             type="button"
-            className={styles.actionBtn}
+            className={`${styles.actionBtn} ${isUpdating ? styles.updating : ''}`}
             onClick={() => setShowConfirm(true)}
+            disabled={isUpdating}
           >
-            {btnLabel}
+            {isUpdating ? (
+              <>
+                <div className={styles.btnSpinner} />
+                Updating...
+              </>
+            ) : (
+              btnLabel
+            )}
           </button>
         </div>
       </div>

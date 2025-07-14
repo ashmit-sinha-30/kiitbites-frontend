@@ -2,58 +2,134 @@
 .container {
   display: flex;
   min-height: 100vh;
+  background: linear-gradient(120deg, #f7fafc 60%, #e6fffa 100%);
+  margin-top: 2rem;
 }
+
+/* Sidebar base styles (for reference, should be in sidebar SCSS):
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 10;
+  background: #fff;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+}
+*/
 
 .main {
-  margin-left: 240px; /* sidebar width */
   flex: 1;
-  padding: 2rem;
-  padding-top: 80px;
-  padding-bottom: 2rem; /* Add bottom padding to prevent footer overlap */
-  background: #f9f9fc;
-  min-height: calc(100vh - 64px);
+  padding: 2.5rem 3vw 2.5rem 3vw;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  background: transparent;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  min-height: 100vh;
+  margin-left: 240px; /* Prevent content behind sidebar */
+  
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f7fafc;
 }
 
-.header h1 {
-  font-size: 1.75rem;
-  margin-bottom: 0.25rem;
+.main::-webkit-scrollbar {
+  width: 8px;
 }
-.header p {
-  color: #555;
-  margin-top: 0;
+.main::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.main::-webkit-scrollbar-track {
+  background: #f7fafc;
+}
+
+/* Smooth fade-in for content changes */
+.main > * {
+  animation: fadeIn 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1.5px solid #e2e8f0;
+  background: transparent;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #1a202c;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -1px;
+    transition: color 0.3s;
+  }
+  
+  p {
+    color: #4a5568;
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: color 0.3s;
+  }
 }
 
 .topBar {
   display: flex;
-  justify-content: space-between;
   flex-wrap: wrap;
-  margin: 1rem 0;
-  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem 1.5rem 1.25rem 1.5rem;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: box-shadow 0.3s;
+  gap: 1.5rem;
+  
+  &:hover {
+    box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+  }
 }
 
 .stats {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
   flex-wrap: wrap;
+  align-items: flex-end;
+  transition: all 0.3s;
 }
 
 .controls {
   display: flex;
   gap: 1rem;
-  flex-wrap: wrap;
   align-items: center;
+  transition: all 0.3s;
 }
 
 .error {
-  color: #d32f2f;
-  background-color: #fff3f3;
-  padding: 10px 15px;
-  border: 1px solid #f8d7da;
-  border-radius: 6px;
-  margin: 15px 0;
+  color: #e53e3e;
+  background: #fed7d7;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #feb2b2;
+  margin: 1rem 0;
+  font-size: 1.1rem;
+  transition: all 0.3s;
 }
 
 // Inventory Container Styles
@@ -379,8 +455,52 @@
 
 // Under construction styles
 .underConstruction {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  font-size: 1.5rem;
+  color: #4a5568;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .main {
+    padding: 1.5rem 1vw 1.5rem 1vw;
+  }
+  .topBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .main {
+    padding: 0.5rem 0.5vw 0.5rem 0.5vw;
+  }
+  .header h1 {
+    font-size: 1.3rem;
+  }
+  .header p {
+    font-size: 1rem;
+  }
+  .topBar {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+  }
+  .underConstruction {
+    font-size: 1rem;
+    border-radius: 0.5rem;
+  }
 }

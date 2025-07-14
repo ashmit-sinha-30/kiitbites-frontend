@@ -5,13 +5,24 @@
   flex-direction: column;
   gap: 1.5rem;
   margin-top: 1rem;
+  transition: all 0.3s ease;
 }
 
 .empty {
   text-align: center;
-  color: #718096; /* slate-600 */
-  font-size: 1rem;
-  padding: 2rem 0;
+  padding: 3rem;
+  color: #4a5568;
+  font-size: 1.1rem;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin: 2rem 0;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
 }
 
 /* Card styles for PastOrdersList */
@@ -126,25 +137,47 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 1rem;
   gap: 1rem;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .pageButton {
-  padding: 0.4rem 1rem;
-  border-radius: 0.5rem;
-  border: none;
-  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  background: #4299e1;
   color: white;
-  font-weight: bold;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
   cursor: pointer;
-
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background: #3182ce;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
   &:disabled {
-    background: #ccc;
+    background: #a0aec0;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 }
 
 .pageIndicator {
   font-weight: 600;
+  color: #4a5568;
+  min-width: 100px;
+  text-align: center;
+  transition: color 0.3s ease;
 }
