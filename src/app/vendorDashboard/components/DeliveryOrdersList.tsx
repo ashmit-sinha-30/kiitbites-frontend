@@ -13,6 +13,7 @@ const REFRESH_INTERVAL = 30000; // 30 seconds
 type OrderState = {
   order: Order;
   localStatus: LocalStatus;
+  isUpdating?: boolean; // For optimistic updates
 };
 
 interface ApiOrder {
@@ -44,17 +45,48 @@ interface DeliveryOrdersListProps {
   }[];
 }
 
+// Skeleton loading component
+const OrderSkeleton = () => (
+  <div className={styles.cardSkeleton}>
+    <div className={styles.skeletonStripe} />
+    <div className={styles.skeletonContent}>
+      <div className={styles.skeletonHeader}>
+        <div className={styles.skeletonTitle} />
+        <div className={styles.skeletonBadge} />
+      </div>
+      <div className={styles.skeletonMeta}>
+        <div className={styles.skeletonText} />
+        <div className={styles.skeletonText} />
+        <div className={styles.skeletonText} />
+      </div>
+      <div className={styles.skeletonItems}>
+        <div className={styles.skeletonItem} />
+        <div className={styles.skeletonItem} />
+      </div>
+      <div className={styles.skeletonButton} />
+    </div>
+  </div>
+);
+
 export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ onLoaded, onOrderStatusChange, orderStatusChanges }) => {
   const [list, setList] = useState<OrderState[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchDeliveryOrders = useCallback(async () => {
+  const fetchDeliveryOrders = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    
     setError(null);
     try {
       // Fetch only delivery orders that are on the way
-      const res = await fetch(`${BASE}/order/active/${VENDOR_ID}/delivery`);
+      const res = await fetch(`${BASE}/order/delivery/${VENDOR_ID}`);
       if (!res.ok) throw new Error('Failed to load delivery orders');
       const data = await res.json();
       
@@ -62,27 +94,48 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ onLoaded
         onLoaded(data.vendorName, data.vendorId);
       }
 
-      // Filter only orders that are on the way
-      const deliveryOrders = data.orders.filter((order: ApiOrder) => 
-        order.status === "onTheWay" || order.status === "completed"
-      );
+      // The backend now returns only onTheWay orders, so no filtering needed
+      const deliveryOrders = data.orders;
 
       const combined: OrderState[] = deliveryOrders.map((o: ApiOrder) => ({
         order: o,
         localStatus: mapToLocal(o.status),
       }));
 
-      setList(combined);
+      // Smooth update: preserve existing orders and merge with new ones
+      if (isRefresh) {
+        setList(prev => {
+          const newList = [...combined];
+          // Preserve any orders that are currently being updated
+          prev.forEach(existingOrder => {
+            if (existingOrder.isUpdating) {
+              const existingIndex = newList.findIndex(o => o.order.orderId === existingOrder.order.orderId);
+              if (existingIndex >= 0) {
+                newList[existingIndex] = { ...newList[existingIndex], isUpdating: true };
+              }
+            }
+          });
+          return newList;
+        });
+      } else {
+        setList(combined);
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'An unknown error occurred');
+    } finally {
+      if (isRefresh) {
+        setIsRefreshing(false);
+      } else {
+        setLoading(false);
+        setIsInitialLoad(false);
+      }
     }
   }, [onLoaded]);
 
   // Load once + auto-refresh
   useEffect(() => {
-    setLoading(true);
-    fetchDeliveryOrders().finally(() => setLoading(false));
-    const interval = setInterval(fetchDeliveryOrders, REFRESH_INTERVAL);
+    fetchDeliveryOrders(false);
+    const interval = setInterval(() => fetchDeliveryOrders(true), REFRESH_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchDeliveryOrders]);
 
@@ -90,9 +143,9 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ onLoaded
   useEffect(() => {
     if (orderStatusChanges && orderStatusChanges.length > 0) {
       orderStatusChanges.forEach(change => {
-        if (change.newStatus === "onTheWay" && change.orderData) {
+        if (change.newStatus === "onTheWay" && change.orderData?.orderType === "delivery") {
           console.log(`DeliveryOrdersList: Adding order ${change.orderId} to delivery orders (status: ${change.newStatus})`);
-          // Add new delivery order to the list
+          // Add new delivery order to the list when it starts delivery
           const newOrder: OrderState = {
             order: change.orderData,
             localStatus: "onTheWay"
@@ -111,50 +164,77 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ onLoaded
     // Find the order being updated
     const orderToUpdate = list.find(os => os.order.orderId === orderId);
     
+    if (!orderToUpdate) {
+      console.error(`Order not found: ${orderId}`);
+      return;
+    }
+    
+    // Optimistic update with loading state
     setList(
       (prev) =>
         prev
           .map((os) => {
             if (os.order.orderId !== orderId) return os;
-            if (next === "delivered") return null;
-            return { ...os, localStatus: next as LocalStatus };
+            if (next === "delivered") return null; // Remove from delivery orders when delivered
+            return { ...os, localStatus: next as LocalStatus, isUpdating: true };
           })
           .filter(Boolean) as OrderState[]
     );
 
     // Notify parent component about the status change
-    if (onOrderStatusChange && orderToUpdate) {
+    if (onOrderStatusChange) {
       onOrderStatusChange(orderId, next, orderToUpdate.order);
     }
 
-    const endpoint =
-      next === "delivered"
-        ? `/order/${orderId}/deliver`
-        : next === "onTheWay"
-        ? `/order/${orderId}/onTheWay`
-        : `/order/${orderId}/complete`;
-
-    fetch(`${BASE}${endpoint}`, { method: "PATCH" }).catch((err) => {
-      console.error("Failed to PATCH", endpoint, err);
-    });
+    // For delivery orders in onTheWay status, only allow marking as delivered
+    if (next === "delivered") {
+      fetch(`${BASE}/order/${orderId}/deliver`, { method: "PATCH" })
+        .then(() => {
+          // Order will be removed by the status change handler
+        })
+        .catch((err) => {
+          console.error("Failed to PATCH /deliver", err);
+          // Revert on error
+          setList(prev => [...prev, { ...orderToUpdate, isUpdating: false }]);
+        });
+    }
   };
 
   const totalPages = Math.ceil(list.length / PAGE_SIZE);
   const currentPageList = list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  if (loading) return <p className={styles.empty}>Loading delivery orders…</p>;
+  // Show skeleton loading only on initial load
+  if (isInitialLoad && loading) {
+    return (
+      <div className={styles.wrap}>
+        {Array.from({ length: 2 }).map((_, i) => (
+          <OrderSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
   if (error) return <p className={styles.empty}>Error: {error}</p>;
-  if (list.length === 0)
+  if (list.length === 0 && !isRefreshing)
     return <p className={styles.empty}>No orders out for delivery.</p>;
 
   return (
     <div className={styles.wrap}>
+      {/* Subtle refresh indicator */}
+      {isRefreshing && (
+        <div className={styles.refreshIndicator}>
+          <div className={styles.refreshSpinner} />
+          <span>Refreshing delivery orders...</span>
+        </div>
+      )}
+      
       {currentPageList.map((os) => (
         <OrderCard
           key={os.order.orderId}
           order={os.order}
           localStatus={os.localStatus}
           onAdvance={advance}
+          isUpdating={os.isUpdating}
         />
       ))}
 
@@ -187,8 +267,9 @@ function mapToLocal(status: string): LocalStatus {
     case "inProgress":
       return "inProgress";
     case "ready":
-    case "completed":
       return "ready";
+    case "completed":
+      return "completed";
     case "onTheWay":
       return "onTheWay";
     default:

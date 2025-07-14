@@ -267,7 +267,7 @@ export default function VendorDashboardPage() {
           <>
             <div className={styles.header}>
               <h1>Delivery Orders</h1>
-              <p>Manage your delivery orders</p>
+              <p>Manage orders that are out for delivery</p>
             </div>
             <DeliveryOrdersList 
               onLoaded={handleOnLoaded} 

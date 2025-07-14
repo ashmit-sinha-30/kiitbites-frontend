@@ -196,10 +196,7 @@ export function VendorManagement({ universityId }: Props) {
                 <div
                   key={vendor._id}
                   className={`${styles.vendorCard} ${!isActive ? styles.unavailable : styles.active}`}
-                  style={isActive ? { cursor: "pointer" } : {}}
-                  onClick={() => {
-                    if (isActive) router.push(`/uniDashboard/vendor/${vendor._id}`);
-                  }}
+                  style={isActive ? { cursor: "default" } : {}}
                 >
                   <div className={styles.vendorInfo}>
                     <h4 className={styles.vendorName}>{vendor.fullName}</h4>
@@ -245,6 +242,14 @@ export function VendorManagement({ universityId }: Props) {
                       }}
                       disabled={deleteLoading && deleteVendorId === vendor._id}
                     >{deleteLoading && deleteVendorId === vendor._id ? 'Deleting...' : 'Delete'}</button>
+                    {/* Show Open button for all vendors */}
+                    <button
+                      className={styles.toggleButton}
+                      onClick={e => {
+                        e.stopPropagation();
+                        router.push(`/uniDashboard/vendor/${vendor._id}`);
+                      }}
+                    >Open</button>
                   </div>
                 </div>
               );
