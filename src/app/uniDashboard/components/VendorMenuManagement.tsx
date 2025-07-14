@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from "react";
 import styles from "../styles/VendorMenuManagement.module.scss";
 import Modal from "react-modal";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -46,7 +49,6 @@ export function VendorMenuManagement({ vendorId }: Props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [successMsg, setSuccessMsg] = useState("");
 
   // Form states for adding/editing items
   const [formData, setFormData] = useState({
@@ -187,7 +189,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
       if (!res.ok) throw new Error("Failed to create item");
       
-      setSuccessMsg("Item added successfully!");
+      toast.success("Item added successfully!");
       setShowAddModal(false);
       resetForm();
       fetchVendorData(); // Refresh the menu
@@ -243,7 +245,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
       if (!res.ok) throw new Error("Failed to update item");
       
-      setSuccessMsg("Item updated successfully!");
+      toast.success("Item updated successfully!");
       setShowEditModal(false);
       setEditingItem(null);
       resetForm();
@@ -265,7 +267,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
       if (!res.ok) throw new Error("Failed to delete item");
       
-      setSuccessMsg("Item deleted successfully!");
+      toast.success("Item deleted successfully!");
       fetchVendorData(); // Refresh the menu
     } catch (err) {
       console.error("Error deleting item:", err);
@@ -274,6 +276,10 @@ export function VendorMenuManagement({ vendorId }: Props) {
   };
 
   const toggleItemAvailability = async (itemId: string, currentStatus: "Y" | "N") => {
+    if (!itemId) {
+      alert("Invalid item ID. Cannot update availability.");
+      return;
+    }
     try {
       const newStatus = currentStatus === "Y" ? "N" : "Y";
       const kind = activeTab === "retail" ? "retail" : "produce";
@@ -286,7 +292,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
       if (!res.ok) throw new Error("Failed to update item availability");
       
-      setSuccessMsg("Item availability updated!");
+      toast.success("Item availability updated!");
       fetchVendorData(); // Refresh the menu
     } catch (err) {
       console.error("Error updating item availability:", err);
@@ -479,7 +485,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
                   <>
                     <p><strong>Special:</strong> {item.isSpecial === "Y" ? "Yes" : "No"}</p>
                     <p><strong>Quantity:</strong> {item.quantity ?? 0}</p>
-                    <p><strong>Available:</strong> {(item.quantity ?? 0) > 0 ? "Yes" : "No"}</p>
+                    <p><strong>Available:</strong> {(item.isAvailable || item.inventory?.isAvailable) === "Y" ? "Yes" : "No"}</p>
                   </>
                 ) : (
                   <>
@@ -498,12 +504,10 @@ export function VendorMenuManagement({ vendorId }: Props) {
                   Edit
                 </button>
                 <button
-                  onClick={() => toggleItemAvailability(item._id ?? '', activeTab === "retail" ? ((item.quantity ?? 0) > 0 ? "Y" : "N") : (item.isAvailable || item.inventory?.isAvailable || "N"))}
-                  className={`${styles.toggleButton} ${(activeTab === "retail" ? ((item.quantity ?? 0) > 0 ? styles.available : styles.unavailable) : ((item.isAvailable || item.inventory?.isAvailable) === "Y" ? styles.available : styles.unavailable))}`}
+                  onClick={() => toggleItemAvailability(item._id || item.itemId || '', (item.isAvailable || item.inventory?.isAvailable || "N"))}
+                  className={`${styles.toggleButton} ${((item.isAvailable || item.inventory?.isAvailable) === "Y" ? styles.available : styles.unavailable)}`}
                 >
-                  {activeTab === "retail"
-                    ? (item.quantity ?? 0) > 0 ? "Make Unavailable" : "Make Available"
-                    : (item.isAvailable || item.inventory?.isAvailable) === "Y" ? "Make Unavailable" : "Make Available"}
+                  {(item.isAvailable || item.inventory?.isAvailable) === "Y" ? "Make Unavailable" : "Make Available"}
                 </button>
                 <button
                   onClick={() => handleDeleteItem(item._id ?? '')}
@@ -736,13 +740,8 @@ export function VendorMenuManagement({ vendorId }: Props) {
           </div>
         </form>
       </Modal>
-
-      {successMsg && (
-        <div className={styles.successMessage + ' ' + styles.toastBottom}>
-          {successMsg}
-          <button onClick={() => setSuccessMsg("")}>×</button>
-        </div>
-      )}
+      
+      <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
   );
 } 
