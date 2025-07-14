@@ -216,9 +216,12 @@ export default function DownloadButton({
       { width: 15 }  // Closing Stock
     ];
 
-    // 7) Append sheet and download
+    // 7) Generate automatic filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '_');
+    const filename = `${vendorName}_Inventory_${timestamp}.xlsx`;
+
+    // 8) Append sheet and download
     XLSX.utils.book_append_sheet(wb, ws, "Inventory Report");
-    const filename = `${vendorName}_Inventory_${reportDate}.xlsx`;
     XLSX.writeFile(wb, filename);
   };
 

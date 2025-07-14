@@ -44,6 +44,28 @@ interface InventoryItem {
   itemType: string;
 }
 
+// Add interface for inventory report entries
+interface InventoryReportEntry {
+  item?: {
+    _id: string;
+    name: string;
+  };
+  openingQty?: number;
+  receivedQty?: number;
+  soldQty?: number;
+  closingQty?: number;
+}
+
+interface RawInventoryReportEntry {
+  item?: {
+    _id: string;
+    name: string;
+    unit?: string;
+  };
+  openingQty?: number;
+  closingQty?: number;
+}
+
 export default function VendorMenuPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id: vendorId } = React.use(params);
@@ -200,19 +222,222 @@ export default function VendorMenuPage({ params }: { params: Promise<{ id: strin
       const res = await fetch(`${BACKEND_URL}/inventoryreport/vendor/${vendorId}?date=${reportDate}`);
       if (!res.ok) throw new Error("Failed to fetch inventory report");
       const data = await res.json();
-      const items = data.data?.items || [];
-      if (!items.length) {
+      
+      // Combine retail, produce, and raw entries
+      const retailEntries = data.data?.retailEntries || [];
+      const produceEntries = data.data?.produceEntries || [];
+      const rawEntries = data.data?.rawEntries || [];
+      
+      if (!retailEntries.length && !produceEntries.length && !rawEntries.length) {
         alert("No report data for this date.");
         return;
       }
-      // Prepare Excel data
-      const header = ["Item Name", "Opening", "Received", "Sold", "Closing", "Type"];
-      const rows = items.map((i: InventoryItem) => [i.name, i.opening, i.received, i.sold, i.closing, i.itemType]);
-      const sheetData = [header, ...rows];
+      
+      // Build comprehensive sheet data
+      const sheetData: (string | number)[][] = [];
+
+      // Header with vendor info
+      const vendorName = data.data?.vendor?.fullName || "Unknown Vendor";
+      sheetData.push([`${vendorName} - Inventory Report`]);
+      sheetData.push([`Date: ${new Date(reportDate).toLocaleDateString()}`]);
+      sheetData.push([]); // Empty row
+
+      // Stats section
+      const totalItems = retailEntries.length + produceEntries.length + rawEntries.length;
+      const totalSold = retailEntries.reduce((sum: number, entry: InventoryReportEntry) => sum + (entry.soldQty || 0), 0) +
+                       produceEntries.reduce((sum: number, entry: InventoryReportEntry) => sum + (entry.soldQty || 0), 0);
+      const totalReceived = retailEntries.reduce((sum: number, entry: InventoryReportEntry) => sum + (entry.receivedQty || 0), 0);
+
+      sheetData.push(["SUMMARY STATISTICS"]);
+      sheetData.push(["Metric", "Value"]);
+      sheetData.push(["Total Items Tracked", totalItems]);
+      sheetData.push(["Items Sold Today", totalSold]);
+      sheetData.push(["Items Received", totalReceived]);
+      sheetData.push([]); // Empty row
+
+      // Retail Inventory Section
+      sheetData.push(["RETAIL INVENTORY"]);
+      sheetData.push([
+        "Item Name",
+        "Opening Stock",
+        "Received",
+        "Sold",
+        "Closing Stock"
+      ]);
+      
+      if (retailEntries.length === 0) {
+        sheetData.push(["No retail items found", "", "", "", ""]);
+      } else {
+        retailEntries.forEach((entry: InventoryReportEntry) => {
+          sheetData.push([
+            entry.item?.name || "Unknown Item",
+            entry.openingQty || 0,
+            entry.receivedQty || 0,
+            entry.soldQty || 0,
+            entry.closingQty || 0
+          ]);
+        });
+      }
+      sheetData.push([]); // Empty row
+
+      // Produce Inventory Section
+      sheetData.push(["PRODUCE INVENTORY"]);
+      sheetData.push(["Item Name", "Times Sold"]);
+      
+      if (produceEntries.length === 0) {
+        sheetData.push(["No produce items found", ""]);
+      } else {
+        produceEntries.forEach((entry: InventoryReportEntry) => {
+          sheetData.push([
+            entry.item?.name || "Unknown Item",
+            entry.soldQty || 0
+          ]);
+        });
+      }
+      sheetData.push([]); // Empty row
+
+      // Raw Material Inventory Section
+      sheetData.push(["RAW MATERIAL INVENTORY"]);
+      sheetData.push([
+        "Item Name",
+        "Opening Amount",
+        "Closing Amount",
+        "Unit"
+      ]);
+      
+      if (rawEntries.length === 0) {
+        sheetData.push(["No raw material items found", "", "", ""]);
+      } else {
+        rawEntries.forEach((entry: RawInventoryReportEntry) => {
+          sheetData.push([
+            entry.item?.name || "Unknown Item",
+            entry.openingQty || 0,
+            entry.closingQty || 0,
+            entry.item?.unit || "-"
+          ]);
+        });
+      }
+      
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(sheetData);
-      XLSX.utils.book_append_sheet(wb, ws, "Report");
-      XLSX.writeFile(wb, `InventoryReport_${vendorId}_${reportDate}.xlsx`);
+
+      // Apply styling and formatting
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      
+      // Define styles for different sections
+      const styles = {
+        header: {
+          font: { bold: true, size: 14, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "1976D2" } },
+          alignment: { horizontal: "center" }
+        },
+        sectionHeader: {
+          font: { bold: true, size: 12, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "1976D2" } },
+          alignment: { horizontal: "left" }
+        },
+        retailHeader: {
+          font: { bold: true, size: 11, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "1976D2" } },
+          alignment: { horizontal: "center" }
+        },
+        produceHeader: {
+          font: { bold: true, size: 11, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "388E3C" } },
+          alignment: { horizontal: "center" }
+        },
+        rawHeader: {
+          font: { bold: true, size: 11, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "F57C00" } },
+          alignment: { horizontal: "center" }
+        },
+        retailRow: {
+          fill: { fgColor: { rgb: "E3F2FD" } }
+        },
+        produceRow: {
+          fill: { fgColor: { rgb: "E8F5E8" } }
+        },
+        rawRow: {
+          fill: { fgColor: { rgb: "FFF3E0" } }
+        }
+      };
+
+      // Apply styles to cells
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+          const cell = ws[cellAddress];
+          
+          if (cell) {
+            const cellValue = cell.v?.toString() || '';
+            
+            // Main header (vendor name)
+            if (R === 0) {
+              cell.s = styles.header;
+            }
+            // Date row
+            else if (R === 1) {
+              cell.s = { font: { bold: true, size: 12 } };
+            }
+            // Summary Statistics header
+            else if (cellValue === "SUMMARY STATISTICS") {
+              cell.s = styles.sectionHeader;
+            }
+            // Retail Inventory header
+            else if (cellValue === "RETAIL INVENTORY") {
+              cell.s = { ...styles.sectionHeader, fill: { fgColor: { rgb: "1976D2" } } };
+            }
+            // Produce Inventory header
+            else if (cellValue === "PRODUCE INVENTORY") {
+              cell.s = { ...styles.sectionHeader, fill: { fgColor: { rgb: "388E3C" } } };
+            }
+            // Raw Material Inventory header
+            else if (cellValue === "RAW MATERIAL INVENTORY") {
+              cell.s = { ...styles.sectionHeader, fill: { fgColor: { rgb: "F57C00" } } };
+            }
+            // Retail table headers
+            else if (R === 12 && C <= 4) {
+              cell.s = styles.retailHeader;
+            }
+            // Produce table headers
+            else if (cellValue === "Item Name" && R > 15 && R < 20) {
+              cell.s = styles.produceHeader;
+            }
+            // Raw table headers
+            else if (cellValue === "Item Name" && R > 20) {
+              cell.s = styles.rawHeader;
+            }
+            // Retail data rows
+            else if (R > 12 && R < 12 + retailEntries.length + 1 && retailEntries.length > 0) {
+              cell.s = styles.retailRow;
+            }
+            // Produce data rows
+            else if (R > 16 && R < 16 + produceEntries.length + 1 && produceEntries.length > 0) {
+              cell.s = styles.produceRow;
+            }
+            // Raw data rows
+            else if (R > 20 && R < 20 + rawEntries.length + 1 && rawEntries.length > 0) {
+              cell.s = styles.rawRow;
+            }
+          }
+        }
+      }
+
+      // Set column widths
+      ws['!cols'] = [
+        { width: 25 }, // Item Name
+        { width: 15 }, // Opening Stock/Amount
+        { width: 15 }, // Received/Closing Amount
+        { width: 15 }, // Sold/Unit
+        { width: 15 }  // Closing Stock
+      ];
+
+      // Generate automatic filename
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '_');
+      const filename = `${vendorName}_Inventory_${timestamp}.xlsx`;
+
+      XLSX.utils.book_append_sheet(wb, ws, "Inventory Report");
+      XLSX.writeFile(wb, filename);
     } catch {
       alert("Failed to download report");
     } finally {
@@ -227,19 +452,222 @@ export default function VendorMenuPage({ params }: { params: Promise<{ id: strin
       const res = await fetch(`${BACKEND_URL}/inventoryreport/vendor/${vendorId}?date=${date}`);
       if (!res.ok) throw new Error("Failed to fetch inventory report");
       const data = await res.json();
-      const items = data.data?.items || [];
-      if (!items.length) {
+      
+      // Combine retail, produce, and raw entries
+      const retailEntries = data.data?.retailEntries || [];
+      const produceEntries = data.data?.produceEntries || [];
+      const rawEntries = data.data?.rawEntries || [];
+      
+      if (!retailEntries.length && !produceEntries.length && !rawEntries.length) {
         alert("No report data for this date.");
         return;
       }
-      // Prepare Excel data
-      const header = ["Item Name", "Opening", "Received", "Sold", "Closing", "Type"];
-      const rows = items.map((i: InventoryItem) => [i.name, i.opening, i.received, i.sold, i.closing, i.itemType]);
-      const sheetData = [header, ...rows];
+      
+      // Build comprehensive sheet data
+      const sheetData: (string | number)[][] = [];
+
+      // Header with vendor info
+      const vendorName = data.data?.vendor?.fullName || "Unknown Vendor";
+      sheetData.push([`${vendorName} - Inventory Report`]);
+      sheetData.push([`Date: ${new Date(date).toLocaleDateString()}`]);
+      sheetData.push([]); // Empty row
+
+      // Stats section
+      const totalItems = retailEntries.length + produceEntries.length + rawEntries.length;
+      const totalSold = retailEntries.reduce((sum: number, entry: InventoryReportEntry) => sum + (entry.soldQty || 0), 0) +
+                       produceEntries.reduce((sum: number, entry: InventoryReportEntry) => sum + (entry.soldQty || 0), 0);
+      const totalReceived = retailEntries.reduce((sum: number, entry: InventoryReportEntry) => sum + (entry.receivedQty || 0), 0);
+
+      sheetData.push(["SUMMARY STATISTICS"]);
+      sheetData.push(["Metric", "Value"]);
+      sheetData.push(["Total Items Tracked", totalItems]);
+      sheetData.push(["Items Sold Today", totalSold]);
+      sheetData.push(["Items Received", totalReceived]);
+      sheetData.push([]); // Empty row
+
+      // Retail Inventory Section
+      sheetData.push(["RETAIL INVENTORY"]);
+      sheetData.push([
+        "Item Name",
+        "Opening Stock",
+        "Received",
+        "Sold",
+        "Closing Stock"
+      ]);
+      
+      if (retailEntries.length === 0) {
+        sheetData.push(["No retail items found", "", "", "", ""]);
+      } else {
+        retailEntries.forEach((entry: InventoryReportEntry) => {
+          sheetData.push([
+            entry.item?.name || "Unknown Item",
+            entry.openingQty || 0,
+            entry.receivedQty || 0,
+            entry.soldQty || 0,
+            entry.closingQty || 0
+          ]);
+        });
+      }
+      sheetData.push([]); // Empty row
+
+      // Produce Inventory Section
+      sheetData.push(["PRODUCE INVENTORY"]);
+      sheetData.push(["Item Name", "Times Sold"]);
+      
+      if (produceEntries.length === 0) {
+        sheetData.push(["No produce items found", ""]);
+      } else {
+        produceEntries.forEach((entry: InventoryReportEntry) => {
+          sheetData.push([
+            entry.item?.name || "Unknown Item",
+            entry.soldQty || 0
+          ]);
+        });
+      }
+      sheetData.push([]); // Empty row
+
+      // Raw Material Inventory Section
+      sheetData.push(["RAW MATERIAL INVENTORY"]);
+      sheetData.push([
+        "Item Name",
+        "Opening Amount",
+        "Closing Amount",
+        "Unit"
+      ]);
+      
+      if (rawEntries.length === 0) {
+        sheetData.push(["No raw material items found", "", "", ""]);
+      } else {
+        rawEntries.forEach((entry: RawInventoryReportEntry) => {
+          sheetData.push([
+            entry.item?.name || "Unknown Item",
+            entry.openingQty || 0,
+            entry.closingQty || 0,
+            entry.item?.unit || "-"
+          ]);
+        });
+      }
+      
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(sheetData);
-      XLSX.utils.book_append_sheet(wb, ws, "Report");
-      XLSX.writeFile(wb, `InventoryReport_${vendorId}_${date}.xlsx`);
+
+      // Apply styling and formatting
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      
+      // Define styles for different sections
+      const styles = {
+        header: {
+          font: { bold: true, size: 14, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "1976D2" } },
+          alignment: { horizontal: "center" }
+        },
+        sectionHeader: {
+          font: { bold: true, size: 12, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "1976D2" } },
+          alignment: { horizontal: "left" }
+        },
+        retailHeader: {
+          font: { bold: true, size: 11, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "1976D2" } },
+          alignment: { horizontal: "center" }
+        },
+        produceHeader: {
+          font: { bold: true, size: 11, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "388E3C" } },
+          alignment: { horizontal: "center" }
+        },
+        rawHeader: {
+          font: { bold: true, size: 11, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "F57C00" } },
+          alignment: { horizontal: "center" }
+        },
+        retailRow: {
+          fill: { fgColor: { rgb: "E3F2FD" } }
+        },
+        produceRow: {
+          fill: { fgColor: { rgb: "E8F5E8" } }
+        },
+        rawRow: {
+          fill: { fgColor: { rgb: "FFF3E0" } }
+        }
+      };
+
+      // Apply styles to cells
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+          const cell = ws[cellAddress];
+          
+          if (cell) {
+            const cellValue = cell.v?.toString() || '';
+            
+            // Main header (vendor name)
+            if (R === 0) {
+              cell.s = styles.header;
+            }
+            // Date row
+            else if (R === 1) {
+              cell.s = { font: { bold: true, size: 12 } };
+            }
+            // Summary Statistics header
+            else if (cellValue === "SUMMARY STATISTICS") {
+              cell.s = styles.sectionHeader;
+            }
+            // Retail Inventory header
+            else if (cellValue === "RETAIL INVENTORY") {
+              cell.s = { ...styles.sectionHeader, fill: { fgColor: { rgb: "1976D2" } } };
+            }
+            // Produce Inventory header
+            else if (cellValue === "PRODUCE INVENTORY") {
+              cell.s = { ...styles.sectionHeader, fill: { fgColor: { rgb: "388E3C" } } };
+            }
+            // Raw Material Inventory header
+            else if (cellValue === "RAW MATERIAL INVENTORY") {
+              cell.s = { ...styles.sectionHeader, fill: { fgColor: { rgb: "F57C00" } } };
+            }
+            // Retail table headers
+            else if (R === 12 && C <= 4) {
+              cell.s = styles.retailHeader;
+            }
+            // Produce table headers
+            else if (cellValue === "Item Name" && R > 15 && R < 20) {
+              cell.s = styles.produceHeader;
+            }
+            // Raw table headers
+            else if (cellValue === "Item Name" && R > 20) {
+              cell.s = styles.rawHeader;
+            }
+            // Retail data rows
+            else if (R > 12 && R < 12 + retailEntries.length + 1 && retailEntries.length > 0) {
+              cell.s = styles.retailRow;
+            }
+            // Produce data rows
+            else if (R > 16 && R < 16 + produceEntries.length + 1 && produceEntries.length > 0) {
+              cell.s = styles.produceRow;
+            }
+            // Raw data rows
+            else if (R > 20 && R < 20 + rawEntries.length + 1 && rawEntries.length > 0) {
+              cell.s = styles.rawRow;
+            }
+          }
+        }
+      }
+
+      // Set column widths
+      ws['!cols'] = [
+        { width: 25 }, // Item Name
+        { width: 15 }, // Opening Stock/Amount
+        { width: 15 }, // Received/Closing Amount
+        { width: 15 }, // Sold/Unit
+        { width: 15 }  // Closing Stock
+      ];
+
+      // Generate automatic filename
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '_');
+      const filename = `${vendorName}_Inventory_${timestamp}.xlsx`;
+
+      XLSX.utils.book_append_sheet(wb, ws, "Inventory Report");
+      XLSX.writeFile(wb, filename);
     } catch {
       alert("Failed to download report");
     } finally {
