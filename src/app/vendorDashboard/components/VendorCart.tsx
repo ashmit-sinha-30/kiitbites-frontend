@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { VendorCart as VendorCartType, BillingFormData } from "../types";
 import styles from "../styles/VendorCart.module.scss";
+import { VendorRazorpayPayment } from "./VendorRazorpayPayment";
+import { OrderSuccessPopup } from "./OrderSuccessPopup";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -42,13 +44,30 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showBilling, setShowBilling] = useState(false);
+  const [showCashConfirmation, setShowCashConfirmation] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [billingForm, setBillingForm] = useState<BillingFormData>({
     userName: "",
     phoneNumber: "",
+    orderType: "takeaway",
     paymentMethod: "cash",
   });
   const [cartLoading, setCartLoading] = useState(false);
+  const [showRazorpayPayment, setShowRazorpayPayment] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successOrderDetails, setSuccessOrderDetails] = useState<{
+    orderNumber: string;
+    customerName: string;
+    phoneNumber: string;
+    items: Array<{ name: string; price: number; quantity: number; kind?: "Retail" | "Produce" }>;
+    total: number;
+    orderType: "dinein" | "takeaway";
+  } | null>(null);
+  const [universityCharges, setUniversityCharges] = useState<{
+    packingCharge: number;
+    deliveryCharge: number;
+    universityName: string;
+  } | null>(null);
 
   // Fetch vendor cart from backend
   const fetchVendorCart = async () => {
@@ -58,15 +77,60 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       const data = await response.json();
       
       if (data.success) {
+        console.log("🛒 Cart data from backend:", data.data);
+        // Ensure all items have a 'kind' property
+        const itemsWithKind = (data.data.items || []).map((item: { itemId: string; name: string; price: number; quantity: number; type: string; kind?: "Retail" | "Produce" }) => {
+          if (item.kind) return item;
+          // Infer kind from type or default to 'Retail'
+          if (item.type && item.type.toLowerCase().includes('produce')) return { ...item, kind: 'Produce' };
+          return { ...item, kind: 'Retail' };
+        });
+        // Calculate total with packing charges on frontend
+        const itemTotal = itemsWithKind.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
+        const packableItems = itemsWithKind.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
+        const packingCharge = universityCharges?.packingCharge || 5;
+        const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
+        const totalWithPacking = itemTotal + packingTotal;
+        
         setCart({
-          items: data.data.items || [],
-          total: data.data.total || 0
+          items: itemsWithKind,
+          total: totalWithPacking
         });
       }
     } catch (err) {
       console.error("Error fetching vendor cart:", err);
     } finally {
       setCartLoading(false);
+    }
+  };
+
+  // Fetch university charges for the vendor
+  const fetchUniversityCharges = async () => {
+    try {
+      console.log("🔍 Fetching university charges for vendor:", vendorId);
+      const response = await fetch(`${BACKEND_URL}/api/vendor/${vendorId}/university-charges`);
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log("✅ University charges fetched:", data.data);
+        setUniversityCharges(data.data);
+      } else {
+        console.error("❌ Failed to fetch university charges:", data.message);
+        // Use default charges if fetch fails
+        setUniversityCharges({
+          packingCharge: 5,
+          deliveryCharge: 50,
+          universityName: "University"
+        });
+      }
+    } catch (err) {
+      console.error("❌ Error fetching university charges:", err);
+      // Use default charges if fetch fails
+      setUniversityCharges({
+        packingCharge: 5,
+        deliveryCharge: 50,
+        universityName: "University"
+      });
     }
   };
 
@@ -115,10 +179,12 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
 
     fetchItems();
     fetchVendorCart();
+    fetchUniversityCharges();
   }, [vendorId, onLoaded]);
 
   const addToCart = async (item: VendorItem) => {
     try {
+      console.log("➕ Adding item to cart:", item);
       const response = await fetch(`${BACKEND_URL}/vendorcart/${vendorId}/items`, {
         method: 'POST',
         headers: {
@@ -141,9 +207,18 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       const data = await response.json();
       
       if (data.success) {
+        console.log("✅ Item added to cart:", data.data);
+        // Calculate total with packing charges on frontend
+        const items = data.data.items || [];
+        const itemTotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
+        const packableItems = items.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
+        const packingCharge = universityCharges?.packingCharge || 5;
+        const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
+        const totalWithPacking = itemTotal + packingTotal;
+        
         setCart({
-          items: data.data.items || [],
-          total: data.data.total || 0
+          items: items,
+          total: totalWithPacking
         });
       }
     } catch (err) {
@@ -170,9 +245,17 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       const data = await response.json();
       
       if (data.success) {
+        // Calculate total with packing charges on frontend
+        const items = data.data.items || [];
+        const itemTotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
+        const packableItems = items.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
+        const packingCharge = universityCharges?.packingCharge || 5;
+        const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
+        const totalWithPacking = itemTotal + packingTotal;
+        
         setCart({
-          items: data.data.items || [],
-          total: data.data.total || 0
+          items: items,
+          total: totalWithPacking
         });
       }
     } catch (err) {
@@ -190,9 +273,17 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       const data = await response.json();
       
       if (data.success) {
+        // Calculate total with packing charges on frontend
+        const items = data.data.items || [];
+        const itemTotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
+        const packableItems = items.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
+        const packingCharge = universityCharges?.packingCharge || 5;
+        const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
+        const totalWithPacking = itemTotal + packingTotal;
+        
         setCart({
-          items: data.data.items || [],
-          total: data.data.total || 0
+          items: items,
+          total: totalWithPacking
         });
       }
     } catch (err) {
@@ -219,7 +310,28 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       return;
     }
 
+    // If payment method is UPI, show Razorpay payment component
+    if (billingForm.paymentMethod === "upi") {
+      setShowRazorpayPayment(true);
+      return;
+    }
+
+    // For cash payment, show confirmation with order summary
+    if (billingForm.paymentMethod === "cash") {
+      setShowCashConfirmation(true);
+      return;
+    }
+  };
+
+  const handleCashConfirmation = async () => {
     try {
+      // Calculate total with packing charges
+      const itemTotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const packableItems = cart.items.filter(item => item.kind === "Produce");
+      const packingCharge = universityCharges?.packingCharge || 5;
+      const packingTotal = packableItems.reduce((sum, item) => sum + (packingCharge * item.quantity), 0);
+      const totalWithPacking = itemTotal + packingTotal;
+
       const response = await fetch(`${BACKEND_URL}/order/guest`, {
         method: "POST",
         headers: {
@@ -228,10 +340,11 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
         body: JSON.stringify({
           vendorId,
           items: cart.items,
-          total: cart.total,
+          total: totalWithPacking, // Use total with packing charges
           collectorName: billingForm.userName,
           collectorPhone: billingForm.phoneNumber,
-          orderType: billingForm.paymentMethod,
+          orderType: billingForm.orderType,
+          paymentMethod: billingForm.paymentMethod,
           isGuest: true,
         }),
       });
@@ -251,7 +364,7 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
               customerName: billingForm.userName,
               phoneNumber: billingForm.phoneNumber,
               paymentMethod: billingForm.paymentMethod,
-              totalAmount: cart.total,
+              totalAmount: totalWithPacking, // Use total with packing charges
               orderNumber: result.orderNumber,
               orderId: result.orderId,
               items: cart.items,
@@ -272,9 +385,25 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
         }
         
         setCart({ items: [], total: 0 });
-        setBillingForm({ userName: "", phoneNumber: "", paymentMethod: "cash" });
+        setBillingForm({ userName: "", phoneNumber: "", orderType: "takeaway", paymentMethod: "cash" });
         setShowBilling(false);
-        alert(`Order placed successfully! Order Number: ${result.orderNumber}`);
+        setShowCashConfirmation(false);
+        
+        // Show success popup
+        setSuccessOrderDetails({
+          orderNumber: result.orderNumber,
+          customerName: billingForm.userName,
+          phoneNumber: billingForm.phoneNumber,
+          items: cart.items.map(item => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            kind: item.kind
+          })),
+          total: totalWithPacking, // Use total with packing charges
+          orderType: billingForm.orderType,
+        });
+        setShowSuccessPopup(true);
       } else {
         setError(result.message);
       }
@@ -282,6 +411,84 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       console.error("Error placing order:", err);
       setError("Failed to place order. Please try again.");
     }
+  };
+
+  const handleRazorpayPaymentSuccess = async (orderId: string, orderNumber: string) => {
+    try {
+      // Save billing information
+      await fetch(`${BACKEND_URL}/billinginfo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vendorId,
+          customerName: billingForm.userName,
+          phoneNumber: billingForm.phoneNumber,
+          paymentMethod: "upi",
+          totalAmount: (() => {
+            const itemTotal = cart.items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
+            const packableItems = cart.items.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
+            const packingCharge = universityCharges?.packingCharge || 5;
+            const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
+            return itemTotal + packingTotal;
+          })(),
+          orderNumber: orderNumber,
+          orderId: orderId,
+          items: cart.items,
+          isGuest: true
+        }),
+      });
+
+      // Clear cart in backend
+      await fetch(`${BACKEND_URL}/vendorcart/${vendorId}`, {
+        method: 'DELETE',
+      });
+      
+      setCart({ items: [], total: 0 });
+      setBillingForm({ userName: "", phoneNumber: "", orderType: "takeaway", paymentMethod: "cash" });
+      setShowBilling(false);
+      setShowRazorpayPayment(false);
+      
+      // Show success popup
+              setSuccessOrderDetails({
+          orderNumber: orderNumber,
+          customerName: billingForm.userName,
+          phoneNumber: billingForm.phoneNumber,
+          items: cart.items.map(item => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            kind: item.kind
+          })),
+          total: (() => {
+            const itemTotal = cart.items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
+            const packableItems = cart.items.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
+            const packingCharge = universityCharges?.packingCharge || 5;
+            const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
+            return itemTotal + packingTotal;
+          })(),
+          orderType: billingForm.orderType,
+        });
+      setShowSuccessPopup(true);
+    } catch (err) {
+      console.error("Error saving billing info:", err);
+      setError("Order placed but failed to save billing information");
+    }
+  };
+
+  const handleRazorpayPaymentFailure = (error: string) => {
+    setError(`Payment failed: ${error}`);
+    setShowRazorpayPayment(false);
+  };
+
+  const handleRazorpayPaymentCancel = () => {
+    setShowRazorpayPayment(false);
+  };
+
+  const handleSuccessPopupClose = () => {
+    setShowSuccessPopup(false);
+    setSuccessOrderDetails(null);
   };
 
   const allItems = [...retailItems, ...produceItems];
@@ -420,7 +627,12 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
               </div>
               
               <div className={styles.cartTotal}>
-                <h4>Total: ₹{cart.total.toFixed(2)}</h4>
+                <div className={styles.cartBreakdown}>
+                  <div className={styles.breakdownRow}>
+                    <strong>Total:</strong>
+                    <strong>₹{cart.total.toFixed(2)}</strong>
+                  </div>
+                </div>
                 <button
                   onClick={() => setShowBilling(true)}
                   className={styles.proceedButton}
@@ -432,9 +644,10 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
           )}
         </div>
 
-        {showBilling && (
+        {showBilling && !showRazorpayPayment && (
           <div className={styles.billingSection}>
             <h3>Billing Information</h3>
+            
             <form onSubmit={handleBillingSubmit} className={styles.billingForm}>
               <div className={styles.formGroup}>
                 <label htmlFor="userName">Customer Name *</label>
@@ -459,6 +672,35 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
                   className={styles.input}
                 />
               </div>
+              
+              <div className={styles.formGroup}>
+                <label>Order Type *</label>
+                <div className={styles.orderTypeOptions}>
+                  <label className={styles.orderTypeOption}>
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="takeaway"
+                      checked={billingForm.orderType === "takeaway"}
+                      onChange={(e) => setBillingForm(prev => ({ ...prev, orderType: e.target.value as "dinein" | "takeaway" }))}
+                      required
+                    />
+                    <span>Takeaway</span>
+                  </label>
+                  <label className={styles.orderTypeOption}>
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="dinein"
+                      checked={billingForm.orderType === "dinein"}
+                      onChange={(e) => setBillingForm(prev => ({ ...prev, orderType: e.target.value as "dinein" | "takeaway" }))}
+                      required
+                    />
+                    <span>Dine In</span>
+                  </label>
+                </div>
+              </div>
+              
               
               <div className={styles.formGroup}>
                 <label>Payment Method *</label>
@@ -506,7 +748,98 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
             </form>
           </div>
         )}
+
+        {showRazorpayPayment && (
+          <div className={styles.billingSection}>
+            <VendorRazorpayPayment
+              vendorId={vendorId}
+              items={cart.items}
+              total={cart.total}
+              collectorName={billingForm.userName}
+              collectorPhone={billingForm.phoneNumber}
+              orderType={billingForm.orderType}
+              packingCharge={universityCharges?.packingCharge || 5}
+              onPaymentSuccess={handleRazorpayPaymentSuccess}
+              onPaymentFailure={handleRazorpayPaymentFailure}
+              onCancel={handleRazorpayPaymentCancel}
+            />
+          </div>
+        )}
+
+        {showCashConfirmation && (
+          <div className={styles.billingSection}>
+            <h3>Order Confirmation</h3>
+            
+            <div className={styles.orderSummary}>
+              <h4>Order Summary</h4>
+              {(() => {
+                const itemTotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const packableItems = cart.items.filter(item => item.kind === "Produce");
+                const packingCharge = universityCharges?.packingCharge || 5;
+                const packingTotal = packableItems.reduce((sum, item) => sum + (packingCharge * item.quantity), 0);
+                const totalWithPacking = itemTotal + packingTotal;
+                
+                return (
+                  <div className={styles.summaryBreakdown}>
+                    <div className={styles.summaryRow}>
+                      <span>Items Total:</span>
+                      <span>₹{itemTotal.toFixed(2)}</span>
+                    </div>
+                    {packableItems.length > 0 && (
+                      <div className={styles.summaryRow}>
+                        <span>Packing Charge ({packableItems.length} produce items @ ₹{packingCharge} each):</span>
+                        <span>₹{packingTotal.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className={styles.summaryRow}>
+                      <strong>Total Amount:</strong>
+                      <strong>₹{totalWithPacking.toFixed(2)}</strong>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className={styles.customerInfo}>
+              <h4>Customer Information</h4>
+              <p><strong>Name:</strong> {billingForm.userName}</p>
+              <p><strong>Phone:</strong> {billingForm.phoneNumber}</p>
+              <p><strong>Order Type:</strong> {billingForm.orderType === "takeaway" ? "Takeaway" : "Dine In"}</p>
+              <p><strong>Payment Method:</strong> Cash</p>
+            </div>
+
+            <div className={styles.formActions}>
+              <button
+                type="button"
+                onClick={() => setShowCashConfirmation(false)}
+                className={styles.cancelButton}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCashConfirmation}
+                className={styles.submitButton}
+              >
+                Confirm Order
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {showSuccessPopup && successOrderDetails && (
+        <OrderSuccessPopup
+          orderNumber={successOrderDetails.orderNumber}
+          customerName={successOrderDetails.customerName}
+          phoneNumber={successOrderDetails.phoneNumber}
+          items={successOrderDetails.items}
+          total={successOrderDetails.total}
+          orderType={successOrderDetails.orderType}
+          packingCharge={universityCharges?.packingCharge || 5}
+          onClose={handleSuccessPopupClose}
+        />
+      )}
     </div>
   );
 }; 

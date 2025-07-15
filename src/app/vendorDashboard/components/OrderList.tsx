@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Order } from "../types";
 import { OrderCard, LocalStatus } from "./OrderCard";
 import styles from "../styles/OrderList.module.scss";
@@ -13,6 +13,7 @@ const REFRESH_INTERVAL = 30000; // 30 seconds
 type OrderState = {
   order: Order;
   localStatus: LocalStatus;
+  isUpdating?: boolean; // For optimistic updates
 };
 
 interface ApiOrder {
@@ -44,13 +45,45 @@ interface OrderListProps {
   }[];
 }
 
+// Skeleton loading component
+const OrderSkeleton = () => (
+  <div className={styles.cardSkeleton}>
+    <div className={styles.skeletonStripe} />
+    <div className={styles.skeletonContent}>
+      <div className={styles.skeletonHeader}>
+        <div className={styles.skeletonTitle} />
+        <div className={styles.skeletonBadge} />
+      </div>
+      <div className={styles.skeletonMeta}>
+        <div className={styles.skeletonText} />
+        <div className={styles.skeletonText} />
+        <div className={styles.skeletonText} />
+      </div>
+      <div className={styles.skeletonItems}>
+        <div className={styles.skeletonItem} />
+        <div className={styles.skeletonItem} />
+      </div>
+      <div className={styles.skeletonButton} />
+    </div>
+  </div>
+);
+
 export const OrderList: React.FC<OrderListProps> = ({ onLoaded, onOrderStatusChange, orderStatusChanges }) => {
   const [list, setList] = useState<OrderState[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const previousListRef = useRef<OrderState[]>([]);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    
     setError(null);
     try {
       const fetchType = async (type: Order["orderType"]) => {
@@ -96,17 +129,42 @@ export const OrderList: React.FC<OrderListProps> = ({ onLoaded, onOrderStatusCha
         localStatus: mapToLocal(o.status),
       }));
 
-      setList(combined);
+      // Smooth update: preserve existing orders and merge with new ones
+      if (isRefresh) {
+        setList(prev => {
+          const newList = [...combined];
+          // Preserve any orders that are currently being updated
+          prev.forEach(existingOrder => {
+            if (existingOrder.isUpdating) {
+              const existingIndex = newList.findIndex(o => o.order.orderId === existingOrder.order.orderId);
+              if (existingIndex >= 0) {
+                newList[existingIndex] = { ...newList[existingIndex], isUpdating: true };
+              }
+            }
+          });
+          return newList;
+        });
+      } else {
+        setList(combined);
+      }
+      
+      previousListRef.current = combined;
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'An unknown error occurred');
+    } finally {
+      if (isRefresh) {
+        setIsRefreshing(false);
+      } else {
+        setLoading(false);
+        setIsInitialLoad(false);
+      }
     }
   }, [onLoaded]);
 
   // Load once + auto-refresh
   useEffect(() => {
-    setLoading(true);
-    fetchOrders().finally(() => setLoading(false));
-    const interval = setInterval(fetchOrders, REFRESH_INTERVAL);
+    fetchOrders(false);
+    const interval = setInterval(() => fetchOrders(true), REFRESH_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
@@ -114,63 +172,232 @@ export const OrderList: React.FC<OrderListProps> = ({ onLoaded, onOrderStatusCha
   useEffect(() => {
     if (orderStatusChanges && orderStatusChanges.length > 0) {
       orderStatusChanges.forEach(change => {
-        if (change.newStatus === "onTheWay") {
+        if (change.newStatus === "onTheWay" && change.orderData?.orderType === "delivery") {
           console.log(`OrderList: Removing order ${change.orderId} from active orders (status: ${change.newStatus})`);
-          // Remove order from active orders list when it becomes onTheWay
+          // Remove delivery order from active orders list when it becomes onTheWay
+          setList(prev => prev.filter(os => os.order.orderId !== change.orderId));
+        } else if (change.newStatus === "delivered") {
+          console.log(`OrderList: Removing order ${change.orderId} from active orders (status: ${change.newStatus})`);
+          // Remove order from active orders list when it's delivered
           setList(prev => prev.filter(os => os.order.orderId !== change.orderId));
         }
       });
     }
   }, [orderStatusChanges]);
 
+  useEffect(() => {
+    if (!loading && !isInitialLoad) {
+      // After every list update, check if the current page is still valid
+      const totalPages = Math.ceil(list.length / PAGE_SIZE);
+      if (page > totalPages && totalPages > 0) {
+        setPage(totalPages);
+      } else if (list.length === 0 && page !== 1) {
+        setPage(1);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, loading, isInitialLoad]);
+
   const advance = (orderId: string, next: LocalStatus | "delivered") => {
     // Find the order being updated
     const orderToUpdate = list.find(os => os.order.orderId === orderId);
     
+    if (!orderToUpdate) {
+      console.error(`Order not found: ${orderId}`);
+      return;
+    }
+    
+    // Optimistic update with loading state
     setList(
       (prev) =>
         prev
           .map((os) => {
             if (os.order.orderId !== orderId) return os;
-            if (next === "delivered") return null;
-            return { ...os, localStatus: next as LocalStatus };
+            if (next === "delivered") return null; // Remove from active orders when delivered
+            return { ...os, localStatus: next as LocalStatus, isUpdating: true };
           })
           .filter(Boolean) as OrderState[]
     );
 
     // Notify parent component about the status change
-    if (onOrderStatusChange && orderToUpdate) {
+    if (onOrderStatusChange) {
       onOrderStatusChange(orderId, next, orderToUpdate.order);
     }
 
+    // --- DELIVERY ORDERS ---
+    if (orderToUpdate?.order.orderType === "delivery") {
+      if (next === "ready") {
+        // Mark as ready - persist to backend
+        fetch(`${BASE}/order/${orderId}/ready`, { method: "PATCH" })
+          .then(async (res) => {
+            if (!res.ok) throw new Error("Failed to mark as ready");
+            setList(prev => prev.map(os =>
+              os.order.orderId === orderId
+                ? { ...os, localStatus: mapToLocal("ready"), isUpdating: false }
+                : os
+            ));
+          })
+          .catch((err) => {
+            console.error("Failed to PATCH /ready", err);
+            // Revert on error
+            setList(prev => prev.map(os =>
+              os.order.orderId === orderId
+                ? { ...os, localStatus: orderToUpdate.localStatus, isUpdating: false }
+                : os
+            ));
+          });
+        return;
+      } else if (next === "onTheWay") {
+        // Start delivery - moves to delivery orders section
+        fetch(`${BASE}/order/${orderId}/onTheWay`, { method: "PATCH" })
+          .then(() => {
+            // Order will be removed by the status change handler
+          })
+          .catch((err) => {
+            console.error("Failed to PATCH /onTheWay", err);
+            // Revert on error
+            setList(prev => prev.map(os =>
+              os.order.orderId === orderId
+                ? { ...os, localStatus: orderToUpdate.localStatus, isUpdating: false }
+                : os
+            ));
+          });
+        return;
+      } else if (next === "delivered") {
+        // Mark as delivered - moves to past orders
+        fetch(`${BASE}/order/${orderId}/deliver`, { method: "PATCH" })
+          .then(() => {
+            // Order will be removed by the status change handler
+          })
+          .catch((err) => {
+            console.error("Failed to PATCH /deliver", err);
+            // Revert on error
+            setList(prev => [...prev, { ...orderToUpdate, isUpdating: false }]);
+          });
+        return;
+      }
+      // Do not allow 'completed' for delivery orders
+    }
+
+    // --- TAKEAWAY & DINE-IN ---
+    if (orderToUpdate?.order.orderType === "takeaway" || orderToUpdate?.order.orderType === "dinein") {
+      if (next === "ready") {
+        // Mark as ready - persist to backend
+        fetch(`${BASE}/order/${orderId}/ready`, { method: "PATCH" })
+          .then(async (res) => {
+            if (!res.ok) throw new Error("Failed to mark as ready");
+            setList(prev => prev.map(os =>
+              os.order.orderId === orderId
+                ? { ...os, localStatus: mapToLocal("ready"), isUpdating: false }
+                : os
+            ));
+          })
+          .catch((err) => {
+            console.error("Failed to PATCH /ready", err);
+            // Revert on error
+            setList(prev => prev.map(os =>
+              os.order.orderId === orderId
+                ? { ...os, localStatus: orderToUpdate.localStatus, isUpdating: false }
+                : os
+            ));
+          });
+        return;
+      } else if (next === "completed") {
+        // Mark as completed - stays in active orders
+        fetch(`${BASE}/order/${orderId}/complete`, { method: "PATCH" })
+          .then(() => {
+            setList(prev => prev.map(os => 
+              os.order.orderId === orderId 
+                ? { ...os, isUpdating: false }
+                : os
+            ));
+          })
+          .catch((err) => {
+            console.error("Failed to PATCH /complete", err);
+            // Revert on error
+            setList(prev => prev.map(os => 
+              os.order.orderId === orderId 
+                ? { ...os, localStatus: orderToUpdate.localStatus, isUpdating: false }
+                : os
+            ));
+          });
+        return;
+      } else if (next === "delivered") {
+        // Mark as delivered - moves to past orders
+        fetch(`${BASE}/order/${orderId}/deliver`, { method: "PATCH" })
+          .then(() => {
+            // Order will be removed by the status change handler
+          })
+          .catch((err) => {
+            console.error("Failed to PATCH /deliver", err);
+            // Revert on error
+            setList(prev => [...prev, { ...orderToUpdate, isUpdating: false }]);
+          });
+        return;
+      }
+    }
+
+    // Fallback for any other types or transitions
     const endpoint =
       next === "delivered"
         ? `/order/${orderId}/deliver`
         : next === "onTheWay"
         ? `/order/${orderId}/onTheWay`
         : `/order/${orderId}/complete`;
-
-    fetch(`${BASE}${endpoint}`, { method: "PATCH" }).catch((err) => {
-      console.error("Failed to PATCH", endpoint, err);
-    });
+    fetch(`${BASE}${endpoint}`, { method: "PATCH" })
+      .then(() => {
+        setList(prev => prev.map(os => 
+          os.order.orderId === orderId 
+            ? { ...os, isUpdating: false }
+            : os
+        ));
+      })
+      .catch((err) => {
+        console.error("Failed to PATCH", endpoint, err);
+        // Revert on error
+        setList(prev => prev.map(os => 
+          os.order.orderId === orderId 
+            ? { ...os, localStatus: orderToUpdate.localStatus, isUpdating: false }
+            : os
+        ));
+      });
   };
 
   const totalPages = Math.ceil(list.length / PAGE_SIZE);
   const currentPageList = list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  if (loading) return <p className={styles.empty}>Loading orders…</p>;
+  // Show skeleton loading only on initial load
+  if (isInitialLoad && loading) {
+    return (
+      <div className={styles.wrap}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <OrderSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
   if (error) return <p className={styles.empty}>Error: {error}</p>;
-  if (list.length === 0)
+  if (list.length === 0 && !isRefreshing)
     return <p className={styles.empty}>No active orders.</p>;
 
   return (
     <div className={styles.wrap}>
+      {/* Subtle refresh indicator */}
+      {isRefreshing && (
+        <div className={styles.refreshIndicator}>
+          <div className={styles.refreshSpinner} />
+          <span>Refreshing...</span>
+        </div>
+      )}
+      
       {currentPageList.map((os) => (
         <OrderCard
           key={os.order.orderId}
           order={os.order}
           localStatus={os.localStatus}
           onAdvance={advance}
+          isUpdating={os.isUpdating}
         />
       ))}
 
@@ -203,8 +430,9 @@ function mapToLocal(status: string): LocalStatus {
     case "inProgress":
       return "inProgress";
     case "ready":
-    case "completed":
       return "ready";
+    case "completed":
+      return "completed";
     case "onTheWay":
       return "onTheWay";
     default:

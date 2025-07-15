@@ -224,12 +224,12 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
                       {editItem && editItem._id === item._id ? (
                         <form onSubmit={handleEditSubmit} style={{ display: 'inline' }}>
                           <input type="file" accept="image/*" onChange={handleEditImage} style={{ marginBottom: 6 }} />
-                          <button type="submit" disabled={editLoading} style={{ marginRight: 8, padding: '0.4rem 1rem', borderRadius: 6, background: '#6366f1', color: '#fff', border: 'none', fontWeight: 500 }}>{editLoading ? 'Saving...' : 'Save'}</button>
+                          <button type="submit" disabled={editLoading} style={{ marginRight: 8, padding: '0.4rem 1rem', borderRadius: 6, background: 'linear-gradient(90deg, #4ea199, #6fc3bd)', color: '#fff', border: 'none', fontWeight: 500 }}>{editLoading ? 'Saving...' : 'Save'}</button>
                           <button type="button" onClick={() => setEditItem(null)} disabled={editLoading} style={{ padding: '0.4rem 1rem', borderRadius: 6, background: '#e0e7ff', color: '#333', border: 'none', fontWeight: 500 }}>Cancel</button>
                         </form>
                       ) : (
                         <>
-                          <button className={styles.editButton} onClick={() => handleEdit(item)} style={{ marginRight: 8, padding: '0.4rem 1rem', borderRadius: 6, background: '#6366f1', color: '#fff', border: 'none', fontWeight: 500 }}>Edit</button>
+                          <button className={styles.editButton} onClick={() => handleEdit(item)} style={{ marginRight: 8, padding: '0.4rem 1rem', borderRadius: 6, background: 'linear-gradient(90deg, #4ea199, #6fc3bd)', color: '#fff', border: 'none', fontWeight: 500 }}>Edit</button>
                           <button className={styles.deleteButton} onClick={() => handleDelete(item)} disabled={deleteLoading === item._id} style={{ padding: '0.4rem 1rem', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 500 }}>
                             {deleteLoading === item._id ? 'Deleting...' : 'Delete'}
                           </button>

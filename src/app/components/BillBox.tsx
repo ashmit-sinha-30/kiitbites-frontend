@@ -63,12 +63,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [charges, setCharges] = useState({ packingCharge: 5, deliveryCharge: 50 });
+  const [vendorDeliverySettings, setVendorDeliverySettings] = useState<{ offersDelivery: boolean; deliveryPreparationTime: number } | null>(null);
 
-  // Fetch university charges when component mounts
+  // Fetch university charges and vendor delivery settings when component mounts
   useEffect(() => {
-    const fetchCharges = async () => {
+    const fetchChargesAndDeliverySettings = async () => {
       try {
-        console.log("🔄 Fetching charges for userId:", userId);
+        console.log("🔄 Fetching charges and delivery settings for userId:", userId);
         
         // Get user's cart to find vendorId
         const cartResponse = await axios.get(
@@ -79,9 +80,29 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         console.log("📦 Cart response:", cartResponse.data);
         
         if (cartResponse.data.vendorId) {
+          const vendorId = cartResponse.data.vendorId;
+          
+          // Fetch vendor delivery settings
+          try {
+            const deliverySettingsResponse = await axios.get(
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/vendor/${vendorId}/delivery-settings`,
+              { withCredentials: true }
+            );
+            
+            console.log("🚚 Delivery settings response:", deliverySettingsResponse.data);
+            
+            if (deliverySettingsResponse.data.success) {
+              setVendorDeliverySettings(deliverySettingsResponse.data.data);
+            }
+          } catch (error) {
+            console.error("❌ Failed to fetch delivery settings:", error);
+            // If we can't fetch delivery settings, assume delivery is available
+            setVendorDeliverySettings({ offersDelivery: true, deliveryPreparationTime: 30 });
+          }
+          
           // Get vendor to find university
           const vendorResponse = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${cartResponse.data.vendorId}`,
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}`,
             { withCredentials: true }
           );
           
@@ -113,8 +134,16 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
       }
     };
 
-    fetchCharges();
+    fetchChargesAndDeliverySettings();
   }, [userId]);
+
+  // Auto-switch to takeaway if delivery is disabled
+  useEffect(() => {
+    if (vendorDeliverySettings && !vendorDeliverySettings.offersDelivery && orderType === "delivery") {
+      console.log("🔄 Web: Delivery disabled by vendor, switching to takeaway");
+      setOrderType("takeaway");
+    }
+  }, [vendorDeliverySettings, orderType]);
 
   // Debug logging
   console.log("🔍 BillBox Debug:", {
@@ -250,19 +279,19 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           
           // Only cancel order if orderId exists
           if (orderId) {
-            try {
-              // Cancel the order and release locks
-              await axios.post(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/order/${orderId}/cancel`,
-                {},
-                { withCredentials: true }
-              );
-              
-              console.log("✅ Order cancelled successfully");
-              toast.success("Payment cancelled. You can try ordering again.");
-            } catch (error) {
-              console.error("❌ Failed to cancel order:", error);
-              toast.error("Payment cancelled, but there was an issue. Please try again in a few minutes.");
+          try {
+            // Cancel the order and release locks
+            await axios.post(
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/order/${orderId}/cancel`,
+              {},
+              { withCredentials: true }
+            );
+            
+            console.log("✅ Order cancelled successfully");
+            toast.success("Payment cancelled. You can try ordering again.");
+          } catch (error) {
+            console.error("❌ Failed to cancel order:", error);
+            toast.error("Payment cancelled, but there was an issue. Please try again in a few minutes.");
             }
           } else {
             console.warn("⚠️ No orderId available to cancel");
@@ -285,20 +314,28 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   return (
     <form className={styles.container} onSubmit={handleSubmit}>
       <div className={styles.segmentedControl}>
-        {(["takeaway", "delivery", "dinein"] as OrderType[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={orderType === t ? styles.active : styles.segment}
-            onClick={() => setOrderType(t)}
-          >
-            {t === "takeaway"
-              ? "takeaway"
-              : t === "delivery"
-              ? "Delivery"
-              : "Dine In"}
-          </button>
-        ))}
+        {(["takeaway", "delivery", "dinein"] as OrderType[])
+          .filter((t) => {
+            // Hide delivery option if vendor doesn't offer delivery
+            if (t === "delivery" && vendorDeliverySettings && !vendorDeliverySettings.offersDelivery) {
+              return false;
+            }
+            return true;
+          })
+          .map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={orderType === t ? styles.active : styles.segment}
+              onClick={() => setOrderType(t)}
+            >
+              {t === "takeaway"
+                ? "takeaway"
+                : t === "delivery"
+                ? "Delivery"
+                : "Dine In"}
+            </button>
+          ))}
       </div>
 
       <input
@@ -342,6 +379,15 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           </div>
         ))}
         </div>
+        
+        {/* Estimated Preparation Time */}
+        {vendorDeliverySettings && (
+          <div className={styles.preparationTime}>
+            <span>Estimated preparation time</span>
+            <span>{vendorDeliverySettings.deliveryPreparationTime} minutes</span>
+          </div>
+        )}
+        
       <div className={styles.totalPack}>
         {packaging > 0 && (
           <div className={styles.extra}>

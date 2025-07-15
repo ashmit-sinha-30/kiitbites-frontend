@@ -162,11 +162,12 @@
   }
   
   &.turnOn {
-    background: #28a745;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
     color: white;
     
     &:hover:not(:disabled) {
-      background: #218838;
+      background: linear-gradient(90deg, #4ea199, #6fc3bd);
+      opacity: 0.9;
     }
   }
   
@@ -198,7 +199,7 @@
 }
 
 .retryButton {
-  background: #007bff;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -207,7 +208,8 @@
   font-weight: 600;
   
   &:hover {
-    background: #0056b3;
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
   }
 }
 
@@ -335,4 +337,52 @@
 .modalForm input:focus {
   border-color: #4ea199;
   outline: none;
+}
+
+.download {
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  
+  &:hover {
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.scrollableDates {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fafbfc;
+  
+  &.expanded {
+    max-height: none;
+  }
+}
+
+.showMoreBtn {
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  
+  &:hover {
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
+    opacity: 0.9;
+  }
 } 
