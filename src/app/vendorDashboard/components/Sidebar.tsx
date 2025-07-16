@@ -15,6 +15,7 @@ import styles from "../styles/SideBar.module.scss";
 
 const segments = [
   { key: "dashboard", label: "Dashboard", icon: <AiOutlineDashboard /> },
+  { key: "active-orders", label: "Active Orders", icon: <AiOutlineAppstore /> },
   {
     key: "retail-inventory",
     label: "Retail Inventory",
