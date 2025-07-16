@@ -85,16 +85,12 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
           if (item.type && item.type.toLowerCase().includes('produce')) return { ...item, kind: 'Produce' };
           return { ...item, kind: 'Retail' };
         });
-        // Calculate total with packing charges on frontend
+        // Calculate total WITHOUT packing charges for cart view
         const itemTotal = itemsWithKind.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
-        const packableItems = itemsWithKind.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
-        const packingCharge = universityCharges?.packingCharge || 5;
-        const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
-        const totalWithPacking = itemTotal + packingTotal;
         
         setCart({
           items: itemsWithKind,
-          total: totalWithPacking
+          total: itemTotal
         });
       }
     } catch (err) {
@@ -208,17 +204,13 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       
       if (data.success) {
         console.log("✅ Item added to cart:", data.data);
-        // Calculate total with packing charges on frontend
+        // Calculate total WITHOUT packing charges for cart view
         const items = data.data.items || [];
         const itemTotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
-        const packableItems = items.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
-        const packingCharge = universityCharges?.packingCharge || 5;
-        const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
-        const totalWithPacking = itemTotal + packingTotal;
         
         setCart({
           items: items,
-          total: totalWithPacking
+          total: itemTotal
         });
       }
     } catch (err) {
@@ -245,17 +237,12 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       const data = await response.json();
       
       if (data.success) {
-        // Calculate total with packing charges on frontend
+        // Calculate total WITHOUT packing charges for cart view
         const items = data.data.items || [];
         const itemTotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
-        const packableItems = items.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
-        const packingCharge = universityCharges?.packingCharge || 5;
-        const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
-        const totalWithPacking = itemTotal + packingTotal;
-        
         setCart({
           items: items,
-          total: totalWithPacking
+          total: itemTotal
         });
       }
     } catch (err) {
@@ -273,17 +260,12 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       const data = await response.json();
       
       if (data.success) {
-        // Calculate total with packing charges on frontend
+        // Calculate total WITHOUT packing charges for cart view
         const items = data.data.items || [];
         const itemTotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
-        const packableItems = items.filter((item: { kind?: "Retail" | "Produce" }) => item.kind === "Produce");
-        const packingCharge = universityCharges?.packingCharge || 5;
-        const packingTotal = packableItems.reduce((sum: number, item: { quantity: number }) => sum + (packingCharge * item.quantity), 0);
-        const totalWithPacking = itemTotal + packingTotal;
-        
         setCart({
           items: items,
-          total: totalWithPacking
+          total: itemTotal
         });
       }
     } catch (err) {
