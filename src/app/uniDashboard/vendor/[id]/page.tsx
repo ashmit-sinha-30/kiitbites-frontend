@@ -6,6 +6,7 @@ import styles from "../../styles/VendorManagement.module.scss";
 import * as XLSX from "xlsx";
 import Modal from "react-modal";
 import { VendorMenuManagement } from "../../components/VendorMenuManagement";
+import VendorAnalytics from "../../components/VendorAnalytics";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -836,6 +837,11 @@ export default function VendorMenuPage({ params }: { params: Promise<{ id: strin
             </tbody>
           </table>
         )}
+      </section>
+
+      {/* Vendor Analytics Section */}
+      <section className={styles.section} style={{ marginBottom: 32 }}>
+        <VendorAnalytics vendorId={vendorId} vendorName={vendor?.fullName} />
       </section>
 
       {/* Inventory Section */}
