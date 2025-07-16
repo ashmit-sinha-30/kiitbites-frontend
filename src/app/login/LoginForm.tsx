@@ -73,10 +73,7 @@ export default function LoginForm() {
 
       localStorage.setItem("token", data.token);
 
-      // Format college name and create redirect URL
-      const collegeName = data.user?.college?.name?.toLowerCase().replace(/\s+/g, '-') || 'college';
-      const collegeId = data.user?.college?._id || '';
-      const redirectUrl = `/home/${collegeName}${collegeId ? `?cid=${collegeId}` : ''}`;
+      const redirectUrl = `/home`;
 
       notify("Login successful!", "success");
       setTimeout(() => router.push(redirectUrl), 2000);

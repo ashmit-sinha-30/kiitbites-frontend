@@ -23,6 +23,7 @@ const segmentsMap: Record<string, string> = {
   "delete-vendor": "Delete Vendor",
   "addItem": "Add Food Item",
   "manage-charges": "Manage Charges",
+  logout: "Logout",
 };
 
 export default function UniDashboardPage() {
@@ -80,7 +81,7 @@ export default function UniDashboardPage() {
         )}
 
         {/* Other segments under construction */}
-        {!["dashboard", "add-vendor", "delete-vendor", "addItem", "manage-items", "manage-charges"].includes(activeSegment) && (
+        {!["dashboard", "add-vendor", "delete-vendor", "addItem", "manage-items", "manage-charges", "logout"].includes(activeSegment) && (
           <div className={styles.underConstruction}>
             {segmentsMap[activeSegment]
               ? segmentsMap[activeSegment]

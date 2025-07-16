@@ -36,6 +36,7 @@ const segmentsMap: Record<string, string> = {
   "vendor-cart": "Vendor Cart",
   "delivery-settings": "Delivery Settings",
   "raw-materials": "Raw Materials",
+  logout: "Logout",
   // ...other segments
 };
 
@@ -315,7 +316,8 @@ export default function VendorDashboardPage() {
           activeSegment !== "delivery-orders" &&
           activeSegment !== "vendor-cart" &&
           activeSegment !== "delivery-settings" &&
-          activeSegment !== "raw-materials" && (
+          activeSegment !== "raw-materials" &&
+          activeSegment !== "logout" && (
             <div className={styles.underConstruction}>
               🚧{" "}
               {segmentsMap[activeSegment]

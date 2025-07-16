@@ -39,6 +39,25 @@
   background: linear-gradient(90deg, #4ea199, #6fc3bd);
   color: #fff;
 }
+
+// Special styling for logout button
+.menu li[data-segment="logout"] {
+  margin-top: auto;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.menu li[data-segment="logout"]:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.menu li[data-segment="logout"].active {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+  color: #fff;
+}
+
 .icon {
   font-size: 1.2rem;
 }
