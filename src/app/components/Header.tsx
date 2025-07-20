@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from 'next/image';
+import Image from "next/image";
 import { IoMdSearch } from "react-icons/io";
 import { IoHelp, IoPersonOutline } from "react-icons/io5";
 import { PiShoppingCartSimpleBold } from "react-icons/pi";
@@ -340,7 +340,7 @@ const Header: React.FC<HeaderProps> = ({
                       </div>
                       <div
                         className={styles.navItem}
-                        onClick={() => handleNavigation("/orders")}
+                        onClick={() => handleNavigation("/activeorders")}
                         style={{ fontSize: "1rem" }}
                       >
                         <span style={{ fontSize: "1rem" }}>Orders</span>

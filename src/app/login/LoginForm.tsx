@@ -73,13 +73,13 @@ export default function LoginForm() {
 
       localStorage.setItem("token", data.token);
 
-      const redirectUrl = `/home`;
+      // const redirectUrl = `/home`;
 
       notify("Login successful!", "success");
-      setTimeout(() => router.push(redirectUrl), 2000);
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
+      setTimeout(() => router.push("/home"), 2000);
+      // setTimeout(() => {
+      //   window.location.reload();
+      // }, 3000);
     } catch (error) {
       console.error("Login error:", error);
       notify("An unexpected error occurred. Please try again.", "error");
@@ -95,11 +95,13 @@ export default function LoginForm() {
       const res = await fetch(`${BACKEND_URL}/api/user/auth/refresh`, {
         method: "GET",
         credentials: "include",
-        headers: token ? {
-          'Authorization': `Bearer ${token}`
-        } : {}
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {},
       });
-  
+
       if (res.ok) {
         console.log("✅ Session refreshed successfully");
         const data = await res.json();
@@ -117,16 +119,15 @@ export default function LoginForm() {
       console.error("❌ Error refreshing session:", error);
     }
   }, [BACKEND_URL, router]);
-  
 
   // Refresh session on component mount
   useEffect(() => {
     checkSession(); // Refresh on page load
-  
+
     const interval = setInterval(() => {
       checkSession();
-    },  60 * 60 * 1000); // Refresh every 1 hour
-  
+    }, 60 * 60 * 1000); // Refresh every 1 hour
+
     return () => clearInterval(interval); // Cleanup on unmount
   }, [checkSession]);
 
