@@ -1,28 +1,32 @@
-"use client"; 
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { 
-  User, 
-  Mail, 
-  // Bell, 
-  ShoppingCart, 
-  Book, 
+import React, { useEffect, useState } from "react";
+import {
+  User,
+  Mail,
+  // Bell,
+  ShoppingCart,
+  Book,
   HelpCircle,
   LogOut,
   ChevronDown,
   ChevronUp,
   ChevronRight,
-  Info
-} from 'lucide-react';
-import styles from './styles/UserProfile.module.scss';
-import { useRouter } from "next/navigation";  
-import Link from 'next/link';
+  Info,
+} from "lucide-react";
+import styles from "./styles/UserProfile.module.scss";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const UserProfile = () => {
   const router = useRouter();
-  const [user, setUser] = useState<{ fullName: string; email: string; phone: string } | null>(null);
+  const [user, setUser] = useState<{
+    fullName: string;
+    email: string;
+    phone: string;
+  } | null>(null);
   const [isPersonalInfoOpen, setIsPersonalInfoOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -62,13 +66,13 @@ const UserProfile = () => {
   const handleLogout = async () => {
     if (isLoggingOut) return; // Prevent multiple clicks
     setIsLoggingOut(true);
-    
+
     try {
       const response = await fetch(`${BACKEND_URL}/api/user/auth/logout`, {
         method: "POST",
         credentials: "include",
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
 
@@ -100,10 +104,7 @@ const UserProfile = () => {
 
         {/* Personal Info Section */}
         <div className={styles.section}>
-          <div 
-            className={styles.dropdownHeader}
-            onClick={togglePersonalInfo}
-          >
+          <div className={styles.dropdownHeader} onClick={togglePersonalInfo}>
             <User className={styles.iconBlue} size={20} />
             <span>Personal Info</span>
             {isPersonalInfoOpen ? (
@@ -112,16 +113,20 @@ const UserProfile = () => {
               <ChevronDown className={styles.chevron} size={16} />
             )}
           </div>
-          
-          <div className={`${styles.dropdownContent} ${isPersonalInfoOpen ? styles.open : ''}`}>
+
+          <div
+            className={`${styles.dropdownContent} ${
+              isPersonalInfoOpen ? styles.open : ""
+            }`}
+          >
             <div className={styles.infoItem}>
-              <strong>Full Name:</strong> {user?.fullName || 'Loading...'}
+              <strong>Full Name:</strong> {user?.fullName || "Loading..."}
             </div>
             <div className={styles.infoItem}>
-              <strong>Email Address:</strong> {user?.email || 'Loading...'}
+              <strong>Email Address:</strong> {user?.email || "Loading..."}
             </div>
             <div className={styles.infoItem}>
-              <strong>Phone Number:</strong> +91 {user?.phone || 'Loading...'}
+              <strong>Phone Number:</strong> +91 {user?.phone || "Loading..."}
             </div>
           </div>
         </div>
@@ -133,25 +138,25 @@ const UserProfile = () => {
             <span>Cart</span>
             <ChevronRight className={styles.chevron} size={16} />
           </Link>
-          
-          <Link href="/orders" className={styles.menuItem}>
+
+          <Link href="/pastorders" className={styles.menuItem}>
             <Book className={styles.iconPurple} size={20} />
             <span>Previous Orders</span>
             <ChevronRight className={styles.chevron} size={16} />
           </Link>
-          
+
           <Link href="/fav" className={styles.menuItem}>
             <User className={styles.iconOrange} size={20} />
             <span>Favourites</span>
             <ChevronRight className={styles.chevron} size={16} />
           </Link>
-          
+
           {/* Will be added later */}
           {/* <Link href="/notifications" className={styles.menuItem}>
             <Bell className={styles.iconBlue} size={20} />
             <span>Notifications</span>
             <ChevronRight className={styles.chevron} size={16} />
-          </Link> */} 
+          </Link> */}
         </div>
 
         {/* Support Section */}
@@ -161,13 +166,13 @@ const UserProfile = () => {
             <span>Terms & Conditions</span>
             <ChevronRight className={styles.chevron} size={16} />
           </Link>
-          
+
           <Link href="/about" className={styles.menuItem}>
             <Info className={styles.iconIndigo} size={20} />
             <span>About Us</span>
             <ChevronRight className={styles.chevron} size={16} />
           </Link>
-          
+
           <Link href="/contact" className={styles.menuItem}>
             <Mail className={styles.iconPink} size={20} />
             <span>Contact Us</span>
@@ -177,13 +182,13 @@ const UserProfile = () => {
 
         {/* Logout Section */}
         <div className={styles.section}>
-          <div 
-            className={`${styles.menuItem} ${styles.logoutItem}`} 
+          <div
+            className={`${styles.menuItem} ${styles.logoutItem}`}
             onClick={handleLogout}
-            style={{ cursor: isLoggingOut ? 'not-allowed' : 'pointer' }}
+            style={{ cursor: isLoggingOut ? "not-allowed" : "pointer" }}
           >
             <LogOut className={styles.iconRed} size={20} />
-            <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+            <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
           </div>
         </div>
       </div>
