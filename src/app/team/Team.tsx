@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import TeamCard from "../components/TeamCard";
-import SkeletonCard from "../components/SkeletonCard"; // Import SkeletonCard
+import SkeletonCard from "../components/SkeletonCard";
 import styles from "./styles/Team.module.scss";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 interface TeamMember {
   name: string;
@@ -12,6 +12,29 @@ interface TeamMember {
   github: string;
   linkedin: string;
 }
+
+const containerVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 120,
+      damping: 16,
+    },
+  },
+};
 
 const TeamPage: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -24,35 +47,64 @@ const TeamPage: React.FC = () => {
         setTeamMembers(data);
         setLoading(false);
       })
-      .catch((error) => {
-        console.error("Error loading team data:", error);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
+
+  // split for real data
+  const half = Math.ceil(teamMembers.length / 2);
+  const topRow = teamMembers.slice(0, half);
+  const bottomRow = teamMembers.slice(half);
+
+  // split for skeletons
+  const placeholderCount = 5;
+  const halfPh = Math.ceil(placeholderCount / 2);
 
   return (
     <div className={styles.teamPage}>
       <div className={styles.box}>
-        <h1 className={styles.h1}>Meet Our Team</h1>
-        <div className={styles.grid}>
-          {loading
-            ? [...Array(6)].map((_, i) => <SkeletonCard key={i} />) // Render SkeletonCard components
-            : teamMembers.map((member, index) => {
-                const isTopRow = index < Math.ceil(teamMembers.length / 2);
-                const delay = (isTopRow ? teamMembers.length - index - 1 : index) * 0.15;
+        <h1>Meet Our Team</h1>
 
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: isTopRow ? -200 : 200 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.8, delay }}
-                  >
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {loading ? (
+            <>
+              <div className={styles.topGrid}>
+                {[...Array(halfPh)].map((_, i) => (
+                  <motion.div key={i} variants={itemVariants}>
+                    <SkeletonCard />
+                  </motion.div>
+                ))}
+              </div>
+              <div className={styles.bottomGrid}>
+                {[...Array(placeholderCount - halfPh)].map((_, i) => (
+                  <motion.div key={i + halfPh} variants={itemVariants}>
+                    <SkeletonCard />
+                  </motion.div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className={styles.topGrid}>
+                {topRow.map((member, i) => (
+                  <motion.div key={i} variants={itemVariants}>
                     <TeamCard {...member} />
                   </motion.div>
-                );
-              })}
-        </div>
+                ))}
+              </div>
+              <div className={styles.bottomGrid}>
+                {bottomRow.map((member, i) => (
+                  <motion.div key={i + half} variants={itemVariants}>
+                    <TeamCard {...member} />
+                  </motion.div>
+                ))}
+              </div>
+            </>
+          )}
+        </motion.div>
       </div>
     </div>
   );
