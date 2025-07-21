@@ -3,7 +3,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 40px 20px; // Added padding for better spacing
+  padding: 40px 20px;
   background-color: #f0f4f8;
 
   .box {
@@ -13,8 +13,8 @@
     margin-top: 50px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     text-align: center;
-    width: 90%; // More adaptive width
-    max-width: 1100px; // Limiting width for large screens
+    width: 90%;
+    max-width: 1100px;
     transition: transform 0.2s ease-in-out;
 
     &:hover {
@@ -25,41 +25,44 @@
   h1 {
     color: #4ea199;
     font-size: 32px;
-    text-align: center;
     margin-bottom: 20px;
   }
 
-  /* Shared grid settings */
-  /* Top row: 3 across */
+  /* Top row: up to 3 cards across, each min 240px */
   .topGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 24px;
     justify-content: center;
   }
 
-  /* Bottom row: center even if fewer items */
+  /* Bottom row: exactly 2 columns, width = 2/3 of .box, centered */
   .bottomGrid {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 24px;
-    margin-top: 24px;
+    width: 66.666%;
+    margin: 24px auto 0;
+  }
 
-    /* force each card wrapper to match the 280px min of the top row */
-    & > * {
-      flex: 0 1 280px;
+  /* Tablet: force 2‑across and full width */
+  @media (max-width: 900px) {
+    .topGrid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .bottomGrid {
+      width: 100%;
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
-  @media (max-width: 768px) {
+  /* Mobile: single column */
+  @media (max-width: 560px) {
     .topGrid {
-      display: flex;
-      justify-content: center;
-      // grid-template-columns: 1fr;
+      grid-template-columns: 1fr;
     }
-
     .bottomGrid {
+      width: 100%;
       grid-template-columns: 1fr;
     }
   }
