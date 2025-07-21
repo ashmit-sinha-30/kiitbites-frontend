@@ -29,30 +29,41 @@ const TeamPage: React.FC = () => {
         setLoading(false);
       });
   }, []);
+  // after loading is false:
+  const half = Math.ceil(teamMembers.length / 2);
+  const topRow = teamMembers.slice(0, half);
+  const bottomRow = teamMembers.slice(half);
 
   return (
     <div className={styles.teamPage}>
       <div className={styles.box}>
-        <h1 className={styles.h1}>Meet Our Team</h1>
-        <div className={styles.grid}>
-          {loading
-            ? [...Array(6)].map((_, i) => <SkeletonCard key={i} />) // Render SkeletonCard components
-            : teamMembers.map((member, index) => {
-                const isTopRow = index < Math.ceil(teamMembers.length / 2);
-                const delay = (isTopRow ? teamMembers.length - index - 1 : index) * 0.15;
+        <h1>Meet Our Team</h1>
 
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: isTopRow ? -200 : 200 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.8, delay }}
-                  >
-                    <TeamCard {...member} />
-                  </motion.div>
-                );
-              })}
-        </div>
+        {loading ? (
+          <div className={styles.grid}>
+            {[...Array(5)].map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className={styles.topGrid}>
+              {topRow.map((member, i) => (
+                <motion.div key={i}>
+                  <TeamCard {...member} />
+                </motion.div>
+              ))}
+            </div>
+
+            <div className={styles.bottomGrid}>
+              {bottomRow.map((member, i) => (
+                <motion.div key={i + half}>
+                  <TeamCard {...member} />
+                </motion.div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
