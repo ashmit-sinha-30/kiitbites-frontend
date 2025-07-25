@@ -62,12 +62,14 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [charges, setCharges] = useState({ packingCharge: 5, deliveryCharge: 50 });
+  const [charges, setCharges] = useState<{ packingCharge: number | null; deliveryCharge: number | null }>({ packingCharge: null, deliveryCharge: null });
   const [vendorDeliverySettings, setVendorDeliverySettings] = useState<{ offersDelivery: boolean; deliveryPreparationTime: number } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Fetch university charges and vendor delivery settings when component mounts
   useEffect(() => {
     const fetchChargesAndDeliverySettings = async () => {
+      setLoading(true);
       try {
         console.log("🔄 Fetching charges and delivery settings for userId:", userId);
         
@@ -122,15 +124,15 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
               deliveryCharge: chargesResponse.data.deliveryCharge,
             });
           } else {
-            console.warn("⚠️ No uniID found in vendor response");
+            setCharges({ packingCharge: null, deliveryCharge: null });
           }
         } else {
-          console.warn("⚠️ No vendorId found in cart response");
+          setCharges({ packingCharge: null, deliveryCharge: null });
         }
       } catch (error) {
-        console.error("❌ Failed to fetch university charges:", error);
-        // Use default charges if fetch fails
-        console.log("🔄 Using default charges:", { packingCharge: 5, deliveryCharge: 50 });
+        setCharges({ packingCharge: 5, deliveryCharge: 50 }); // fallback only if fetch fails
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -159,8 +161,8 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   console.log("📦 Packable items found:", packableItems.map(i => ({ name: i.name, packable: i.packable, quantity: i.quantity })));
   
   // Ensure charges are available
-  const packingCharge = charges.packingCharge || 5;
-  const deliveryCharge = charges.deliveryCharge || 50;
+  const packingCharge = charges.packingCharge ?? 0;
+  const deliveryCharge = charges.deliveryCharge ?? 0;
   
   const itemTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const packaging =
@@ -179,6 +181,24 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
     packingChargePerItem: packingCharge,
     deliveryCharge: deliveryCharge
   });
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+        <span>Loading bill details...</span>
+      </div>
+    );
+  }
+
+  // Determine source of packing charge for debug
+  let packingChargeSource = "API";
+  if (charges.packingCharge === 5 && loading === false) {
+    packingChargeSource = "Fallback/default (API failed or returned 5)";
+  } else if (charges.packingCharge !== null && loading === false) {
+    packingChargeSource = "API";
+  } else if (charges.packingCharge === null && loading === false) {
+    packingChargeSource = "Not set";
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -313,6 +333,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
   return (
     <form className={styles.container} onSubmit={handleSubmit}>
+      {/* Estimated Preparation Time at the top */}
+      {vendorDeliverySettings && (
+        <div className={styles.preparationTime} style={{ marginBottom: '0.5rem' }}>
+          <span>Estimated preparation time</span> 
+          <span>{vendorDeliverySettings.deliveryPreparationTime} minutes</span>
+        </div>
+      )}
       <div className={styles.segmentedControl}>
         {(["takeaway", "delivery", "dinein"] as OrderType[])
           .filter((t) => {
@@ -364,10 +391,8 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         />
       )}
 
-      <div
-        className={`${styles.bill} ${
-          orderType === "delivery" ? styles.billDelivery : styles.billRegular
-        }`}
+      <div className={styles.bill} 
+        // ... existing code ...
       >
         <div className={styles.items}>
         {items.map((i) => (
@@ -379,14 +404,6 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           </div>
         ))}
         </div>
-        
-        {/* Estimated Preparation Time */}
-        {vendorDeliverySettings && (
-          <div className={styles.preparationTime}>
-            <span>Estimated preparation time</span>
-            <span>{vendorDeliverySettings.deliveryPreparationTime} minutes</span>
-          </div>
-        )}
         
       <div className={styles.totalPack}>
         {packaging > 0 && (
