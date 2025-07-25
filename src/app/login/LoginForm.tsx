@@ -73,7 +73,21 @@ export default function LoginForm() {
 
       localStorage.setItem("token", data.token);
 
-      // const redirectUrl = `/home`;
+      // Notify header to update
+      window.dispatchEvent(new Event("authChanged"));
+
+      // Optionally, call refresh API immediately after login
+      try {
+        await fetch(`${BACKEND_URL}/api/user/auth/refresh`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+        });
+      } catch {
+        // Ignore refresh errors here
+      }
 
       notify("Login successful!", "success");
       setTimeout(() => router.push("/home"), 2000);

@@ -97,9 +97,13 @@ export default function SignupForm() {
 
   const checkSession = useCallback(async () => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${BACKEND_URL}/api/user/auth/refresh`, {
         method: "GET",
         credentials: "include",
+        headers: token
+          ? { Authorization: `Bearer ${token}` }
+          : {},
       });
 
       if (res.ok) {
