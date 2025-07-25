@@ -85,7 +85,7 @@ export default function LoginForm() {
             Authorization: `Bearer ${data.token}`,
           },
         });
-      } catch (e) {
+      } catch {
         // Ignore refresh errors here
       }
 
