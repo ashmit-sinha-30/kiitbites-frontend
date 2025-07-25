@@ -130,6 +130,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           setCharges({ packingCharge: null, deliveryCharge: null });
         }
       } catch (error) {
+        console.error("Failed to fetch charges and delivery settings:", error);
         setCharges({ packingCharge: 5, deliveryCharge: 50 }); // fallback only if fetch fails
       } finally {
         setLoading(false);
@@ -188,16 +189,6 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         <span>Loading bill details...</span>
       </div>
     );
-  }
-
-  // Determine source of packing charge for debug
-  let packingChargeSource = "API";
-  if (charges.packingCharge === 5 && loading === false) {
-    packingChargeSource = "Fallback/default (API failed or returned 5)";
-  } else if (charges.packingCharge !== null && loading === false) {
-    packingChargeSource = "API";
-  } else if (charges.packingCharge === null && loading === false) {
-    packingChargeSource = "Not set";
   }
 
   const handleSubmit = async (e: FormEvent) => {
