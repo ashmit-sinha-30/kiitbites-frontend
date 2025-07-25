@@ -1,8 +1,7 @@
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./globals.css"; // Optional global styles
-import { GoogleOAuthProvider } from "@react-oauth/google";
-import { AuthProvider } from "./context/AuthContext"; // Import AuthProvider
+import { GoogleOAuthProvider } from "@react-oauth/google";// Import AuthProvider
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { Metadata } from "next";
@@ -83,13 +82,11 @@ export default function RootLayout({
       </head> */}
       <body>
         <GoogleOAuthProvider clientId={googleClientId}>
-          <AuthProvider>
             <SearchCartProvider>
               <Header />
               <main>{children}</main>
               <Footer />
             </SearchCartProvider>
-          </AuthProvider>
         </GoogleOAuthProvider>
         <SpeedInsights />
         <Analytics />
