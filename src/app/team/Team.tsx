@@ -50,31 +50,12 @@ const TeamPage: React.FC = () => {
       .catch(() => setLoading(false));
   }, []);
 
-  // split for real data
-  // const half = Math.ceil(teamMembers.length / 2);
-  // const topRow = teamMembers.slice(0, half);
-  // const bottomRow = teamMembers.slice(half);
 
   // split for real data
 const firstRow = teamMembers.slice(0, 3);
 const secondRow = teamMembers.slice(3, 6);
 const centerRow = teamMembers.slice(6, 7); // only 1 card
 
-// split for skeletons (adjusted to 7 placeholders)
-// const placeholderCount = 7;
-
-  // split for skeletons
-  const placeholderCount = 7;
-  const skeletonRows = Math.ceil(placeholderCount / 3);
-  // const skeletons = Array.from({ length: skeletonRows }, (_, i) => (
-  //   <div key={i} className={styles.rowGrid}>
-  //     {Array.from({ length: 3 }, (_, j) => (
-  //       <motion.div key={j} variants={itemVariants}>
-  //         <SkeletonCard />
-  //       </motion.div>
-  //     ))}
-  //   </div>
-  // ));
 
   return (
     <div className={styles.teamPage}>
