@@ -51,9 +51,9 @@ const TeamPage: React.FC = () => {
   }, []);
 
   // split for real data
-  const half = Math.ceil(teamMembers.length / 2);
-  const topRow = teamMembers.slice(0, half);
-  const bottomRow = teamMembers.slice(half);
+  // const half = Math.ceil(teamMembers.length / 2);
+  // const topRow = teamMembers.slice(0, half);
+  // const bottomRow = teamMembers.slice(half);
 
   // split for real data
 const firstRow = teamMembers.slice(0, 3);
