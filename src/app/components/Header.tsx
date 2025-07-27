@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from 'next/image';
+import Image from "next/image";
 import { IoMdSearch } from "react-icons/io";
 import { IoHelp, IoPersonOutline } from "react-icons/io5";
 import { PiShoppingCartSimpleBold } from "react-icons/pi";
@@ -63,6 +63,7 @@ const Header: React.FC<HeaderProps> = ({
       // Clear token and redirect
       localStorage.removeItem("token");
       setUserFullName(null);
+      window.dispatchEvent(new Event("authChanged")); // Notify header
       router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -73,7 +74,10 @@ const Header: React.FC<HeaderProps> = ({
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
+        if (!token) {
+          setUserFullName(null);
+          return;
+        }
 
         const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
           credentials: "include",
@@ -85,13 +89,25 @@ const Header: React.FC<HeaderProps> = ({
         if (response.ok) {
           const data = await response.json();
           setUserFullName(data.fullName);
+        } else {
+          setUserFullName(null);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
+        setUserFullName(null);
       }
     };
 
     fetchUser();
+
+    // Listen for custom authChanged event
+    const handleAuthChanged = () => {
+      fetchUser();
+    };
+    window.addEventListener("authChanged", handleAuthChanged);
+    return () => {
+      window.removeEventListener("authChanged", handleAuthChanged);
+    };
   }, []);
 
   useEffect(() => {
@@ -340,7 +356,7 @@ const Header: React.FC<HeaderProps> = ({
                       </div>
                       <div
                         className={styles.navItem}
-                        onClick={() => handleNavigation("/orders")}
+                        onClick={() => handleNavigation("/activeorders")}
                         style={{ fontSize: "1rem" }}
                       >
                         <span style={{ fontSize: "1rem" }}>Orders</span>

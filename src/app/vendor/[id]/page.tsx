@@ -362,11 +362,6 @@ const VendorPage = () => {
                       {item.quantity !== undefined && (
                         <p className={styles.quantity}>Available: {item.quantity}</p>
                       )}
-                      {item.isAvailable && (
-                        <p className={`${styles.availability} ${item.isAvailable === "Y" ? styles.available : styles.unavailable}`}>
-                          {item.isAvailable === "Y" ? "Available" : "Not Available"}
-                        </p>
-                      )}
                     </div>
                     {userData && (
                       <button 

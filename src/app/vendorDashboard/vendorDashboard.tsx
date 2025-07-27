@@ -19,6 +19,7 @@ import { Order } from "./types";
 import { RetailInventory } from "./components/RetailInventory";
 import { ProduceInventory } from "./components/ProduceInventory";
 import { RawMaterialInventory } from "./components/RawMaterialInventory";
+import DashboardAnalytics from "./components/DashboardAnalytics";
 
 import styles from "./styles/InventoryReport.module.scss";
 import { InventoryReport, transformApiReport } from "./types";
@@ -35,13 +36,14 @@ const segmentsMap: Record<string, string> = {
   "vendor-cart": "Vendor Cart",
   "delivery-settings": "Delivery Settings",
   "raw-materials": "Raw Materials",
+  logout: "Logout",
   // ...other segments
 };
 
 export default function VendorDashboardPage() {
   const VENDOR_ID = "6834622e10d75a5ba7b7740d";
 
-  const [activeSegment, setActiveSegment] = useState<string>("dashboard");
+  const [activeSegment, setActiveSegment] = useState<string>("active-orders");
 
   // State for managing order transitions between components
   const [orderStatusChanges, setOrderStatusChanges] = useState<{
@@ -143,8 +145,8 @@ export default function VendorDashboardPage() {
       />
 
       <main className={styles.main}>
-        {/* Dashboard Segment: Active Orders */}
-        {activeSegment === "dashboard" && (
+        {/* Active Orders Segment */}
+        {activeSegment === "active-orders" && (
           <>
             <div className={styles.header}>
               <h1>Active Orders</h1>
@@ -156,6 +158,11 @@ export default function VendorDashboardPage() {
               orderStatusChanges={orderStatusChanges}
             />
           </>
+        )}
+
+        {/* Dashboard Segment (analytics) */}
+        {activeSegment === "dashboard" && (
+          <DashboardAnalytics />
         )}
 
         {/* Retail Inventory Segment */}
@@ -301,6 +308,7 @@ export default function VendorDashboardPage() {
 
         {/* Other segments under construction */}
         {activeSegment !== "dashboard" &&
+          activeSegment !== "active-orders" &&
           activeSegment !== "inventory-reports" &&
           activeSegment !== "retail-inventory" &&
           activeSegment !== "produce-inventory" &&
@@ -308,12 +316,13 @@ export default function VendorDashboardPage() {
           activeSegment !== "delivery-orders" &&
           activeSegment !== "vendor-cart" &&
           activeSegment !== "delivery-settings" &&
-          activeSegment !== "raw-materials" && (
+          activeSegment !== "raw-materials" &&
+          activeSegment !== "logout" && (
             <div className={styles.underConstruction}>
               🚧{" "}
               {segmentsMap[activeSegment]
                 ? segmentsMap[activeSegment]
-                : activeSegment.replace(/-/g, " ")}{" "}
+                : activeSegment.replace(/-/g, " ")} {" "}
               is under construction.
             </div>
           )}

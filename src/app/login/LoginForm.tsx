@@ -73,16 +73,27 @@ export default function LoginForm() {
 
       localStorage.setItem("token", data.token);
 
-      // Format college name and create redirect URL
-      const collegeName = data.user?.college?.name?.toLowerCase().replace(/\s+/g, '-') || 'college';
-      const collegeId = data.user?.college?._id || '';
-      const redirectUrl = `/home/${collegeName}${collegeId ? `?cid=${collegeId}` : ''}`;
+      // Notify header to update
+      window.dispatchEvent(new Event("authChanged"));
+
+      // Optionally, call refresh API immediately after login
+      try {
+        await fetch(`${BACKEND_URL}/api/user/auth/refresh`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+        });
+      } catch {
+        // Ignore refresh errors here
+      }
 
       notify("Login successful!", "success");
-      setTimeout(() => router.push(redirectUrl), 2000);
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
+      setTimeout(() => router.push("/home"), 2000);
+      // setTimeout(() => {
+      //   window.location.reload();
+      // }, 3000);
     } catch (error) {
       console.error("Login error:", error);
       notify("An unexpected error occurred. Please try again.", "error");
@@ -98,11 +109,13 @@ export default function LoginForm() {
       const res = await fetch(`${BACKEND_URL}/api/user/auth/refresh`, {
         method: "GET",
         credentials: "include",
-        headers: token ? {
-          'Authorization': `Bearer ${token}`
-        } : {}
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {},
       });
-  
+
       if (res.ok) {
         console.log("✅ Session refreshed successfully");
         const data = await res.json();
@@ -120,16 +133,15 @@ export default function LoginForm() {
       console.error("❌ Error refreshing session:", error);
     }
   }, [BACKEND_URL, router]);
-  
 
   // Refresh session on component mount
   useEffect(() => {
     checkSession(); // Refresh on page load
-  
+
     const interval = setInterval(() => {
       checkSession();
-    },  60 * 60 * 1000); // Refresh every 1 hour
-  
+    }, 60 * 60 * 1000); // Refresh every 1 hour
+
     return () => clearInterval(interval); // Cleanup on unmount
   }, [checkSession]);
 

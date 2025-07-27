@@ -168,7 +168,10 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ onLoaded
       console.error(`Order not found: ${orderId}`);
       return;
     }
-    
+    // Prevent multiple delivery requests for the same order
+    if (orderToUpdate.isUpdating) {
+      return;
+    }
     // Optimistic update with loading state
     setList(
       (prev) =>

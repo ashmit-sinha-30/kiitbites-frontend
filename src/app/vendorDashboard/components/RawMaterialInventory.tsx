@@ -9,6 +9,7 @@ interface RawMaterialApiItem {
   openingAmount: number;
   closingAmount: number;
   unit: string;
+  createdAt?: string | Date;
 }
 
 interface RawMaterialInventoryProps {
@@ -75,8 +76,16 @@ export const RawMaterialInventory: React.FC<RawMaterialInventoryProps> = ({
           openingAmount: typeof it.openingAmount === "number" ? it.openingAmount : 0,
           closingAmount: typeof it.closingAmount === "number" ? it.closingAmount : 0,
           unit: it.unit ?? "kg",
+          createdAt: it.createdAt ? new Date(it.createdAt as string) : undefined,
         }));
-        setItems(dataItems);
+        // Filter: only show items created within the last 24 hours
+        const now = new Date();
+        const filteredByDate = dataItems.filter(item => {
+          if (!item.createdAt) return true; // fallback: show if missing
+          const created = new Date(item.createdAt);
+          return now.getTime() - created.getTime() < 24 * 60 * 60 * 1000;
+        });
+        setItems(filteredByDate);
         let vendorNameFromResp: string | undefined;
         let vendorIdFromResp: string | undefined;
         if (isObject(json) && typeof (json as Record<string, unknown>).foodCourtName === "string") {
@@ -265,16 +274,28 @@ export const RawMaterialInventory: React.FC<RawMaterialInventoryProps> = ({
     return <div className={styles.error}>Error: {error}</div>;
   }
 
+  // Manual clear button
+  const handleManualClear = () => setItems([]);
+
   return (
     <div className={styles.inventoryContainer}>
       <div className={styles.header}>
         <h2>Raw Material Inventory</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className={styles.addButton}
-        >
-          Add Raw Material
-        </button>
+        <div>
+          <button
+            onClick={() => setShowForm(true)}
+            className={styles.addButton}
+          >
+            Add Raw Material
+          </button>
+          <button
+            onClick={handleManualClear}
+            className={styles.addButton}
+            style={{ marginLeft: 12, background: '#e57373' }}
+          >
+            Clear
+          </button>
+        </div>
       </div>
 
       {showForm && (

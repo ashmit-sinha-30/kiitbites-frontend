@@ -504,7 +504,21 @@ const SearchBar: React.FC<SearchBarProps> = ({
       return;
     }
 
-    // ... existing code for showing vendor selection modal ...
+    // If not in vendor mode, show vendor selection modal
+    try {
+      // Fetch vendors for the selected item
+      const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id || item._id || item.itemId}`);
+      if (!response.ok) {
+        toast.error('Failed to fetch vendors for this item');
+        return;
+      }
+      const vendors = await response.json();
+      setAvailableVendors(vendors);
+      setShowVendorModal(true);
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+      toast.error('Failed to fetch vendors');
+    }
   };
 
   const handleVendorSelect = (vendor: Vendor) => {
@@ -688,11 +702,20 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       <div 
                         key={item._id} 
                         className={styles.resultCard}
-                        onClick={() => item.isVendor && item._id ? handleVendorClick(item._id) : null}
+                        onClick={() => item.isVendor && item._id ? handleVendorClick(item._id!) : null}
                       >
                         {item.isVendor ? (
                           <div className={styles.vendorCard}>
                             <h3 className="font-semibold">{item.name}</h3>
+                            <button
+                              className={styles.checkMenuButton}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleVendorClick(item._id!);
+                              }}
+                            >
+                              Check Menu
+                            </button>
                           </div>
                         ) : (
                           <div className={styles.foodCard}>
