@@ -28,42 +28,52 @@
     margin-bottom: 20px;
   }
 
-  /* Top row: up to 3 cards across, each min 240px */
-  .topGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 24px;
-    justify-content: center;
-  }
+.rowGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
 
-  /* Bottom row: exactly 2 columns, width = 2/3 of .box, centered */
-  .bottomGrid {
+.centerGrid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
     gap: 24px;
-    width: 66.666%;
+    width: 33.333%;
     margin: 24px auto 0;
+}
+
+@media (max-width: 900px) {
+  .rowGrid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  /* Tablet: force 2‑across and full width */
-  @media (max-width: 900px) {
-    .topGrid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    .bottomGrid {
-      width: 100%;
-      grid-template-columns: repeat(2, 1fr);
-    }
+  .centerGrid > div {
+    width: 100%;
+    max-width: 100%;
+    // Ensure direct child "card" fills the width
+    // > .box {
+    //     width: 100%;
+    //     max-width: 100%;
+    // }
   }
+}
+
 
   /* Mobile: single column */
   @media (max-width: 560px) {
-    .topGrid {
+    .rowGrid {
       grid-template-columns: 1fr;
+      width: 100%;    
     }
-    .bottomGrid {
+    .centerGrid {
       width: 100%;
-      grid-template-columns: 1fr;
+      max-width: 100%;
+       > .box {
+        width: 100%;
+        max-width: 100%;
     }
+    }
+
   }
 }

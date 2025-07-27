@@ -55,49 +55,74 @@ const TeamPage: React.FC = () => {
   const topRow = teamMembers.slice(0, half);
   const bottomRow = teamMembers.slice(half);
 
+  // split for real data
+const firstRow = teamMembers.slice(0, 3);
+const secondRow = teamMembers.slice(3, 6);
+const centerRow = teamMembers.slice(6, 7); // only 1 card
+
+// split for skeletons (adjusted to 7 placeholders)
+// const placeholderCount = 7;
+
   // split for skeletons
-  const placeholderCount = 5;
-  const halfPh = Math.ceil(placeholderCount / 2);
+  const placeholderCount = 7;
+  const skeletonRows = Math.ceil(placeholderCount / 3);
+  const skeletons = Array.from({ length: skeletonRows }, (_, i) => (
+    <div key={i} className={styles.rowGrid}>
+      {Array.from({ length: 3 }, (_, j) => (
+        <motion.div key={j} variants={itemVariants}>
+          <SkeletonCard />
+        </motion.div>
+      ))}
+    </div>
+  ));
 
   return (
     <div className={styles.teamPage}>
       <div className={styles.box}>
         <h1>Meet Our Team</h1>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
           {loading ? (
             <>
-              <div className={styles.topGrid}>
-                {[...Array(halfPh)].map((_, i) => (
+              <div className={styles.rowGrid}>
+                {[...Array(3)].map((_, i) => (
                   <motion.div key={i} variants={itemVariants}>
                     <SkeletonCard />
                   </motion.div>
                 ))}
               </div>
-              <div className={styles.bottomGrid}>
-                {[...Array(placeholderCount - halfPh)].map((_, i) => (
-                  <motion.div key={i + halfPh} variants={itemVariants}>
+              <div className={styles.rowGrid}>
+                {[...Array(3)].map((_, i) => (
+                  <motion.div key={i + 3} variants={itemVariants}>
                     <SkeletonCard />
                   </motion.div>
                 ))}
               </div>
+              <div className={styles.centerGrid}>
+                <motion.div key={6} variants={itemVariants}>
+                  <SkeletonCard />
+                </motion.div>
+              </div>
             </>
           ) : (
             <>
-              <div className={styles.topGrid}>
-                {topRow.map((member, i) => (
+              <div className={styles.rowGrid}>
+                {firstRow.map((member, i) => (
                   <motion.div key={i} variants={itemVariants}>
                     <TeamCard {...member} />
                   </motion.div>
                 ))}
               </div>
-              <div className={styles.bottomGrid}>
-                {bottomRow.map((member, i) => (
-                  <motion.div key={i + half} variants={itemVariants}>
+              <div className={styles.rowGrid}>
+                {secondRow.map((member, i) => (
+                  <motion.div key={i + 3} variants={itemVariants}>
+                    <TeamCard {...member} />
+                  </motion.div>
+                ))}
+              </div>
+              <div className={styles.centerGrid}>
+                {centerRow.map((member, i) => (
+                  <motion.div key={i + 6} variants={itemVariants}>
                     <TeamCard {...member} />
                   </motion.div>
                 ))}
@@ -105,6 +130,7 @@ const TeamPage: React.FC = () => {
             </>
           )}
         </motion.div>
+
       </div>
     </div>
   );
