@@ -66,15 +66,15 @@ const centerRow = teamMembers.slice(6, 7); // only 1 card
   // split for skeletons
   const placeholderCount = 7;
   const skeletonRows = Math.ceil(placeholderCount / 3);
-  const skeletons = Array.from({ length: skeletonRows }, (_, i) => (
-    <div key={i} className={styles.rowGrid}>
-      {Array.from({ length: 3 }, (_, j) => (
-        <motion.div key={j} variants={itemVariants}>
-          <SkeletonCard />
-        </motion.div>
-      ))}
-    </div>
-  ));
+  // const skeletons = Array.from({ length: skeletonRows }, (_, i) => (
+  //   <div key={i} className={styles.rowGrid}>
+  //     {Array.from({ length: 3 }, (_, j) => (
+  //       <motion.div key={j} variants={itemVariants}>
+  //         <SkeletonCard />
+  //       </motion.div>
+  //     ))}
+  //   </div>
+  // ));
 
   return (
     <div className={styles.teamPage}>
