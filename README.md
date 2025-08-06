@@ -1,4 +1,4 @@
-# BiteBay - Web Application
+<!-- # BiteBay - Web Application
 
 ## Introduction
 **BiteBay** is a comprehensive online food ordering and inventory management platform designed exclusively for the KIIT University campus. The platform aims to enhance the food ordering experience by providing a seamless, time-efficient, and convenient way for students and faculty to access food across multiple food courts while also helping food vendors manage their inventory effectively.
@@ -155,4 +155,4 @@ This project is licensed under the MIT License.
 For queries or contributions, contact the **BiteBay Team** at [kiitbites@gmail.com](mailto:kiitbites@gmail.com).
 
 ## Design Reference
-Figma Link: [Click Here](https://www.figma.com/design/uCTZfzhDkk06FNwA2Ooc4G/BiteBay?node-id=0-1&t=eN4BzoUfe3aSVfNt-0)
+Figma Link: [Click Here](https://www.figma.com/design/uCTZfzhDkk06FNwA2Ooc4G/BiteBay?node-id=0-1&t=eN4BzoUfe3aSVfNt-0) -->
