@@ -10,7 +10,7 @@ export default function AboutPage() {
 <div className={styles.aboutUsContainer}>
         <h1>About Us</h1>
         <p>
-          Welcome to BitesBay — your trusted partner in redefining how food is ordered and managed 
+          Welcome to KAMPYN — your trusted partner in redefining how food is ordered and managed 
           within college food courts. We are committed to streamlining the campus dining experience 
           by making food ordering more efficient for students, staff, and vendors alike.
         </p>
@@ -18,7 +18,7 @@ export default function AboutPage() {
       <section className={styles.section}>
         <h2>Our Mission</h2>
         <p>
-          At BitesBay, our mission is to empower students and food court operators with a modern, 
+          At KAMPYN, our mission is to empower students and food court operators with a modern, 
           digital platform that simplifies food ordering and inventory management. We strive to save time, 
           reduce queues, and enhance satisfaction with a system that&apos;s built for speed, accuracy, and ease of use.
         </p>
@@ -53,7 +53,7 @@ export default function AboutPage() {
 
       <div className={styles.closing}>
         <p>
-          Thank you for choosing BitesBay — where convenience meets campus cuisine.
+          Thank you for choosing KAMPYN — where convenience meets campus cuisine.
           <br />
           We&apos;re here to serve, support, and simplify your food experience.
         </p>

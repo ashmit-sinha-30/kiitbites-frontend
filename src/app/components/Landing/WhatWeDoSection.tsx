@@ -40,7 +40,7 @@ const WhatWeDoSection: React.FC = () => {
                 Campus-Exclusive Food Delivery
               </h3>
               <p className="text-gray-700 mb-6">
-                BitesBay connects students with campus-exclusive food vendors that
+                KAMPYN connects students with campus-exclusive food vendors that
                 aren&apos;t available on mainstream delivery platforms like Swiggy or
                 Zomato. We&apos;re building a seamless connection between hungry students
                 and the best campus food spots.

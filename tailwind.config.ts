@@ -64,7 +64,7 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // BitesBay Custom Colors
+        // KAMPYN Custom Colors
         bitesbay: {
           background: "#54a6a1",
           text: "#4ea199",

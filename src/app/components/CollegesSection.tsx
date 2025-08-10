@@ -69,7 +69,7 @@ const CollegesSection: React.FC = () => {
       <div className="container mx-auto px-4">
         <SectionTitle
           title="Our Partner Colleges"
-          subtitle="BitesBay is rapidly expanding to campuses across the country"
+          subtitle="KAMPYN is rapidly expanding to campuses across the country"
         />
 
         <div className="reveal">
@@ -110,7 +110,7 @@ const CollegesSection: React.FC = () => {
            */}
           <div className="text-center mt-12">
             <p className="text-lg text-bitesbay-text font-medium">
-              Want to bring BitesBay to your campus?
+              Want to bring KAMPYN to your campus?
             </p>
             <a 
               href="/help" 

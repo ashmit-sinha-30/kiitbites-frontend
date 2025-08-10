@@ -7,8 +7,8 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div>
             <img
-              src="https://res.cloudinary.com/dt45pu5mx/image/upload/v1748277700/FullLogo_Transparent_NoBuffer_3_zfoohq.png"
-              alt="BitesBay Logo"
+              src="https://res.cloudinary.com/dt45pu5mx/image/upload/v1754678667/FullLogo_Transparent_NoBuffer_qgxrht.png"
+              alt="KAMPYN Logo"
               className="w-full max-w-[200px] h-auto mb-4"
             />
 
@@ -265,7 +265,7 @@ const Footer: React.FC = () => {
         <div className="border-t border-gray-700 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-400 mb-4 md:mb-0">
-              &copy; {new Date().getFullYear()} BitesBay. All rights reserved.
+              &copy; {new Date().getFullYear()} KAMPYN. All rights reserved.
             </p>
             <div className="flex space-x-4">
               <a

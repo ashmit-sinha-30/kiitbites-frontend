@@ -153,8 +153,8 @@ const Header: React.FC<HeaderProps> = ({
       <div className={styles.logoContainer}>
         <Link href="/">
           <Image
-            src="https://res.cloudinary.com/dt45pu5mx/image/upload/v1747594694/Untitled_design__1_-removebg-preview_mwcssf.png"
-            alt="BiteBay Logo"
+            src="https://res.cloudinary.com/dt45pu5mx/image/upload/v1754770229/FullLogo_Transparent_NoBuffer_1_fg1iux.png"
+            alt="KAMPYN Logo"
             width={150} // adjust width as needed
             height={50} // adjust height as needed
           />

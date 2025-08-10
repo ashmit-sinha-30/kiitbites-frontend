@@ -9,14 +9,14 @@ import { SearchCartProvider } from './components/context/SearchCartContext';
 
 export const metadata: Metadata = {
   title: {
-    default: "BitesBay - Campus Food Ordering Platform",
-    template: "%s | BitesBay"
+    default: "KAMPYN - Campus Food Ordering Platform",
+    template: "%s | KAMPYN"
   },
-  description: "BitesBay is your one-stop solution for campus food ordering. Order from your favorite campus restaurants, track deliveries, and enjoy hassle-free food ordering at KIIT University.",
+  description: "KAMPYN is your one-stop solution for campus food ordering. Order from your favorite campus restaurants, track deliveries, and enjoy hassle-free food ordering at KIIT University.",
   keywords: ["campus food", "food delivery", "KIIT University", "online food ordering", "campus restaurants", "food delivery app"],
-  authors: [{ name: "BitesBay Team" }],
-  creator: "BitesBay",
-  publisher: "BitesBay",
+  authors: [{ name: "KAMPYN Team" }],
+  creator: "KAMPYN",
+  publisher: "KAMPYN",
   formatDetection: {
     email: false,
     address: false,
@@ -27,21 +27,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://bitesbay.com',
-    siteName: 'BitesBay',
-    title: 'BitesBay - Campus Food Ordering Platform',
+    siteName: 'KAMPYN',
+    title: 'KAMPYN - Campus Food Ordering Platform',
     description: 'Order food from your favorite campus restaurants at KIIT University',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'BitesBay - Campus Food Ordering',
+        alt: 'KAMPYN - Campus Food Ordering',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BitesBay - Campus Food Ordering Platform',
+    title: 'KAMPYN - Campus Food Ordering Platform',
     description: 'Order food from your favorite campus restaurants at KIIT University',
     images: ['/twitter-image.jpg'],
   },

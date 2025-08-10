@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       <h1>Privacy Policy</h1>
 
       <p className={styles.intro}>
-        At BitesBay, your privacy and trust are of utmost importance. This
+        At KAMPYN, your privacy and trust are of utmost importance. This
         policy outlines how we collect, use, store, and safeguard your personal
         information as you use our services across campus food courts.
       </p>
@@ -114,7 +114,7 @@ export default function PrivacyPage() {
         <p>
           This Privacy Policy may be updated from time to time to reflect
           changes in technology, regulation, or service practices. We encourage
-          users to review it periodically. Continued use of BitesBay implies
+          users to review it periodically. Continued use of KAMPYN implies
           acceptance of the most recent version.
         </p>
       </div>
@@ -133,7 +133,7 @@ export default function PrivacyPage() {
 
       <div className={styles.closing}>
         <p>
-          Thank you for trusting BitesBay — where your time, taste, and data are
+          Thank you for trusting KAMPYN — where your time, taste, and data are
           respected. We are committed to serving you responsibly.
         </p>
       </div>

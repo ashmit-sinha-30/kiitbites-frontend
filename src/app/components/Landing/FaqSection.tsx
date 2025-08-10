@@ -36,29 +36,29 @@ const FaqSection: React.FC = () => {
 
   const faqs = [
     {
-      question: "How is BitesBay different from other food delivery apps?",
+      question: "How is KAMPYN different from other food delivery apps?",
       answer:
-        "BitesBay is specifically designed for campus communities. We focus exclusively on connecting students with campus vendors that aren't available on mainstream delivery platforms. Our system is tailored to the unique needs of campus life, including scheduled pickups, real-time inventory tracking, and campus-specific delivery options.",
+        "KAMPYN is specifically designed for campus communities. We focus exclusively on connecting students with campus vendors that aren't available on mainstream delivery platforms. Our system is tailored to the unique needs of campus life, including scheduled pickups, real-time inventory tracking, and campus-specific delivery options.",
     },
     {
-      question: "Is BitesBay available at my college?",
+      question: "Is KAMPYN available at my college?",
       answer:
-        "BitesBay is rapidly expanding to campuses across the country. Check our partner colleges section or contact us to see if we're available at your campus. If we're not there yet, let your campus administration know you'd like to see BitesBay at your school!",
+        "KAMPYN is rapidly expanding to campuses across the country. Check our partner colleges section or contact us to see if we're available at your campus. If we're not there yet, let your campus administration know you'd like to see KAMPYN at your school!",
     },
     {
-      question: "How do I become a vendor on BitesBay?",
+      question: "How do I become a vendor on KAMPYN?",
       answer:
         "If you operate a food service on a college campus, you can apply to become a vendor through our website. Click on the 'Become a Vendor' link in the footer, fill out the application form, and our team will contact you with next steps. We provide all the necessary training and support to get you started.",
     },
     {
-      question: "Are there any fees for students to use BitesBay?",
+      question: "Are there any fees for students to use KAMPYN?",
       answer:
-        "BitesBay is free to download and create an account. There may be small service fees applied to orders, which are clearly displayed before checkout. We strive to keep these fees minimal to ensure affordability for students.",
+        "KAMPYN is free to download and create an account. There may be small service fees applied to orders, which are clearly displayed before checkout. We strive to keep these fees minimal to ensure affordability for students.",
     },
     {
       question: "Can I schedule orders in advance?",
       answer:
-        "Yes! One of BitesBay's key features is the ability to schedule orders in advance. This is perfect for planning meals between classes or scheduling a pick-up during your free period. You can place orders up to 7 days in advance.",
+        "Yes! One of KAMPYN's key features is the ability to schedule orders in advance. This is perfect for planning meals between classes or scheduling a pick-up during your free period. You can place orders up to 7 days in advance.",
     },
     {
       question: "How do refunds work if there's an issue with my order?",
@@ -72,7 +72,7 @@ const FaqSection: React.FC = () => {
       <div className="container mx-auto px-4">
         <SectionTitle
           title="Frequently Asked Questions"
-          subtitle="Everything you need to know about BitesBay"
+          subtitle="Everything you need to know about KAMPYN"
         />
 
         <div className="max-w-3xl mx-auto reveal">

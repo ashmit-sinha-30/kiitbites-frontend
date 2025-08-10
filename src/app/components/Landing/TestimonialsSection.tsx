@@ -30,7 +30,7 @@ const TestimonialsSection: React.FC = () => {
   const testimonials = [
     {
       content:
-        "BitesBay has completely changed how I eat on campus. No more waiting in long lines or missing out on my favorite cafeteria meals. The app is super easy to use!",
+        "KAMPYN has completely changed how I eat on campus. No more waiting in long lines or missing out on my favorite cafeteria meals. The app is super easy to use!",
       name: "Sarah Johnson",
       role: "Engineering Student",
       avatarUrl: "https://randomuser.me/api/portraits/women/44.jpg",
@@ -38,7 +38,7 @@ const TestimonialsSection: React.FC = () => {
     },
     {
       content:
-        "As a busy student with back-to-back classes, BitesBay is a lifesaver. I can order between lectures and pick up my food without wasting time in queues.",
+        "As a busy student with back-to-back classes, KAMPYN is a lifesaver. I can order between lectures and pick up my food without wasting time in queues.",
       name: "Michael Chang",
       role: "Business Major",
       avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
@@ -54,7 +54,7 @@ const TestimonialsSection: React.FC = () => {
     },
     {
       content:
-        "My campus coffee shop used to have lines out the door during rush hours. With BitesBay, we've streamlined operations and improved customer satisfaction.",
+        "My campus coffee shop used to have lines out the door during rush hours. With KAMPYN, we've streamlined operations and improved customer satisfaction.",
       name: "David Wilson",
       role: "Campus Restaurant Owner",
       avatarUrl: "https://randomuser.me/api/portraits/men/75.jpg",

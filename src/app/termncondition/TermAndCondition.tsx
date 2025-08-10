@@ -9,7 +9,7 @@ export default function TermAndCondition() {
     <div className={styles.termsContainer}>
       <h1>Terms & Conditions</h1>
       <p className={styles.intro}>
-        Welcome to BitesBay. By accessing or using our platform, you agree to
+        Welcome to KAMPYN. By accessing or using our platform, you agree to
         comply with the following terms and conditions. We encourage all users
         to read them thoroughly to ensure a smooth and fair experience for
         everyone.
@@ -75,7 +75,7 @@ export default function TermAndCondition() {
         <ul className={styles.termsList}>
           <li>
             Breach of any of these terms may lead to temporary suspension or
-            permanent banning of the user from BitesBay.
+            permanent banning of the user from KAMPYN.
           </li>
           <li>
             In case of any disputes, clarifications, or issues, users are
@@ -90,7 +90,7 @@ export default function TermAndCondition() {
 
       <div className={styles.closing}>
         <p>
-          By using BitesBay, you acknowledge and agree to all of the above
+          By using KAMPYN, you acknowledge and agree to all of the above
           terms. We reserve the right to modify or update these terms at any
           time without prior notice. Continued use of the platform constitutes
           acceptance of the most recent terms.
