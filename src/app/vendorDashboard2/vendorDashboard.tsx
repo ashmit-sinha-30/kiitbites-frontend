@@ -43,7 +43,7 @@ const segmentsMap: Record<string, string> = {
 };
 
 export default function VendorDashboardPage() {
-  const VENDOR_ID = "6834622e10d75a5ba7b7740d";
+  const VENDOR_ID = "6834622710d75a5ba7b77403";
 
   const [activeSegment, setActiveSegment] = useState<string>("active-orders");
 

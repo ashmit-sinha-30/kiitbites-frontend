@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Order, OrderType, Status, Item } from "../types";
 import styles from "../styles/OrderList.module.scss";
 
-const VENDOR_ID = "6834622e10d75a5ba7b7740d";
+const VENDOR_ID = "6834622710d75a5ba7b77403";
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 const PAGE_SIZE = 5; // number of orders per page
 const REFRESH_INTERVAL = 60000; // 60 seconds (less frequent for past orders)

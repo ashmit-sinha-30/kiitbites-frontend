@@ -1,0 +1,78 @@
+/* styles/sidebar.module.scss */
+
+.sidebar {
+  position: fixed;
+  top: 64px; // your header height
+  left: 0;
+  bottom: 0; // Changed from 425px to 0 to allow full height
+  overflow-y: auto;
+  background: #fff;
+  width: 240px;
+  padding: 1rem 0.5rem;
+  border-right: 1px solid #eee;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.menu li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.15s;
+}
+.menu li:hover {
+  background: #f5f5ff;
+}
+.active {
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  color: #fff;
+}
+
+// Special styling for logout button
+.menu li[data-segment="logout"] {
+  margin-top: auto;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.menu li[data-segment="logout"]:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.menu li[data-segment="logout"].active {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+  color: #fff;
+}
+
+.icon {
+  font-size: 1.2rem;
+}
+.footer {
+  text-align: left;
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: 2rem;
+}
+.vendorName {
+  //font-weight: 600;
+  color: #4ea199;
+  font-weight: 600;
+  font-size: large;
+}
+.vendorId {
+  color: #6fc3bd;
+}
