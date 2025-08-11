@@ -36,7 +36,7 @@ export const InventoryTransfer: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"send" | "receive">("send");
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedReceiverId, setSelectedReceiverId] = useState<string>("");
-  const [availableItems, setAvailableItems] = useState<any[]>([]);
+  const [availableItems, setAvailableItems] = useState<{ _id: string; name: string; quantity: number }[]>([]);
   const [selectedItems, setSelectedItems] = useState<TransferItem[]>([]);
   const [transferOrders, setTransferOrders] = useState<TransferOrder[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,7 +75,7 @@ export const InventoryTransfer: React.FC = () => {
       if (response.ok) {
         const json = await response.json();
         const rawItems = json?.data?.retailItems ?? json?.items ?? [];
-        const normalized = (rawItems as any[]).map((it) => ({
+        const normalized = (rawItems as { itemId?: string; _id?: string; name?: string; quantity?: number | string }[]).map((it) => ({
           _id: it.itemId ?? it._id ?? "",
           name: it.name ?? "",
           quantity: typeof it.quantity === "number" ? it.quantity : parseInt(String(it.quantity) || "0", 10),
@@ -92,10 +92,10 @@ export const InventoryTransfer: React.FC = () => {
       const response = await fetch(`${BASE_URL}/api/transfer-orders/${currentVendorId}`);
       if (response.ok) {
         const data = await response.json();
-        const orders = (data?.orders ?? []).map((o: any) => ({
+        const orders = (data?.orders ?? []).map((o: { _id: string; status: string; items: Array<{ itemId: string; quantity: number; itemName?: string; itemType?: string; unit?: string }>; createdAt: string }) => ({
           orderId: o._id,
           status: o.status,
-          items: (o.items ?? []).map((it: any) => ({ 
+          items: (o.items ?? []).map((it: { itemId: string; quantity: number; itemName?: string; itemType?: string; unit?: string }) => ({ 
           itemId: String(it.itemId), 
           quantity: Number(it.quantity),
           itemName: it.itemName,
@@ -161,7 +161,7 @@ export const InventoryTransfer: React.FC = () => {
         const errorData = await response.json().catch(() => ({}));
         setMessage({ type: "error", text: errorData.error || errorData.message || "Failed to send transfer" });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Error sending transfer request" });
     } finally {
       setLoading(false);
@@ -189,7 +189,7 @@ export const InventoryTransfer: React.FC = () => {
         const errorData = await response.json().catch(() => ({}));
         setMessage({ type: "error", text: errorData.error || errorData.message || "Failed to confirm transfer" });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Error confirming transfer" });
     }
   };
