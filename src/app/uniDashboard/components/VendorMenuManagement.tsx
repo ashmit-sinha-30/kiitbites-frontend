@@ -706,7 +706,12 @@ export function VendorMenuManagement({ vendorId }: Props) {
           </label>
 
           {/* HSN Suggestions */}
-          {showHsnSuggestions && hsnSuggestions.length > 0 && (
+          {loadingHsnSuggestions && (
+            <div className={styles.hsnSuggestions}>
+              <div className={styles.loading}>Loading HSN suggestions...</div>
+            </div>
+          )}
+          {showHsnSuggestions && hsnSuggestions.length > 0 && !loadingHsnSuggestions && (
             <div className={styles.hsnSuggestions}>
               <h4>HSN Code Suggestions</h4>
               <p className={styles.suggestionNote}>Click on a suggestion to auto-fill both HSN code and GST percentage:</p>
@@ -893,7 +898,12 @@ export function VendorMenuManagement({ vendorId }: Props) {
           </label>
 
           {/* HSN Suggestions */}
-          {showHsnSuggestions && hsnSuggestions.length > 0 && (
+          {loadingHsnSuggestions && (
+            <div className={styles.hsnSuggestions}>
+              <div className={styles.loading}>Loading HSN suggestions...</div>
+            </div>
+          )}
+          {showHsnSuggestions && hsnSuggestions.length > 0 && !loadingHsnSuggestions && (
             <div className={styles.hsnSuggestions}>
               <h4>HSN Code Suggestions</h4>
               <p className={styles.suggestionNote}>Click on a suggestion to auto-fill both HSN code and GST percentage:</p>
