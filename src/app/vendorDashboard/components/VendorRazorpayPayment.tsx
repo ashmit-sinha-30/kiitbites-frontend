@@ -320,7 +320,7 @@ export const VendorRazorpayPayment: React.FC<VendorRazorpayPaymentProps> = ({
                     <span>₹{packingTotal.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="breakdown-row total">
+                <div className="breakdown-row">
                   <strong>Total Amount:</strong>
                   <strong>₹{totalWithPacking.toFixed(2)}</strong>
                 </div>

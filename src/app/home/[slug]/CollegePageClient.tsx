@@ -32,6 +32,7 @@ const categories = {
     "juices",
     "soups",
     "non-veg",
+    "others",
   ],
   retail: [
     "biscuits",
@@ -41,6 +42,7 @@ const categories = {
     "snacks",
     "sweets",
     "nescafe",
+    "others",
   ],
 };
 

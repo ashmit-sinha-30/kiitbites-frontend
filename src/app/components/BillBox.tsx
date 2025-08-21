@@ -164,6 +164,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   // Ensure charges are available
   const packingCharge = charges.packingCharge ?? 0;
   const deliveryCharge = charges.deliveryCharge ?? 0;
+  const platformFee = 2; // Flat platform fee (including GST)
   
   const itemTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const packaging =
@@ -171,12 +172,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
       ? packableItems.reduce((s, i) => s + packingCharge * i.quantity, 0)
       : 0;
   const delivery = orderType === "delivery" ? deliveryCharge : 0;
-  const grandTotal = itemTotal + packaging + delivery;
+  const grandTotal = itemTotal + packaging + delivery + platformFee;
   
   console.log("💰 BillBox Calculation:", {
     itemTotal,
     packaging,
     delivery,
+    platformFee,
     grandTotal,
     packableItemsCount: packableItems.length,
     packingChargePerItem: packingCharge,
@@ -409,6 +411,11 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
             <span>₹{delivery}</span>
           </div>
         )}
+
+        <div className={styles.extra}>
+          <span>Platform Fee</span>
+          <span>₹{platformFee}</span>
+        </div>
 
         <div className={styles.divider} />
 

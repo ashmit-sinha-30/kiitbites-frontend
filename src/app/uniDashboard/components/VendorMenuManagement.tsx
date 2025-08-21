@@ -54,7 +54,9 @@ export function VendorMenuManagement({ vendorId }: Props) {
   const [formData, setFormData] = useState({
     name: "",
     type: "",
-    price: "",
+    priceIncludingTax: "",
+    hsnCode: "",
+    gstPercentage: "",
     quantity: "",
     isSpecial: "N" as "Y" | "N",
     packable: false,
@@ -65,6 +67,122 @@ export function VendorMenuManagement({ vendorId }: Props) {
   const [types, setTypes] = useState<string[]>([]);
   const [cloudName, setCloudName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hsnSuggestions, setHsnSuggestions] = useState<Array<{hsnCode: string, count: number, gstPercentage: number, items: string[]}>>([]);
+  const [showHsnSuggestions, setShowHsnSuggestions] = useState(false);
+  const [loadingHsnSuggestions, setLoadingHsnSuggestions] = useState(false);
+
+  // Calculate tax details
+  const calculateTaxDetails = () => {
+    if (!formData.priceIncludingTax || !formData.gstPercentage) return null;
+    
+    const priceIncludingTaxNum = parseFloat(formData.priceIncludingTax);
+    const gstPercentageNum = parseFloat(formData.gstPercentage);
+    
+    if (isNaN(priceIncludingTaxNum) || isNaN(gstPercentageNum)) return null;
+    
+    const priceExcludingTax = priceIncludingTaxNum / (1 + gstPercentageNum / 100);
+    const sgstPercentage = gstPercentageNum / 2;
+    const cgstPercentage = gstPercentageNum / 2;
+    
+    return {
+      priceExcludingTax: Math.round(priceExcludingTax * 100) / 100,
+      sgstPercentage: Math.round(sgstPercentage * 100) / 100,
+      cgstPercentage: Math.round(cgstPercentage * 100) / 100
+    };
+  };
+
+  const taxDetails = calculateTaxDetails();
+
+  // Fetch HSN code suggestions when type is selected
+  const fetchHsnSuggestions = async (selectedType: string) => {
+    if (!selectedType) {
+      setHsnSuggestions([]);
+      setShowHsnSuggestions(false);
+      setLoadingHsnSuggestions(false);
+      return;
+    }
+
+    setLoadingHsnSuggestions(true);
+    setShowHsnSuggestions(false);
+
+    try {
+      // First try to get suggestions from the specific category
+      const categoryEndpoint = `/api/item/hsn-suggestions/${activeTab}/${selectedType}`;
+      const categoryRes = await fetch(`${BACKEND_URL}${categoryEndpoint}`);
+      
+      if (categoryRes.ok) {
+        const categoryData = await categoryRes.json();
+        console.log('Category HSN suggestions response:', categoryData); // Debug log
+        
+        if (categoryData.success && categoryData.suggestions.length > 0) {
+          setHsnSuggestions(categoryData.suggestions);
+          setShowHsnSuggestions(true);
+          setLoadingHsnSuggestions(false);
+          return;
+        }
+      }
+      
+      // If no category-specific suggestions, try common HSN codes
+      const commonEndpoint = `/api/item/common-hsn/${selectedType}`;
+      const commonRes = await fetch(`${BACKEND_URL}${commonEndpoint}`);
+      
+      if (commonRes.ok) {
+        const commonData = await commonRes.json();
+        console.log('Common HSN suggestions response:', commonData); // Debug log
+        
+        if (commonData.success && commonData.suggestions.length > 0) {
+          setHsnSuggestions(commonData.suggestions);
+          setShowHsnSuggestions(true);
+        } else {
+          setHsnSuggestions([]);
+          setShowHsnSuggestions(false);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching HSN suggestions:", err);
+      setHsnSuggestions([]);
+      setShowHsnSuggestions(false);
+    } finally {
+      setLoadingHsnSuggestions(false);
+    }
+  };
+
+  // Handle type selection and fetch HSN suggestions
+  const handleTypeChange = (selectedType: string) => {
+    setFormData({ ...formData, type: selectedType });
+    if (selectedType) {
+      fetchHsnSuggestions(selectedType);
+    } else {
+      setHsnSuggestions([]);
+      setShowHsnSuggestions(false);
+    }
+  };
+
+  // Handle HSN code selection from suggestions
+  const handleHsnSuggestionClick = (suggestion: {hsnCode: string, count: number, gstPercentage: number, items: string[]}) => {
+    console.log('HSN Suggestion clicked:', suggestion); // Debug log
+    
+    // Additional safety check
+    if (!suggestion || !suggestion.hsnCode) {
+      console.error('Invalid suggestion object:', suggestion);
+      return;
+    }
+    
+    // Validate GST percentage before setting it
+    let gstPercentageValue = "";
+    if (suggestion.gstPercentage != null && suggestion.gstPercentage !== undefined) {
+      gstPercentageValue = suggestion.gstPercentage.toString();
+    } else {
+      console.warn('GST percentage is undefined or null for suggestion:', suggestion);
+    }
+    
+    setFormData({ 
+      ...formData, 
+      hsnCode: suggestion.hsnCode, 
+      gstPercentage: gstPercentageValue
+    });
+    setShowHsnSuggestions(false);
+  };
 
   const fetchVendorData = async () => {
     try {
@@ -145,13 +263,18 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.type || !formData.price) {
+    if (!formData.name || !formData.type || !formData.priceIncludingTax || !formData.hsnCode || !formData.gstPercentage) {
       alert("Please fill in all required fields");
       return;
     }
     
     if (activeTab === "retail" && !formData.quantity) {
       alert("Please fill in quantity for retail items");
+      return;
+    }
+
+    if (!taxDetails) {
+      alert("Please ensure price and GST percentage are valid numbers");
       return;
     }
 
@@ -177,13 +300,18 @@ export function VendorMenuManagement({ vendorId }: Props) {
         body: JSON.stringify({
           name: formData.name,
           type: formData.type,
-          price: parseFloat(formData.price),
+          price: parseFloat(formData.priceIncludingTax),
+          priceExcludingTax: taxDetails?.priceExcludingTax,
           quantity: activeTab === "retail" ? parseInt(formData.quantity) : undefined,
           isSpecial: formData.isSpecial,
           image: imageUrl,
           uniId: "68320fd75c6f79ec179ad3bb",
           packable: formData.packable,
-          vendorId: vendorId // Add vendor-specific flag
+          vendorId: vendorId, // Add vendor-specific flag
+          hsnCode: formData.hsnCode,
+          gstPercentage: parseFloat(formData.gstPercentage),
+          sgstPercentage: taxDetails?.sgstPercentage,
+          cgstPercentage: taxDetails?.cgstPercentage,
         }),
       });
 
@@ -203,13 +331,18 @@ export function VendorMenuManagement({ vendorId }: Props) {
     e.preventDefault();
     if (!editingItem) return;
     
-    if (!formData.name || !formData.type || !formData.price) {
+    if (!formData.name || !formData.type || !formData.priceIncludingTax || !formData.hsnCode || !formData.gstPercentage) {
       alert("Please fill in all required fields");
       return;
     }
     
     if (activeTab === "retail" && !formData.quantity) {
       alert("Please fill in quantity for retail items");
+      return;
+    }
+
+    if (!taxDetails) {
+      alert("Please ensure price and GST percentage are valid numbers");
       return;
     }
 
@@ -235,11 +368,16 @@ export function VendorMenuManagement({ vendorId }: Props) {
         body: JSON.stringify({
           name: formData.name,
           type: formData.type,
-          price: parseFloat(formData.price),
+          price: parseFloat(formData.priceIncludingTax),
+          priceExcludingTax: taxDetails?.priceExcludingTax,
           quantity: activeTab === "retail" ? parseInt(formData.quantity) : undefined,
           isSpecial: formData.isSpecial,
           image: imageUrl,
           packable: formData.packable,
+          hsnCode: formData.hsnCode,
+          gstPercentage: parseFloat(formData.gstPercentage),
+          sgstPercentage: taxDetails?.sgstPercentage,
+          cgstPercentage: taxDetails?.cgstPercentage,
         }),
       });
 
@@ -304,13 +442,18 @@ export function VendorMenuManagement({ vendorId }: Props) {
     setFormData({
       name: "",
       type: "",
-      price: "",
+      priceIncludingTax: "",
+      hsnCode: "",
+      gstPercentage: "",
       quantity: "",
       isSpecial: "N",
       packable: false,
       image: null,
       imageUrl: ""
     });
+    setHsnSuggestions([]);
+    setShowHsnSuggestions(false);
+    setLoadingHsnSuggestions(false);
   };
 
   const openEditModal = (item: MenuItem) => {
@@ -318,7 +461,9 @@ export function VendorMenuManagement({ vendorId }: Props) {
     setFormData({
       name: item.name,
       type: item.type,
-      price: item.price.toString(),
+      priceIncludingTax: item.price.toString(),
+      hsnCode: "", // Placeholder, will be fetched/populated
+      gstPercentage: "", // Placeholder, will be fetched/populated
       quantity: (item.quantity?.toString() || item.inventory?.quantity?.toString() || ""),
       isSpecial: item.inventory?.isSpecial || item.isSpecial || "N",
       packable: item.packable,
@@ -550,7 +695,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
             Type
             <select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              onChange={(e) => handleTypeChange(e.target.value)}
               required
             >
               <option value="">Select type...</option>
@@ -559,17 +704,97 @@ export function VendorMenuManagement({ vendorId }: Props) {
               ))}
             </select>
           </label>
+
+          {/* HSN Suggestions */}
+          {showHsnSuggestions && hsnSuggestions.length > 0 && (
+            <div className={styles.hsnSuggestions}>
+              <h4>HSN Code Suggestions</h4>
+              <p className={styles.suggestionNote}>Click on a suggestion to auto-fill both HSN code and GST percentage:</p>
+              {hsnSuggestions
+                .filter(suggestion => suggestion && suggestion.hsnCode) // Filter out null/undefined suggestions
+                .map(suggestion => (
+                  <div
+                    key={suggestion.hsnCode}
+                    className={styles.hsnSuggestionItem}
+                    onClick={() => handleHsnSuggestionClick(suggestion)}
+                  >
+                    <div className={styles.hsnCode}>{suggestion.hsnCode}</div>
+                    <div className={styles.suggestionDetails}>
+                      <span className={styles.itemCount}>
+                        {suggestion.count || 0} item{(suggestion.count || 0) > 1 ? 's' : ''}
+                      </span>
+                      <span className={styles.gstPercentage}>
+                        GST: {suggestion.gstPercentage != null ? `${suggestion.gstPercentage}%` : 'Not available'}
+                      </span>
+                      <span className={styles.itemNames}>
+                        {(suggestion.items || []).slice(0, 3).join(', ')}
+                        {(suggestion.items || []).length > 3 ? '...' : ''}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+
           <label>
-            Price
+            Price Including Tax
             <input
               type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              value={formData.priceIncludingTax}
+              onChange={(e) => setFormData({ ...formData, priceIncludingTax: e.target.value })}
               min="0"
               step="0.01"
               required
             />
           </label>
+          <label>
+            HSN Code
+            <input
+              type="text"
+              value={formData.hsnCode}
+              onChange={(e) => setFormData({ ...formData, hsnCode: e.target.value })}
+              required
+            />
+          </label>
+          <label>
+            GST Percentage
+            <input
+              type="number"
+              value={formData.gstPercentage}
+              onChange={(e) => setFormData({ ...formData, gstPercentage: e.target.value })}
+              min="0"
+              step="0.01"
+              required
+            />
+          </label>
+
+          {/* Tax Calculation Display */}
+          {taxDetails && (
+            <div className={styles.taxCalculation}>
+              <h4>Tax Calculation</h4>
+              <div className={styles.taxRow}>
+                <span>Price Excluding Tax:</span>
+                <span>₹{taxDetails.priceExcludingTax}</span>
+              </div>
+              <div className={styles.taxRow}>
+                <span>SGST ({taxDetails.sgstPercentage}%):</span>
+                <span>₹{((taxDetails.priceExcludingTax * taxDetails.sgstPercentage) / 100).toFixed(2)}</span>
+              </div>
+              <div className={styles.taxRow}>
+                <span>CGST ({taxDetails.cgstPercentage}%):</span>
+                <span>₹{((taxDetails.priceExcludingTax * taxDetails.cgstPercentage) / 100).toFixed(2)}</span>
+              </div>
+              <div className={styles.taxRow}>
+                <span>Total Tax:</span>
+                <span>₹{(parseFloat(formData.priceIncludingTax) - taxDetails.priceExcludingTax).toFixed(2)}</span>
+              </div>
+              <div className={styles.taxRow}>
+                <span>Price Including Tax:</span>
+                <span>₹{formData.priceIncludingTax}</span>
+              </div>
+            </div>
+          )}
+
           {activeTab === "retail" && (
             <label>
               Quantity
@@ -657,7 +882,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
             Type
             <select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              onChange={(e) => handleTypeChange(e.target.value)}
               required
             >
               <option value="">Select type...</option>
@@ -666,17 +891,97 @@ export function VendorMenuManagement({ vendorId }: Props) {
               ))}
             </select>
           </label>
+
+          {/* HSN Suggestions */}
+          {showHsnSuggestions && hsnSuggestions.length > 0 && (
+            <div className={styles.hsnSuggestions}>
+              <h4>HSN Code Suggestions</h4>
+              <p className={styles.suggestionNote}>Click on a suggestion to auto-fill both HSN code and GST percentage:</p>
+              {hsnSuggestions
+                .filter(suggestion => suggestion && suggestion.hsnCode) // Filter out null/undefined suggestions
+                .map(suggestion => (
+                  <div
+                    key={suggestion.hsnCode}
+                    className={styles.hsnSuggestionItem}
+                    onClick={() => handleHsnSuggestionClick(suggestion)}
+                  >
+                    <div className={styles.hsnCode}>{suggestion.hsnCode}</div>
+                    <div className={styles.suggestionDetails}>
+                      <span className={styles.itemCount}>
+                        {suggestion.count || 0} item{(suggestion.count || 0) > 1 ? 's' : ''}
+                      </span>
+                      <span className={styles.gstPercentage}>
+                        GST: {suggestion.gstPercentage != null ? `${suggestion.gstPercentage}%` : 'Not available'}
+                      </span>
+                      <span className={styles.itemNames}>
+                        {(suggestion.items || []).slice(0, 3).join(', ')}
+                        {(suggestion.items || []).length > 3 ? '...' : ''}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+
           <label>
-            Price
+            Price Including Tax
             <input
               type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              value={formData.priceIncludingTax}
+              onChange={(e) => setFormData({ ...formData, priceIncludingTax: e.target.value })}
               min="0"
               step="0.01"
               required
             />
           </label>
+          <label>
+            HSN Code
+            <input
+              type="text"
+              value={formData.hsnCode}
+              onChange={(e) => setFormData({ ...formData, hsnCode: e.target.value })}
+              required
+            />
+          </label>
+          <label>
+            GST Percentage
+            <input
+              type="number"
+              value={formData.gstPercentage}
+              onChange={(e) => setFormData({ ...formData, gstPercentage: e.target.value })}
+              min="0"
+              step="0.01"
+              required
+            />
+          </label>
+
+          {/* Tax Calculation Display */}
+          {taxDetails && (
+            <div className={styles.taxCalculation}>
+              <h4>Tax Calculation</h4>
+              <div className={styles.taxRow}>
+                <span>Price Excluding Tax:</span>
+                <span>₹{taxDetails.priceExcludingTax}</span>
+              </div>
+              <div className={styles.taxRow}>
+                <span>SGST ({taxDetails.sgstPercentage}%):</span>
+                <span>₹{((taxDetails.priceExcludingTax * taxDetails.sgstPercentage) / 100).toFixed(2)}</span>
+              </div>
+              <div className={styles.taxRow}>
+                <span>CGST ({taxDetails.cgstPercentage}%):</span>
+                <span>₹{((taxDetails.priceExcludingTax * taxDetails.cgstPercentage) / 100).toFixed(2)}</span>
+              </div>
+              <div className={styles.taxRow}>
+                <span>Total Tax:</span>
+                <span>₹{(parseFloat(formData.priceIncludingTax) - taxDetails.priceExcludingTax).toFixed(2)}</span>
+              </div>
+              <div className={styles.taxRow}>
+                <span>Price Including Tax:</span>
+                <span>₹{formData.priceIncludingTax}</span>
+              </div>
+            </div>
+          )}
+
           {activeTab === "retail" && (
             <label>
               Quantity
