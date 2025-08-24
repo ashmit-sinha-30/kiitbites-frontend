@@ -68,7 +68,7 @@ export const isRazorpayInitialized = () => {
  * Get Razorpay initialization status
  */
 export const getRazorpayStatus = () => {
-  const initialized = isRazorpayInitialized();
+  const initialized = Boolean(isRazorpayInitialized());
   const envStatus = validateEnvironment();
   
   return {
