@@ -11,6 +11,7 @@ import {
   AiOutlineShoppingCart,
   AiOutlineTruck,
   AiOutlineSwap,
+  AiOutlineFileZip,
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import styles from "../styles/SideBar.module.scss";
@@ -48,6 +49,11 @@ const segments = [
     key: "past-orders",
     label: "Past Orders",
     icon: <AiOutlineHistory />,
+  },
+  {
+    key: "invoices",
+    label: "Invoices",
+    icon: <AiOutlineFileZip />,
   },
   {
     key: "vendor-cart",
