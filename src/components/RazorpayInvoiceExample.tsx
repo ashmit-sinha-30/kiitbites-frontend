@@ -15,7 +15,7 @@ interface RazorpayStatus {
   initialized: boolean;
   message: string;
   apiBase: string;
-  environment: string;
+  environment: "development" | "production" | "test";
   keyId: string;
   hasSecret: boolean;
   warnings: string[];

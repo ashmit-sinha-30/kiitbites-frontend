@@ -77,8 +77,8 @@ export const getRazorpayStatus = () => {
       ? 'Razorpay ready for direct API calls' 
       : 'Razorpay not initialized - will use backend proxy',
     apiBase: initialized ? ENV_CONFIG.RAZORPAY.API_BASE : 'Backend proxy',
-    environment: ENV_CONFIG.APP.ENVIRONMENT,
-    keyId: ENV_CONFIG.RAZORPAY.KEY_ID,
+    environment: ENV_CONFIG.APP.ENVIRONMENT || 'development',
+    keyId: ENV_CONFIG.RAZORPAY.KEY_ID || '',
     hasSecret: !!ENV_CONFIG.RAZORPAY.KEY_SECRET,
     warnings: envStatus.warnings,
     errors: envStatus.errors
