@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Order, OrderType, Status, Item } from "../types";
+import { Order, OrderType, Status, Item, Invoice } from "../types";
 import styles from "../styles/OrderList.module.scss";
 
 const VENDOR_ID = "6834622e10d75a5ba7b7740d";

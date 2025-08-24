@@ -10,14 +10,14 @@ interface RazorpayInvoiceResponse {
   currency: string;
   status: string;
   description: string;
-  notes: any;
+  notes: Record<string, unknown>;
   customer: {
     name: string;
     contact: string;
     email: string;
   };
-  billing_address: any;
-  shipping_address: any;
+  billing_address: Record<string, unknown>;
+  shipping_address: Record<string, unknown>;
   order_id: string;
   line_items: Array<{
     name: string;
@@ -25,7 +25,7 @@ interface RazorpayInvoiceResponse {
     amount: number;
     quantity: number;
   }>;
-  payment_terms: any;
+  payment_terms: Record<string, unknown>;
   partial_payment: boolean;
   date: number;
   due_date: number;
@@ -41,6 +41,25 @@ interface RazorpayInvoiceResponse {
   group_taxes_discounts: boolean;
   created_at: number;
   updated_at: number;
+}
+
+interface RazorpayInvoiceCreateData {
+  type: string;
+  currency: string;
+  amount: number;
+  description: string;
+  customer: {
+    name: string;
+    contact: string;
+    email: string;
+  };
+  line_items: Array<{
+    name: string;
+    description: string;
+    amount: number;
+    quantity: number;
+  }>;
+  notes?: Record<string, unknown>;
 }
 
 /**
@@ -163,7 +182,7 @@ export const getRazorpayInvoicePdf = async (invoiceId: string): Promise<string> 
  * @param invoiceData - Invoice data to create
  * @returns Promise with created invoice data
  */
-export const createRazorpayInvoice = async (invoiceData: any): Promise<RazorpayInvoiceResponse> => {
+export const createRazorpayInvoice = async (invoiceData: RazorpayInvoiceCreateData): Promise<RazorpayInvoiceResponse> => {
   try {
     if (hasRazorpayCredentials()) {
       // Direct API call to Razorpay - This will hit https://api.razorpay.com/v1/invoices

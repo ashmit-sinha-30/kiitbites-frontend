@@ -306,7 +306,7 @@ const RazorpayInvoiceExample: React.FC = () => {
       <div className="p-4 bg-yellow-100 border border-yellow-400 rounded-md">
         <h3 className="font-semibold mb-2">💡 Check Console for API Calls</h3>
         <p className="text-sm">
-          Open your browser's developer console to see the exact Razorpay API endpoints being hit:
+          Open your browser&apos;s developer console to see the exact Razorpay API endpoints being hit:
         </p>
         <ul className="text-sm mt-2 space-y-1">
           <li>• <code>https://api.razorpay.com/v1/invoices/{'{inv_id}'}</code></li>

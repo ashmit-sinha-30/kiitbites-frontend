@@ -29,8 +29,8 @@ export const RAZORPAY_CONFIG = {
 // This should be called from your app initialization
 export const setRazorpayCredentials = (keyId: string, keySecret: string) => {
   if (typeof window !== 'undefined') {
-    (window as any).RAZORPAY_KEY_ID = keyId;
-    (window as any).RAZORPAY_KEY_SECRET = keySecret;
+    (window as { RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }).RAZORPAY_KEY_ID = keyId;
+    (window as { RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }).RAZORPAY_KEY_SECRET = keySecret;
     console.log('🔑 Razorpay credentials set for direct API calls');
   }
 };
@@ -39,8 +39,8 @@ export const setRazorpayCredentials = (keyId: string, keySecret: string) => {
 export const getRazorpayCredentials = () => {
   if (typeof window !== 'undefined') {
     return {
-      keyId: (window as any).RAZORPAY_KEY_ID,
-      keySecret: (window as any).RAZORPAY_KEY_SECRET
+      keyId: (window as { RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }).RAZORPAY_KEY_ID,
+      keySecret: (window as { RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }).RAZORPAY_KEY_SECRET
     };
   }
   return null;

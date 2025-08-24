@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Order } from "../types";
+import { Order, Invoice } from "../types";
 import styles from "../styles/OrderCard.module.scss";
 import { ConfirmDialog } from "./ConfirmationDialogue";
 
@@ -94,7 +94,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       const invoicesData = await invoicesRes.json();
 
       if (invoicesData?.success && Array.isArray(invoicesData.data) && invoicesData.data.length > 0) {
-        const vendorInvoice = invoicesData.data.find((inv: any) => inv.recipientType === 'vendor');
+        const vendorInvoice = invoicesData.data.find((inv: Invoice) => inv.recipientType === 'vendor');
         const anyInvoice = vendorInvoice || invoicesData.data[0];
 
         if (anyInvoice?.pdfUrl) {
