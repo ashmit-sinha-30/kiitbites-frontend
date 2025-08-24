@@ -13,6 +13,7 @@ import { PastOrdersList } from "./components/PastOrdersList";
 import { DeliveryOrdersList } from "./components/DeliveryOrdersList";
 import { VendorCartComponent } from "./components/VendorCart";
 import { DeliverySettings } from "./components/DeliverySettings";
+import VendorInvoices from "./components/VendorInvoices";
 import { Order } from "./types";
 
 // Import the new inventory components:
@@ -282,6 +283,17 @@ export default function VendorDashboardPage() {
           </>
         )}
 
+        {/* Invoices Segment */}
+        {activeSegment === "invoices" && (
+          <>
+            <div className={styles.header}>
+              <h1>Invoices</h1>
+              <p>View and download your invoices</p>
+            </div>
+            <VendorInvoices vendorId={VENDOR_ID} />
+          </>
+        )}
+
         {/* Delivery Orders Segment */}
         {activeSegment === "delivery-orders" && (
           <>
@@ -331,7 +343,8 @@ export default function VendorDashboardPage() {
           activeSegment !== "vendor-cart" &&
           activeSegment !== "delivery-settings" &&
           activeSegment !== "raw-materials" &&
-          activeSegment !== "logout" && (
+          activeSegment !== "logout" &&
+          activeSegment !== "invoices" && (
             <div className={styles.underConstruction}>
               🚧{" "}
               {segmentsMap[activeSegment]

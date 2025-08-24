@@ -150,27 +150,63 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
   // Debug logging
   console.log("🔍 BillBox Debug:", {
-    items: items.map(i => ({ name: i.name, category: i.category, packable: i.packable, quantity: i.quantity })),
+    items: items.map(i => ({ 
+      name: i.name, 
+      category: i.category, 
+      packable: i.packable, 
+      quantity: i.quantity,
+      _id: i._id 
+    })),
     orderType,
     charges,
     packableItems: items.filter(i => i.packable === true)
   });
   
   // More robust packable item detection
-  const packableItems = items.filter((i) => i.packable === true);
+  // All produce items should be packable, and retail items based on their packable property
+  // This ensures that even if the database is missing the packable property for some items,
+  // produce items will always be treated as packable as per business requirements
+  const packableItems = items.filter((i) => {
+    // Produce items are always packable (even if packable property is missing)
+    if (i.category === "Produce") return true;
+    // Retail items are packable only if explicitly set to true
+    return i.packable === true;
+  });
   
-  console.log("📦 Packable items found:", packableItems.map(i => ({ name: i.name, packable: i.packable, quantity: i.quantity })));
+  // Ensure all produce items are marked as packable for consistency
+  const normalizedItems = items.map(item => ({
+    ...item,
+    packable: item.category === "Produce" ? true : (item.packable || false)
+  }));
   
-  // Ensure charges are available
-  const packingCharge = charges.packingCharge ?? 0;
-  const deliveryCharge = charges.deliveryCharge ?? 0;
+  console.log("📦 Packable items found:", packableItems.map(i => ({ 
+    name: i.name, 
+    packable: i.packable, 
+    quantity: i.quantity, 
+    category: i.category,
+    _id: i._id 
+  })));
+  
+  console.log("🔧 Normalized items:", normalizedItems.map(i => ({ 
+    name: i.name, 
+    category: i.category, 
+    packable: i.packable, 
+    quantity: i.quantity 
+  })));
+  
+  // Ensure charges are available with better fallbacks
+  const packingCharge = charges.packingCharge ?? 5; // Default ₹5 if not set
+  const deliveryCharge = charges.deliveryCharge ?? 50; // Default ₹50 if not set
   const platformFee = 2; // Flat platform fee (including GST)
   
   const itemTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const packaging =
-    orderType !== "dinein"
-      ? packableItems.reduce((s, i) => s + packingCharge * i.quantity, 0)
-      : 0;
+  
+  // Calculate packaging charge - always apply for takeaway and delivery
+  // Apply packing charge to each packable item based on quantity
+  const packaging = orderType !== "dinein" 
+    ? packableItems.reduce((sum, i) => sum + packingCharge * i.quantity, 0)
+    : 0;
+    
   const delivery = orderType === "delivery" ? deliveryCharge : 0;
   const grandTotal = itemTotal + packaging + delivery + platformFee;
   
@@ -182,7 +218,15 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
     grandTotal,
     packableItemsCount: packableItems.length,
     packingChargePerItem: packingCharge,
-    deliveryCharge: deliveryCharge
+    deliveryCharge: deliveryCharge,
+    orderType,
+    willShowPackaging: orderType !== "dinein",
+    willShowDelivery: orderType === "delivery",
+    packagingBreakdown: packableItems.map(i => ({
+      name: i.name,
+      quantity: i.quantity,
+      packagingCost: packingCharge * i.quantity
+    }))
   });
 
   if (loading) {
@@ -399,13 +443,27 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         </div>
         
       <div className={styles.totalPack}>
-        {packaging > 0 && (
-          <div className={styles.extra}>
-            <span>Packaging</span>
-            <span>₹{packaging}</span>
-          </div>
+        {/* Show packaging breakdown for takeaway and delivery orders */}
+        {orderType !== "dinein" && packableItems.length > 0 && (
+          <>
+            {/* Show individual packaging charges for transparency */}
+            {packableItems.map((item) => (
+              <div key={item._id} className={styles.extra}>
+                <span>Packaging - {item.name}</span>
+                <span>₹{packingCharge * item.quantity}</span>
+              </div>
+            ))}
+            {/* Show total packaging summary */}
+            <div className={styles.extra}>
+              <span>Total Packaging ({packableItems.length} item{packableItems.length > 1 ? 's' : ''})</span>
+              <span>₹{packaging}</span>
+            </div>
+          </>
         )}
-        {delivery > 0 && (
+        
+        {/* Always show delivery charge for delivery orders */}
+        {/* This ensures transparency even when delivery charge is ₹0 */}
+        {orderType === "delivery" && (
           <div className={styles.extra}>
             <span>Delivery Charge</span>
             <span>₹{delivery}</span>

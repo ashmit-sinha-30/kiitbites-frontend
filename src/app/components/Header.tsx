@@ -232,6 +232,15 @@ const Header: React.FC<HeaderProps> = ({
                     <PiShoppingCartSimpleBold size={24} />
                     <span>Cart</span>
                   </div>
+                  <div
+                    className={`${styles.navItem} ${
+                      pathname === "/admin" ? styles.activeNavItem : ""
+                    }`}
+                    onClick={() => handleNavigation("/admin")}
+                  >
+                    <span style={{ fontSize: "18px" }}>🔧</span>
+                    <span>Admin</span>
+                  </div>
                 </div>
               </motion.nav>
             )}
@@ -301,6 +310,13 @@ const Header: React.FC<HeaderProps> = ({
                   <span>GET THE APP</span>
                 </div>
               )}
+              <div
+                className={styles.navItem}
+                onClick={() => handleNavigation("/admin")}
+              >
+                <span style={{ fontSize: "18px" }}>🔧</span>
+                <span>Admin</span>
+              </div>
               {showProfile && (
                 <div
                   className={styles.navItem}

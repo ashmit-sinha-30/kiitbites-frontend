@@ -33,6 +33,12 @@ interface ApiResponse {
   orders: ApiOrder[];
 }
 
+interface InvoiceData {
+  _id: string;
+  recipientType: string;
+  pdfUrl?: string;
+}
+
 interface PastOrdersListProps {
   onLoaded?: (vendorName: string, vendorId: string) => void;
 }
@@ -42,6 +48,7 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ onLoaded }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
   const fetchPastOrders = useCallback(async () => {
     setError(null);
@@ -91,16 +98,57 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ onLoaded }) => {
     }
   };
 
-  const getStatusTextColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "#2f855a"; // dark green
-      case "delivered":
-        return "#22543d"; // darker green
-      case "failed":
-        return "#c53030"; // dark red
-      default:
-        return "#4a5568"; // dark gray
+  const getStatusTextColor = (status: string) =>
+    status === "completed" || status === "delivered"
+      ? "#22543d" // darker green
+      : status === "failed"
+      ? "#c53030" // dark red
+      : "#4a5568"; // dark gray
+
+  const downloadInvoice = async (orderId: string) => {
+    try {
+      // Prefer backend invoice list → open Cloudinary pdfUrl if available
+      const response = await fetch(`${API_BASE}/api/invoices/order/${orderId}`);
+      const data = await response.json();
+
+      if (data?.success && Array.isArray(data.data) && data.data.length > 0) {
+        const vendorInvoice = data.data.find((invoice: InvoiceData) => invoice.recipientType === 'vendor');
+        const selectedInvoice = vendorInvoice || data.data[0];
+
+        if (selectedInvoice?.pdfUrl) {
+          window.open(selectedInvoice.pdfUrl, '_blank');
+          return;
+        }
+        if (selectedInvoice?._id) {
+          window.open(`${API_BASE}/api/invoices/${selectedInvoice._id}/download`, '_blank');
+          return;
+        }
+      }
+
+      // Last resort: try to use Razorpay if available on the order
+      const orderResponse = await fetch(`${API_BASE}/order/${orderId}`);
+      const orderData = await orderResponse.json();
+      const order = orderData?.data || orderData?.order || {};
+
+      if (order?.razorpayInvoiceId) {
+        const invoiceResponse = await fetch(`${API_BASE}/razorpay/invoices/${order.razorpayInvoiceId}`);
+        const invoiceData = await invoiceResponse.json();
+        if (invoiceData?.success && invoiceData?.data?.short_url) {
+          window.open(invoiceData.data.short_url, '_blank');
+          return;
+        }
+        const pdfResponse = await fetch(`${API_BASE}/razorpay/invoices/${order.razorpayInvoiceId}/pdf`);
+        const pdfData = await pdfResponse.json();
+        if (pdfData?.success && pdfData?.pdfUrl) {
+          window.open(pdfData.pdfUrl, '_blank');
+          return;
+        }
+      }
+
+      alert('Invoice is not available yet. Please try again later.');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      alert('Failed to download invoice. Please try again.');
     }
   };
 
@@ -168,6 +216,12 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ onLoaded }) => {
             {/* FOOTER */}
             <div className={styles.footer}>
               <div className={styles.total}>Total: ₹{os.order.total.toFixed(2)}</div>
+              <button
+                onClick={() => downloadInvoice(os.order.orderId)}
+                className={styles.invoiceButton}
+              >
+                Download Invoice
+              </button>
             </div>
           </div>
         </div>
