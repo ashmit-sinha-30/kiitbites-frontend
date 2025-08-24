@@ -18,7 +18,12 @@ interface InvoiceData {
 
 interface SystemHealth {
   uptime: number;
-  memory: any;
+  memory: {
+    rss: number;
+    heapUsed: number;
+    heapTotal: number;
+    external: number;
+  };
   version: string;
   platform: string;
   timestamp: string;
