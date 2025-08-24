@@ -33,6 +33,12 @@ interface ApiResponse {
   orders: ApiOrder[];
 }
 
+interface InvoiceData {
+  _id: string;
+  recipientType: string;
+  pdfUrl?: string;
+}
+
 interface PastOrdersListProps {
   onLoaded?: (vendorName: string, vendorId: string) => void;
 }
@@ -106,7 +112,7 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ onLoaded }) => {
       const data = await response.json();
 
       if (data?.success && Array.isArray(data.data) && data.data.length > 0) {
-        const vendorInvoice = data.data.find((invoice: any) => invoice.recipientType === 'vendor');
+        const vendorInvoice = data.data.find((invoice: InvoiceData) => invoice.recipientType === 'vendor');
         const selectedInvoice = vendorInvoice || data.data[0];
 
         if (selectedInvoice?.pdfUrl) {
