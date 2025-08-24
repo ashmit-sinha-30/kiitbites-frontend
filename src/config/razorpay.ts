@@ -36,24 +36,26 @@ export const setRazorpayCredentials = (keyId: string, keySecret: string) => {
 };
 
 // Function to get Razorpay credentials
-export const getRazorpayCredentials = () => {
+export const getRazorpayCredentials = (): { keyId: string; keySecret: string } | null => {
   if (typeof window !== 'undefined') {
-    return {
-      keyId: (window as { RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }).RAZORPAY_KEY_ID,
-      keySecret: (window as { RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }).RAZORPAY_KEY_SECRET
-    };
+    const keyId = (window as { RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }).RAZORPAY_KEY_ID;
+    const keySecret = (window as { RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }).RAZORPAY_KEY_SECRET;
+    
+    if (keyId && keySecret) {
+      return { keyId, keySecret };
+    }
   }
   return null;
 };
 
 // Function to check if credentials are available
-export const hasRazorpayCredentials = () => {
+export const hasRazorpayCredentials = (): boolean => {
   const credentials = getRazorpayCredentials();
-  return credentials && credentials.keyId && credentials.keySecret;
+  return credentials !== null;
 };
 
 // Function to get credentials from environment or config
-export const getRazorpayCredentialsFromEnv = () => {
+export const getRazorpayCredentialsFromEnv = (): { keyId: string; keySecret: string } | null => {
   // Try to get from environment variables first
   if (typeof process !== 'undefined' && process.env) {
     const envKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
