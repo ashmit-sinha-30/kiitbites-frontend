@@ -10,11 +10,86 @@ import {
   getEnvironmentSummary
 } from '../utils/razorpaySetup';
 
+// Define proper types for the component state
+interface RazorpayStatus {
+  initialized: boolean;
+  message: string;
+  apiBase: string;
+  environment: string;
+  keyId: string;
+  hasSecret: boolean;
+  warnings: string[];
+  errors: string[];
+}
+
+interface EnvironmentSummary {
+  razorpay: {
+    keyId: string;
+    hasSecret: boolean;
+    apiBase: string;
+  };
+  backend: {
+    url: string;
+  };
+  app: {
+    name: string;
+    version: string;
+    environment: string;
+  };
+  features: {
+    directRazorpayApi: boolean;
+    razorpayFallback: boolean;
+  };
+}
+
+interface RazorpayInvoiceData {
+  id: string;
+  entity: string;
+  invoice_number: string;
+  amount: number;
+  amount_paid: number;
+  amount_due: number;
+  currency: string;
+  status: string;
+  description: string;
+  notes: Record<string, unknown>;
+  customer: {
+    name: string;
+    contact: string;
+    email: string;
+  };
+  billing_address: Record<string, unknown>;
+  shipping_address: Record<string, unknown>;
+  order_id: string;
+  line_items: Array<{
+    name: string;
+    description: string;
+    amount: number;
+    quantity: number;
+  }>;
+  payment_terms: Record<string, unknown>;
+  partial_payment: boolean;
+  date: number;
+  due_date: number;
+  issued_date: number;
+  paid_at: number;
+  cancelled_at: number;
+  expired_at: number;
+  sms_status: string;
+  email_status: string;
+  short_url: string;
+  view_less: boolean;
+  type: string;
+  group_taxes_discounts: boolean;
+  created_at: number;
+  updated_at: number;
+}
+
 const RazorpayInvoiceExample: React.FC = () => {
-  const [status, setStatus] = useState<any>(null);
-  const [envSummary, setEnvSummary] = useState<any>(null);
+  const [status, setStatus] = useState<RazorpayStatus | null>(null);
+  const [envSummary, setEnvSummary] = useState<EnvironmentSummary | null>(null);
   const [invoiceId, setInvoiceId] = useState('');
-  const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [invoiceData, setInvoiceData] = useState<RazorpayInvoiceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,8 +119,9 @@ const RazorpayInvoiceExample: React.FC = () => {
       const invoice = await fetchRazorpayInvoice(invoiceId);
       setInvoiceData(invoice);
       console.log('✅ Invoice fetched successfully:', invoice);
-    } catch (err: any) {
-      setError(`Failed to fetch invoice: ${err.message}`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to fetch invoice: ${errorMessage}`);
       console.error('❌ Error fetching invoice:', err);
     } finally {
       setLoading(false);
@@ -85,8 +161,9 @@ const RazorpayInvoiceExample: React.FC = () => {
       setInvoiceData(invoice);
       setInvoiceId(invoice.id);
       console.log('✅ Invoice created successfully:', invoice);
-    } catch (err: any) {
-      setError(`Failed to create invoice: ${err.message}`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to create invoice: ${errorMessage}`);
       console.error('❌ Error creating invoice:', err);
     } finally {
       setLoading(false);
@@ -109,8 +186,9 @@ const RazorpayInvoiceExample: React.FC = () => {
       
       // Open PDF in new tab
       window.open(pdfUrl, '_blank');
-    } catch (err: any) {
-      setError(`Failed to get PDF: ${err.message}`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to get PDF: ${errorMessage}`);
       console.error('❌ Error getting PDF:', err);
     } finally {
       setLoading(false);

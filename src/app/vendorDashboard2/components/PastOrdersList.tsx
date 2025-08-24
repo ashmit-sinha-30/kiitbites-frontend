@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Order, OrderType, Status, Item } from "../types";
+import { Order, OrderType, Status, Item, Invoice } from "../types";
 import styles from "../styles/OrderList.module.scss";
 
 const VENDOR_ID = "6834622710d75a5ba7b77403";
@@ -106,7 +106,7 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ onLoaded }) => {
       const data = await response.json();
 
       if (data?.success && Array.isArray(data.data) && data.data.length > 0) {
-        const vendorInvoice = data.data.find((invoice: any) => invoice.recipientType === 'vendor');
+        const vendorInvoice = data.data.find((invoice: Invoice) => invoice.recipientType === 'vendor');
         const anyInvoice = vendorInvoice || data.data[0];
 
         if (anyInvoice?.pdfUrl) {

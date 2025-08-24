@@ -175,3 +175,60 @@ export interface GuestOrderResponse {
   message: string;
   isNewUser?: boolean;
 }
+
+// Invoice interface based on backend model
+export interface Invoice {
+  _id: string;
+  invoiceNumber: string;
+  orderId: string;
+  orderNumber: string;
+  invoiceType: 'vendor' | 'platform';
+  recipientType: 'vendor' | 'admin';
+  recipientId: string;
+  recipientModel: 'Vendor' | 'Admin';
+  vendorId: string;
+  vendorName: string;
+  vendorLocation: string;
+  uniId: string;
+  uniName: string;
+  gstNumber: string;
+  gstNumberType: 'vendor' | 'university';
+  customerName: string;
+  customerPhone: string;
+  customerAddress?: string;
+  subtotal: number;
+  subtotalBeforeGst: number;
+  platformFee: number;
+  gstAmount: number;
+  cgstAmount: number;
+  sgstAmount: number;
+  totalAmount: number;
+  currency: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    priceBeforeGst: number;
+    totalPrice: number;
+    hsnCode: string;
+    gstPercentage: number;
+    cgstPercentage: number;
+    sgstPercentage: number;
+    cgstAmount: number;
+    sgstAmount: number;
+    gstAmount: number;
+    totalAfterGst: number;
+    kind: 'Retail' | 'Produce';
+  }>;
+  packagingCharge: number;
+  deliveryCharge: number;
+  razorpayInvoiceId?: string;
+  razorpayInvoiceUrl?: string;
+  pdfUrl?: string;
+  cloudinaryPublicId?: string;
+  status: 'draft' | 'sent' | 'paid' | 'cancelled';
+  dueDate?: string;
+  paidAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
