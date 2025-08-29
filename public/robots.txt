@@ -1,0 +1,19 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /vendorDashboard/
+Disallow: /vendorDashboard2/
+Disallow: /uniDashboard/
+Disallow: /test/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /404
+Disallow: /500
+
+# Host
+Host: https://kiitbites.com
+
+# Sitemaps
+Sitemap: https://kiitbites.com/sitemap.xml
+Sitemap: https://kampyn.com/sitemap.xml
