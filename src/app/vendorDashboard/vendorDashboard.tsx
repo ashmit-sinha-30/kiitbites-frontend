@@ -22,6 +22,7 @@ import { ProduceInventory } from "./components/ProduceInventory";
 import { RawMaterialInventory } from "./components/RawMaterialInventory";
 import DashboardAnalytics from "./components/DashboardAnalytics";
 import { InventoryTransfer } from "./components/InventoryTransfer";
+import VendorAvailabilityToggle from "./components/VendorAvailabilityToggle";
 
 import styles from "./styles/InventoryReport.module.scss";
 import { InventoryReport, transformApiReport } from "./types";
@@ -165,7 +166,24 @@ export default function VendorDashboardPage() {
 
         {/* Dashboard Segment (analytics) */}
         {activeSegment === "dashboard" && (
-          <DashboardAnalytics />
+          <>
+            <div className={styles.header}>
+              <div className={styles.headerContent}>
+                <div className={styles.headerText}>
+                  <h1>Dashboard</h1>
+                  <p>Overview of your business performance and settings</p>
+                </div>
+                <VendorAvailabilityToggle 
+                  vendorId={report?.vendorId || vendorIdFromAPI || ""}
+                  uniId={""} // Not needed anymore
+                  onAvailabilityChange={(isAvailable) => {
+                    console.log('Vendor availability changed:', isAvailable);
+                  }}
+                />
+              </div>
+            </div>
+            <DashboardAnalytics />
+          </>
         )}
 
         {/* Retail Inventory Segment */}
