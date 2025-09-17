@@ -175,7 +175,6 @@ export default function VendorDashboardPage() {
                 </div>
                 <VendorAvailabilityToggle 
                   vendorId={report?.vendorId || vendorIdFromAPI || ""}
-                  uniId={""} // Not needed anymore
                   onAvailabilityChange={(isAvailable) => {
                     console.log('Vendor availability changed:', isAvailable);
                   }}

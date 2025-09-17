@@ -4,13 +4,11 @@ import styles from '../styles/VendorAvailabilityToggle.module.scss';
 
 interface VendorAvailabilityToggleProps {
   vendorId: string;
-  uniId: string;
   onAvailabilityChange?: (isAvailable: boolean) => void;
 }
 
 const VendorAvailabilityToggle: React.FC<VendorAvailabilityToggleProps> = ({
   vendorId,
-  uniId,
   onAvailabilityChange
 }) => {
   const [isAvailable, setIsAvailable] = useState<boolean>(true);
