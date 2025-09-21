@@ -114,7 +114,7 @@ const AdminDashboard: React.FC = () => {
       description: 'View and manage all generated invoices',
       icon: <FileTextIcon />,
       color: 'bg-purple-500',
-      onClick: () => setSelectedOption('check-invoices')
+      onClick: () => router.push('/admin-dashboard/invoices')
     },
     {
       id: 'download-invoices',
