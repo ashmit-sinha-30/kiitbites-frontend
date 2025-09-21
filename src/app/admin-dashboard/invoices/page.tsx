@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileTextIcon, DownloadIcon, EyeIcon, CalendarIcon, BuildingIcon, UserIcon, DollarSignIcon } from 'lucide-react';
+import { FileTextIcon, DownloadIcon, EyeIcon, BuildingIcon, UserIcon, DollarSignIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './styles/invoices.module.scss';
 
@@ -66,12 +66,7 @@ const InvoicesPage: React.FC = () => {
   const router = useRouter();
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
-  useEffect(() => {
-    fetchInvoices();
-    fetchStats();
-  }, [filters]);
-
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -96,9 +91,9 @@ const InvoicesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, API_BASE]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const queryParams = new URLSearchParams();
       if (filters.startDate) queryParams.append('startDate', filters.startDate);
@@ -113,14 +108,19 @@ const InvoicesPage: React.FC = () => {
           totalAmount: data.data.amounts.total,
           vendorInvoices: data.data.counts.vendor,
           platformInvoices: data.data.counts.platform,
-          paidInvoices: data.data.statusDistribution.find((s: any) => s._id === 'paid')?.count || 0,
-          pendingInvoices: data.data.statusDistribution.find((s: any) => s._id === 'sent')?.count || 0
+          paidInvoices: data.data.statusDistribution.find((s: { _id: string; count: number }) => s._id === 'paid')?.count || 0,
+          pendingInvoices: data.data.statusDistribution.find((s: { _id: string; count: number }) => s._id === 'sent')?.count || 0
         });
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  };
+  }, [filters.startDate, filters.endDate, API_BASE]);
+
+  useEffect(() => {
+    fetchInvoices();
+    fetchStats();
+  }, [fetchInvoices, fetchStats]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
