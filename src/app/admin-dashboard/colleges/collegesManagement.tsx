@@ -73,6 +73,7 @@ interface University {
   packingCharge: number;
   deliveryCharge: number;
   isVerified: boolean;
+  isAvailable: string;
   createdAt: string;
   updatedAt: string;
   totalVendors: number;
@@ -143,6 +144,11 @@ const CollegesManagement: React.FC = () => {
   // Go back to admin dashboard
   const goBack = () => {
     window.history.back();
+  };
+
+  // Navigate to college details
+  const viewCollegeDetails = (uniId: string) => {
+    window.location.href = `/admin-dashboard/colleges/${uniId}`;
   };
 
   return (
@@ -238,6 +244,18 @@ const CollegesManagement: React.FC = () => {
             </div>
             <div className={styles.statLabel}>Pending Verification</div>
           </div>
+          <div className={styles.statCard}>
+            <div className={styles.statNumber}>
+              {universities.filter(uni => uni.isAvailable === 'Y').length}
+            </div>
+            <div className={styles.statLabel}>Available Colleges</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statNumber}>
+              {universities.filter(uni => uni.isAvailable === 'N').length}
+            </div>
+            <div className={styles.statLabel}>Unavailable Colleges</div>
+          </div>
         </div>
       )}
 
@@ -254,7 +272,11 @@ const CollegesManagement: React.FC = () => {
             </div>
           ) : (
             filteredUniversities.map((uni) => (
-              <Card key={uni._id} className={styles.universityCard}>
+              <Card 
+                key={uni._id} 
+                className={`${styles.universityCard} ${styles.clickableCard}`}
+                onClick={() => viewCollegeDetails(uni._id)}
+              >
                 <CardHeader className={styles.cardHeader}>
                   <div className={styles.cardHeaderTop}>
                     <div className={styles.universityInfo}>
@@ -264,6 +286,9 @@ const CollegesManagement: React.FC = () => {
                       <div className={styles.universityMeta}>
                         <Badge variant={uni.isVerified ? "default" : "secondary"}>
                           {uni.isVerified ? 'Verified' : 'Pending Verification'}
+                        </Badge>
+                        <Badge variant={uni.isAvailable === 'Y' ? "default" : "destructive"}>
+                          {uni.isAvailable === 'Y' ? 'Available' : 'Unavailable'}
                         </Badge>
                         <span className={styles.universityId}>
                           ID: {uni._id.slice(-8)}

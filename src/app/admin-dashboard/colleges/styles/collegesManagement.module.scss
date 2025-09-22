@@ -247,6 +247,22 @@
   }
 }
 
+.clickableCard {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    border-color: rgba(102, 126, 234, 0.3);
+  }
+
+  &:active {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  }
+}
+
 .cardHeader {
   padding: 1.5rem 1.5rem 1rem;
 }
