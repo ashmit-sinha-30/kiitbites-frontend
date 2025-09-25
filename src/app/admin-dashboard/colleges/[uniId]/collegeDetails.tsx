@@ -104,6 +104,8 @@ interface UniversityDetails {
   createdAt: string;
   updatedAt: string;
   vendors: Vendor[];
+  features?: { _id: string; name: string }[];
+  services?: { _id: string; name: string; feature?: { _id: string; name: string } }[];
   statistics: {
     totalVendors: number;
     activeVendors: number;
@@ -122,6 +124,12 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
+  const [allFeatures, setAllFeatures] = useState<{ _id: string; name: string }[]>([]);
+  const [allServices, setAllServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
+  const [selectedFeatureIds, setSelectedFeatureIds] = useState<string[]>([]);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [featureToAdd, setFeatureToAdd] = useState<string>("");
+  const [serviceToAdd, setServiceToAdd] = useState<string>("");
 
   // Fetch university details
   const fetchUniversityDetails = async () => {
@@ -135,6 +143,17 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       if (data.success) {
         setUniversity(data.data);
         setFilteredVendors(data.data.vendors);
+        // Load current assignments
+        try {
+          const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
+          const assignJson = await assignRes.json();
+          if (assignJson.success) {
+            setSelectedFeatureIds(assignJson.data.features.map((f: any) => f._id));
+            setSelectedServiceIds(assignJson.data.services.map((s: any) => s._id));
+          }
+        } catch (e) {
+          console.error('Failed to load assignments');
+        }
       } else {
         setError(data.message || 'Failed to fetch university details');
       }
@@ -143,6 +162,22 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       setError('Failed to connect to server');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch catalog for features/services
+  const fetchFeatureAndServiceCatalog = async () => {
+    try {
+      const [fRes, sRes] = await Promise.all([
+        fetch(`${ENV_CONFIG.BACKEND.URL}/api/admin/features`),
+        fetch(`${ENV_CONFIG.BACKEND.URL}/api/admin/services`),
+      ]);
+      const fJson = await fRes.json();
+      const sJson = await sRes.json();
+      if (fJson.success) setAllFeatures(fJson.data);
+      if (sJson.success) setAllServices(sJson.data);
+    } catch (e) {
+      console.error('Failed to fetch feature/service catalog', e);
     }
   };
 
@@ -196,6 +231,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   // Load data on component mount
   useEffect(() => {
     fetchUniversityDetails();
+    fetchFeatureAndServiceCatalog();
   }, [uniId]);
 
   // Format date
@@ -348,6 +384,155 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                 <Label>Added On</Label>
                 <p>{formatDate(university.createdAt)}</p>
               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Feature Assignment */}
+      <Card className={styles.universityInfoCard}>
+        <CardHeader>
+          <CardTitle className={styles.cardTitle}>Assign Features</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <div className="flex flex-wrap gap-2">
+                {selectedFeatureIds.length === 0 && (
+                  <span className="text-sm text-gray-500">No features assigned</span>
+                )}
+                {selectedFeatureIds.map((fid) => {
+                  const f = allFeatures.find((x) => x._id === fid);
+                  return (
+                    <span key={fid} className="inline-flex items-center gap-2 border rounded px-2 py-1 text-sm">
+                      {f?.name || fid}
+                      <button
+                        className="text-red-600"
+                        onClick={async () => {
+                          const next = selectedFeatureIds.filter((id) => id !== fid);
+                          setSelectedFeatureIds(next);
+                          await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/features`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ features: next })
+                          });
+                          // also remove any services that belong to removed feature from selected state
+                          const remainingServiceIds = selectedServiceIds.filter((sid) => {
+                            const svc = allServices.find((s) => s._id === sid);
+                            return svc ? next.includes(svc.feature._id) : false;
+                          });
+                          if (remainingServiceIds.length !== selectedServiceIds.length) {
+                            setSelectedServiceIds(remainingServiceIds);
+                            await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/services`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ services: remainingServiceIds })
+                            });
+                          }
+                        }}
+                        aria-label="Remove feature"
+                      >×</button>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <select
+                className="border rounded p-2 w-full"
+                value={featureToAdd}
+                onChange={(e) => setFeatureToAdd(e.target.value)}
+              >
+                <option value="">Select feature to add</option>
+                {allFeatures
+                  .filter((f) => !selectedFeatureIds.includes(f._id))
+                  .map((f) => (
+                    <option key={f._id} value={f._id}>{f.name}</option>
+                  ))}
+              </select>
+              <Button
+                disabled={!featureToAdd}
+                onClick={async () => {
+                  const next = Array.from(new Set([...selectedFeatureIds, featureToAdd]));
+                  setSelectedFeatureIds(next);
+                  setFeatureToAdd("");
+                  await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/features`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ features: next })
+                  });
+                }}
+              >Add Feature</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Service Assignment */}
+      <Card className={styles.universityInfoCard}>
+        <CardHeader>
+          <CardTitle className={styles.cardTitle}>Assign Services</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <div className="flex flex-wrap gap-2">
+                {selectedServiceIds.length === 0 && (
+                  <span className="text-sm text-gray-500">No services assigned</span>
+                )}
+                {selectedServiceIds.map((sid) => {
+                  const s = allServices.find((x) => x._id === sid);
+                  return (
+                    <span key={sid} className="inline-flex items-center gap-2 border rounded px-2 py-1 text-sm">
+                      {s?.name || sid}{s?.feature?.name ? ` — ${s.feature.name}` : ''}
+                      <button
+                        className="text-red-600"
+                        onClick={async () => {
+                          const next = selectedServiceIds.filter((id) => id !== sid);
+                          setSelectedServiceIds(next);
+                          await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/services`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ services: next })
+                          });
+                        }}
+                        aria-label="Remove service"
+                      >×</button>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <select
+                className="border rounded p-2 w-full"
+                value={serviceToAdd}
+                onChange={(e) => setServiceToAdd(e.target.value)}
+              >
+                <option value="">Select service to add</option>
+                {allServices
+                  .filter((s) => selectedFeatureIds.includes(s.feature._id))
+                  .filter((s) => !selectedServiceIds.includes(s._id))
+                  .map((s) => (
+                    <option key={s._id} value={s._id}>
+                      {s.name} {s.feature?.name ? `— ${s.feature.name}` : ''}
+                    </option>
+                  ))}
+              </select>
+              <Button
+                disabled={!serviceToAdd}
+                onClick={async () => {
+                  const next = Array.from(new Set([...selectedServiceIds, serviceToAdd]));
+                  setSelectedServiceIds(next);
+                  setServiceToAdd("");
+                  await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/services`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ services: next })
+                  });
+                }}
+              >Add Service</Button>
             </div>
           </div>
         </CardContent>

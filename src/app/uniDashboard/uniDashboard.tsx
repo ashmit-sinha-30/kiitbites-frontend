@@ -27,7 +27,7 @@ const segmentsMap: Record<string, string> = {
 };
 
 export default function UniDashboardPage() {
-  const UNIVERSITY_ID = "68320fd75c6f79ec179ad3bb";
+  const UNIVERSITY_ID = "68d57d3b3d091d35373b161a";
 
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
 

@@ -57,14 +57,21 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
 
   const getUserId = async () => {
     const token = localStorage.getItem("token");
-    if (!token) return null;
+    if (!token) {
+      console.log('No token found in localStorage');
+      return null;
+    }
     try {
       const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) return null;
+      if (!response.ok) {
+        console.log('User auth response not ok:', response.status, response.statusText);
+        return null;
+      }
       const user = await response.json();
-      return user._id;
+      console.log('User data received:', user);
+      return user._id || user.id;
     } catch (error) {
       console.error('Error fetching user:', error);
       return null;
@@ -77,11 +84,15 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
     try {
       setIsRefreshing(true);
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        console.log('No token found, skipping cart refresh');
+        return;
+      }
 
       const userId = await getUserId();
       if (!userId) {
-        throw new Error('Failed to get user ID');
+        console.log('No user ID found, skipping cart refresh');
+        return;
       }
 
       const response = await fetch(`${BACKEND_URL}/cart/${userId}`, {
@@ -90,7 +101,8 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch cart items');
+        console.log('Cart fetch failed:', response.status, response.statusText);
+        return;
       }
 
       const data = await response.json();
@@ -109,7 +121,10 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
       setSearchCartItems(transformedItems);
     } catch (error) {
       console.error('Error refreshing search cart:', error);
-      toast.error('Failed to refresh cart');
+      // Don't show toast for expected errors like no user ID
+      if (error instanceof Error && !error.message.includes('Failed to get user ID')) {
+        toast.error('Failed to refresh cart');
+      }
     } finally {
       setIsRefreshing(false);
     }
