@@ -125,11 +125,6 @@ export default function UniDashboardPage() {
           <AddVendorForm universityId={universityId || ""} />
         )}
 
-        {/* Image Upload Section */}
-        {/* {activeSegment === "dashboard" && (
-          <ImageUploadSection universityId={UNIVERSITY_ID} />
-        )} */}
-
         {/* Upload Item Segment */}
         {activeSegment === "addItem" && (
           <UploadItemForm universityId={universityId || ""} />
@@ -144,16 +139,6 @@ export default function UniDashboardPage() {
         {activeSegment === "manage-charges" && (
           <ManageCharges universityId={universityId || ""} />
         )}
-
-        {/* Other segments under construction */}
-        {/* {!["dashboard", "add-vendor", "delete-vendor", "addItem", "manage-items", "manage-charges", "logout"].includes(activeSegment) && (
-          <div className={styles.underConstruction}>
-            {segmentsMap[activeSegment]
-              ? segmentsMap[activeSegment]
-              : activeSegment.replace(/-/g, " ")}{" "}
-            is under construction.
-          </div>
-        )} */}
       </main>
     </div>
   );

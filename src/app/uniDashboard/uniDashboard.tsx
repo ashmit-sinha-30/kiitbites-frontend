@@ -13,10 +13,13 @@ export default function UniDashboardPage() {
   const [features, setFeatures] = useState<{ _id: string; name: string }[]>([]);
   const [services, setServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("activeSegment");
-    if (saved) setActiveSegment(saved);
+    // Always land on dashboard for this page
+    localStorage.removeItem("activeSegment");
+    setActiveSegment("dashboard");
   }, []);
 
   useEffect(() => {
@@ -28,7 +31,10 @@ export default function UniDashboardPage() {
     const init = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
+        if (!token) {
+          router.push("/uni-login");
+          return;
+        }
         const userRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/uni/auth/user`, {
           headers: { Authorization: `Bearer ${token}` },
           credentials: "include",
@@ -44,9 +50,14 @@ export default function UniDashboardPage() {
             setFeatures(assignJson.data.features);
             setServices(assignJson.data.services);
           }
+        } else {
+          router.push("/uni-login");
         }
       } catch (e) {
         console.error("Failed to init uni dashboard", e);
+        setError("Failed to load dashboard");
+      } finally {
+        setLoading(false);
       }
     };
     init();
@@ -59,6 +70,12 @@ export default function UniDashboardPage() {
       {/* Sidebar removed: only feature selection remains in this page */}
 
       <main >
+        {loading && (
+          <div className="p-4 text-sm text-gray-500">Loading your features…</div>
+        )}
+        {!!error && (
+          <div className="p-4 text-sm text-red-600">{error}</div>
+        )}
         {/* Dashboard Segment: Feature selection */}
         {activeSegment === "dashboard" && (
           <div>
@@ -81,6 +98,9 @@ export default function UniDashboardPage() {
                   </button>
                 );
               })}
+              {!loading && features.length === 0 && (
+                <div className="text-sm text-gray-500">No features assigned to your university yet.</div>
+              )}
             </div>
           </div>
         )}

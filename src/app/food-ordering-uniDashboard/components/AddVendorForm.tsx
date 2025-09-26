@@ -12,6 +12,7 @@ export const AddVendorForm: React.FC<AddVendorFormProps> = ({ universityId }) =>
     phone: "",
     password: "",
     location: "",
+    sellerType: "SELLER" as "SELLER" | "NON_SELLER",
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
@@ -48,7 +49,7 @@ export const AddVendorForm: React.FC<AddVendorFormProps> = ({ universityId }) =>
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to add vendor");
       setSuccess("Vendor added successfully! OTP sent to email.");
-      setForm({ fullName: "", email: "", phone: "", password: "", location: "" });
+      setForm({ fullName: "", email: "", phone: "", password: "", location: "", sellerType: "SELLER" });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to add vendor");
     } finally {
@@ -133,6 +134,20 @@ export const AddVendorForm: React.FC<AddVendorFormProps> = ({ universityId }) =>
               className={styles.input}
             />
           </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="sellerType">Seller Type</label>
+          <select
+            id="sellerType"
+            name="sellerType"
+            value={form.sellerType}
+            onChange={(e) => setForm({ ...form, sellerType: e.target.value as "SELLER" | "NON_SELLER" })}
+            className={styles.input}
+          >
+            <option value="SELLER">Seller</option>
+            <option value="NON_SELLER">Non Seller</option>
+          </select>
+        </div>
 
           <button 
             type="submit" 
