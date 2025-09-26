@@ -9,7 +9,7 @@ import {
 import { useRouter } from "next/navigation";
 import styles from "../styles/SideBar.module.scss";
 
-const segments = [
+const defaultSegments = [
   { key: "dashboard", 
     label: "Dashboard", 
     icon: <AiOutlineDashboard /> 
@@ -42,6 +42,7 @@ interface Props {
   onSegmentChange: (key: string) => void;
   universityName?: string;
   universityId?: string;
+  segments?: { key: string; label: string; icon: React.ReactNode }[];
 }
 
 export default function Sidebar({
@@ -49,6 +50,7 @@ export default function Sidebar({
   onSegmentChange,
   universityName = "—",
   universityId = "—",
+  segments,
 }: Props) {
   const router = useRouter();
 
@@ -88,7 +90,7 @@ export default function Sidebar({
   return (
     <aside className={styles.sidebar}>
       <ul className={styles.menu}>
-        {segments.map((s) => (
+        {(segments || defaultSegments).map((s) => (
           <li
             key={s.key}
             className={active === s.key ? styles.active : ""}

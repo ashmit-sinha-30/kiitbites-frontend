@@ -41,6 +41,7 @@ interface Props {
 
 export function VendorMenuManagement({ vendorId }: Props) {
   const [vendor, setVendor] = useState<Vendor | null>(null);
+  const [universityId, setUniversityId] = useState<string>("");
   const [retailItems, setRetailItems] = useState<MenuItem[]>([]);
   const [produceItems, setProduceItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,7 +191,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
       setError(null);
 
       // Fetch vendor details
-      const vendorResponse = await fetch(`${BACKEND_URL}/api/vendor/list/uni/68320fd75c6f79ec179ad3bb`);
+      const vendorResponse = await fetch(`${BACKEND_URL}/api/vendor/list/uni/${universityId}`);
       if (!vendorResponse.ok) throw new Error("Failed to fetch vendor data");
       const vendors = await vendorResponse.json();
       const currentVendor = vendors.find((v: Vendor) => v._id === vendorId);
@@ -305,7 +306,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
           quantity: activeTab === "retail" ? parseInt(formData.quantity) : undefined,
           isSpecial: formData.isSpecial,
           image: imageUrl,
-          uniId: "68320fd75c6f79ec179ad3bb",
+          uniId: universityId,
           packable: formData.packable,
           vendorId: vendorId, // Add vendor-specific flag
           hsnCode: formData.hsnCode,
@@ -474,9 +475,26 @@ export function VendorMenuManagement({ vendorId }: Props) {
   };
 
   useEffect(() => {
-    fetchVendorData();
+    async function loadUni() {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await fetch(`${BACKEND_URL}/api/uni/auth/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        const user = await res.json();
+        setUniversityId(user._id || user.id || "");
+      } catch {}
+    }
+    loadUni();
     fetchCloudName();
   }, [vendorId]);
+
+  useEffect(() => {
+    if (universityId) fetchVendorData();
+  }, [universityId]);
 
   useEffect(() => {
     fetchTypes();

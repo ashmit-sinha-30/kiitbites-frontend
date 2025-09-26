@@ -70,7 +70,27 @@ interface RawInventoryReportEntry {
 export default function VendorMenuPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id: vendorId } = React.use(params);
-  const universityId = "68320fd75c6f79ec179ad3bb"; // hardcoded, or fetch from context if needed
+  const [universityId, setUniversityId] = useState<string>("");
+
+  // Load logged-in university id
+  useEffect(() => {
+    async function loadUni() {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await fetch(`${BACKEND_URL}/api/uni/auth/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        const user = await res.json();
+        setUniversityId(user._id || user.id || "");
+      } catch {
+        // ignore
+      }
+    }
+    loadUni();
+  }, []);
 
   // Vendor details
   const [vendor, setVendor] = useState<Vendor | null>(null);
@@ -126,7 +146,7 @@ export default function VendorMenuPage({ params }: { params: Promise<{ id: strin
         setVendorLoading(false);
       }
     }
-    if (vendorId) fetchVendor();
+    if (vendorId && universityId) fetchVendor();
   }, [vendorId, universityId]);
 
   // Toggle vendor availability

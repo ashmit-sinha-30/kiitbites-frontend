@@ -247,7 +247,7 @@ export function VendorManagement({ universityId }: Props) {
                       className={styles.toggleButton}
                       onClick={e => {
                         e.stopPropagation();
-                        router.push(`/uniDashboard/vendor/${vendor._id}`);
+                        router.push(`/food-ordering-uniDashboard/vendor/${vendor._id}`);
                       }}
                     >Open</button>
                   </div>
