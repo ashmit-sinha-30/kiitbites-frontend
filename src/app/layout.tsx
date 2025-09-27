@@ -1,4 +1,3 @@
-import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./globals.css"; // Optional global styles
 import { GoogleOAuthProvider } from "@react-oauth/google";// Import AuthProvider
@@ -6,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { Metadata } from "next";
 import { SearchCartProvider } from './components/context/SearchCartContext';
+import ConditionalHeader from './components/ConditionalHeader';
 
 export const metadata: Metadata = {
   title: {
@@ -83,7 +83,7 @@ export default function RootLayout({
       <body>
         <GoogleOAuthProvider clientId={googleClientId}>
             <SearchCartProvider>
-              <Header />
+              <ConditionalHeader />
               <main>{children}</main>
               <Footer />
             </SearchCartProvider>

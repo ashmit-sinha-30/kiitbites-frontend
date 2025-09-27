@@ -119,7 +119,6 @@ const FavouriteFoodPageContent: React.FC = () => {
         );
         setUser(response.data);
       } catch (error) {
-        console.error("Error fetching user details:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           router.push("/login");
         }
@@ -138,7 +137,6 @@ const FavouriteFoodPageContent: React.FC = () => {
         );
         setColleges(response.data);
       } catch (error) {
-        console.error("Error fetching colleges:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           router.push("/login");
         }
@@ -162,7 +160,6 @@ const FavouriteFoodPageContent: React.FC = () => {
         setFavorites(response.data.favourites);
         setFavoriteIds(response.data.favourites.map((f: FoodItem) => `${f._id}-${f.vendorId}`));
       } catch (error) {
-        console.error("Error fetching favorites:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           router.push("/login");
         }
@@ -209,9 +206,8 @@ const FavouriteFoodPageContent: React.FC = () => {
         isAlreadyFav ? "Removed from favorites" : "Added to favorites"
       );
     } catch (err) {
-      console.error(err);
       toast.error("Something went wrong");
-  
+
       // Revert UI if error
       setFavoriteIds((prev) =>
         isAlreadyFav ? [...prev, favKey] : prev.filter((id) => id !== favKey)
@@ -263,7 +259,7 @@ const FavouriteFoodPageContent: React.FC = () => {
           setVendors(vendorsMap);
         }
       } catch (error) {
-        console.error("Error fetching vendors:", error);
+        // Error fetching vendors
       }
     };
 
@@ -282,7 +278,6 @@ const FavouriteFoodPageContent: React.FC = () => {
           `${BACKEND_URL}/cart/${user._id}`,
           getAuthConfig()
         );
-        console.log("Cart API Response:", response.data); // Debug log
         const cartData = response.data.cart || [];
         const formattedCartItems = cartData.map((item: CartResponseItem) => ({
           _id: item.itemId,
@@ -292,7 +287,6 @@ const FavouriteFoodPageContent: React.FC = () => {
           vendorName: item.vendorName || response.data.vendorName // Prefer vendorName from item, fallback to response
         }));
         
-        console.log("Formatted Cart Items:", formattedCartItems); // Debug log
         setCartItems(formattedCartItems);
         
         // Set current vendor ID if there are items in cart
@@ -302,7 +296,7 @@ const FavouriteFoodPageContent: React.FC = () => {
           setCurrentVendorId(null);
         }
       } catch (error) {
-        console.error("Error fetching cart items:", error);
+        // Error fetching cart items
       }
     };
 
@@ -360,13 +354,9 @@ const FavouriteFoodPageContent: React.FC = () => {
   // Add function to check vendor availability
   const checkVendorAvailability = async (vendorId: string, itemId: string, itemType: string) => {
     try {
-      console.log('Checking availability for:', { vendorId, itemId, itemType });
-      
       // Determine if item is retail or produce based on category
       const isRetail = Object.values(categories.retail).includes(itemType);
       const isProduce = Object.values(categories.produce).includes(itemType);
-      
-      console.log('Item category check:', { itemType, isRetail, isProduce });
       
       const response = await fetch(`${BACKEND_URL}/api/item/vendors/${itemId}`, {
         credentials: "include",
@@ -374,40 +364,31 @@ const FavouriteFoodPageContent: React.FC = () => {
       });
       
       if (!response.ok) {
-        console.error(`Failed to fetch vendors for item ${itemId}:`, await response.text());
         return false;
       }
       
       const vendors = await response.json() as Vendor[];
-      console.log('Fetched vendors:', vendors);
       
       const vendor = vendors.find((v) => v._id === vendorId);
-      console.log('Found vendor:', vendor);
       
       if (!vendor || !vendor.inventoryValue) {
-        console.log(`Vendor or inventoryValue not found for item ${itemId}`);
         return false;
       }
       
       // For retail items, check quantity
       if (isRetail) {
         const quantity = vendor.inventoryValue.quantity;
-        console.log(`Retail item quantity:`, quantity);
         const isAvailable = typeof quantity === 'number' && quantity > 0;
-        console.log(`Retail item is available:`, isAvailable);
         return isAvailable;
       } 
       // For produce items, check isAvailable flag
       else if (isProduce) {
         const isAvailable = vendor.inventoryValue.isAvailable === 'Y';
-        console.log(`Produce item is available:`, isAvailable);
         return isAvailable;
       }
       
-      console.log('Unknown item type:', itemType);
       return false;
     } catch (error) {
-      console.error("Error checking vendor availability:", error);
       return false;
     }
   };
@@ -419,8 +400,6 @@ const FavouriteFoodPageContent: React.FC = () => {
     }
 
     try {
-      console.log('Adding to cart:', foodItem);
-      
       // Check if cart is empty or if item is from same vendor
       if (currentVendorId && currentVendorId !== foodItem.vendorId) {
         toast.error("You can only add items from the same vendor. Please clear your cart first.");
@@ -429,7 +408,6 @@ const FavouriteFoodPageContent: React.FC = () => {
 
       // Check vendor availability before proceeding
       const isVendorAvailable = await checkVendorAvailability(foodItem.vendorId, foodItem._id, foodItem.type);
-      console.log('Vendor availability check result:', isVendorAvailable);
       
       if (!isVendorAvailable) {
         toast.error("This item is currently unavailable from the vendor. Please try again later.");
@@ -492,7 +470,6 @@ const FavouriteFoodPageContent: React.FC = () => {
 
       toast.success(`${foodItem.name} added to cart!`);
     } catch (error) {
-      console.error("Error adding to cart:", error);
       if (axios.isAxiosError(error) && error.response?.status === 400) {
         const errorMsg = error.response.data.message;
         if (errorMsg.includes("max quantity")) {
@@ -548,7 +525,6 @@ const FavouriteFoodPageContent: React.FC = () => {
       setCartItems(formattedCartItems);
       toast.success(`Increased quantity of ${foodItem.name}`);
     } catch (error) {
-      console.error("Error increasing quantity:", error);
       if (axios.isAxiosError(error) && error.response?.status === 400) {
         const errorMsg = error.response.data.message;
         if (errorMsg.includes("max quantity")) {
@@ -603,7 +579,6 @@ const FavouriteFoodPageContent: React.FC = () => {
 
       toast.info(`Decreased quantity of ${foodItem.name}`);
     } catch (error) {
-      console.error("Error decreasing quantity:", error);
       if (axios.isAxiosError(error) && error.response?.status === 400) {
         toast.error(error.response.data.message);
       } else {
@@ -614,12 +589,10 @@ const FavouriteFoodPageContent: React.FC = () => {
 
   const getVendorName = (vendorId: string) => {
     if (!vendorId) {
-      console.log("No vendorId provided");
       return "Unknown Vendor";
     }
     const vendorName = vendors[vendorId];
     if (!vendorName) {
-      console.log(`No vendor name found for ID: ${vendorId}`);
       return "Unknown Vendor";
     }
     return vendorName;
@@ -630,7 +603,6 @@ const FavouriteFoodPageContent: React.FC = () => {
     if (!user?._id) return;
 
     try {
-      console.log("Clearing cart and resetting vendor ID"); // Debug log
       await axios.post(
         `${BACKEND_URL}/cart/clear/${user._id}`,
         {},
@@ -640,7 +612,6 @@ const FavouriteFoodPageContent: React.FC = () => {
       setCurrentVendorId(null);
       toast.success("Cart cleared successfully");
     } catch (error) {
-      console.error("Error clearing cart:", error);
       toast.error("Failed to clear cart");
     }
   };
@@ -746,38 +717,14 @@ const FavouriteFoodPageContent: React.FC = () => {
               const favKey = `${food._id}-${food.vendorId}`;
               const isFavorited = favoriteIds.includes(favKey);
               // Find the cart item with matching itemId and vendorId
-              console.log("Current cart items:", cartItems); // Debug log
-              console.log("Current food item:", food); // Debug log
-
               const matchingCartItem = cartItems.find(item => {
-                console.log("Comparing cart item:", item); // Debug log
-                console.log("With food item:", food); // Debug log
                 const isMatch = item._id === food._id && item.vendorId === food.vendorId;
-                console.log("Match result:", isMatch, {
-                  itemIdMatch: item._id === food._id,
-                  vendorIdMatch: item.vendorId === food.vendorId,
-                  cartItemId: item._id,
-                  foodItemId: food._id,
-                  cartVendorId: item.vendorId,
-                  foodVendorId: food.vendorId
-                }); // Debug log
                 return isMatch;
               });
 
-              console.log("Found matching cart item:", matchingCartItem); // Debug log
               const quantity = matchingCartItem?.quantity || 0;
               const isSameVendor = !currentVendorId || currentVendorId === food.vendorId;
               const isInCart = matchingCartItem !== undefined;
-              
-              console.log("Food item state:", {
-                foodId: food._id,
-                foodVendorId: food.vendorId,
-                quantity,
-                isSameVendor,
-                isInCart,
-                currentVendorId,
-                matchingCartItem
-              });
               
               return (
                 <div key={`${food._id}-${food.vendorId}`} className={styles.foodCard}>
