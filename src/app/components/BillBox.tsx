@@ -62,7 +62,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [charges, setCharges] = useState<{ packingCharge: number | null; deliveryCharge: number | null }>({ packingCharge: null, deliveryCharge: null });
+  const [charges, setCharges] = useState<{ packingCharge: number | null; deliveryCharge: number | null; platformFee: number | null }>({ packingCharge: null, deliveryCharge: null, platformFee: null });
   const [vendorDeliverySettings, setVendorDeliverySettings] = useState<{ offersDelivery: boolean; deliveryPreparationTime: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -122,16 +122,17 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
             setCharges({
               packingCharge: chargesResponse.data.packingCharge,
               deliveryCharge: chargesResponse.data.deliveryCharge,
+              platformFee: chargesResponse.data.platformFee,
             });
           } else {
-            setCharges({ packingCharge: null, deliveryCharge: null });
+            setCharges({ packingCharge: null, deliveryCharge: null, platformFee: null });
           }
         } else {
-          setCharges({ packingCharge: null, deliveryCharge: null });
+          setCharges({ packingCharge: null, deliveryCharge: null, platformFee: null });
         }
       } catch (error) {
         console.error("Failed to fetch charges and delivery settings:", error);
-        setCharges({ packingCharge: 5, deliveryCharge: 50 }); // fallback only if fetch fails
+        setCharges({ packingCharge: 5, deliveryCharge: 50, platformFee: 2 }); // fallback only if fetch fails
       } finally {
         setLoading(false);
       }
@@ -197,7 +198,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   // Ensure charges are available with better fallbacks
   const packingCharge = charges.packingCharge ?? 5; // Default ₹5 if not set
   const deliveryCharge = charges.deliveryCharge ?? 50; // Default ₹50 if not set
-  const platformFee = 2; // Flat platform fee (including GST)
+  const platformFee = charges.platformFee ?? 2; // University-specific platform fee, default ₹2
   
   const itemTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   
