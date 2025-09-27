@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ENV_CONFIG } from '@/config/environment';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-const VerifyOtpPage: React.FC = () => {
+const VerifyOtpContent: React.FC = () => {
   const router = useRouter();
   const params = useSearchParams();
   const emailFromQuery = params.get('email') || '';
@@ -60,6 +60,14 @@ const VerifyOtpPage: React.FC = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+const VerifyOtpPage: React.FC = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyOtpContent />
+    </Suspense>
   );
 };
 
