@@ -47,7 +47,6 @@ interface GuestCartItem extends Omit<CartItem, 'category'> {
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   if (!token) {
-    console.warn("[Cart.tsx] getAuthHeaders: no token in localStorage");
     return { headers: {}, withCredentials: true };
   }
   return {
@@ -58,7 +57,6 @@ const getAuthHeaders = () => {
 
 const getVendorName = (vendorName: string | undefined) => {
   if (!vendorName) {
-    console.log("No vendorName provided");
     return "Unknown Vendor";
   }
   return vendorName;
@@ -75,20 +73,14 @@ export default function Cart() {
   const router = useRouter();
 
   useEffect(() => {
-    console.log("[Cart.tsx] BACKEND_URL =", BACKEND_URL);
     const fetchExtras = async () => {
       if (!userData?._id) return;
 
       try {
-        console.log(
-          "[Cart.tsx] ▶︎ Calling GET",
-          `${BACKEND_URL}/cart/extras/${userData._id}`
-        );
         const response = await axios.get<ExtrasResponse>(
           `${BACKEND_URL}/cart/extras/${userData._id}`,
           getAuthHeaders()
         );
-        console.log("[Cart.tsx] ← /cart/extras responded with:", response.data);
 
         if (response.data.extras) {
           const formatted: FoodItem[] = response.data.extras.map(
@@ -100,26 +92,19 @@ export default function Cart() {
               kind: e.kind,
             })
           );
-          console.log("[Cart.tsx] → setExtras(...) to:", formatted);
           setExtras(formatted);
         } else {
           setExtras([]);
         }
-      } catch (err: unknown) {
-        console.error("[Cart.tsx] ❌ Error loading extras:", err);
+      } catch {
         setExtras([]);
       }
     };
 
     const fetchUserAndCart = async () => {
       const token = localStorage.getItem("token");
-      console.log("[Cart.tsx] ▶︎ Checking localStorage token:", token);
 
       if (!token) {
-        console.log(
-          "[Cart.tsx] No token found → using guest flow. Guest cart:",
-          localStorage.getItem("guest_cart")
-        );
         setUserLoggedIn(false);
         const rawGuest = localStorage.getItem("guest_cart") || "[]";
         try {
@@ -137,22 +122,12 @@ export default function Cart() {
 
       try {
         const authUrl = `${BACKEND_URL}/api/user/auth/user`;
-        console.log("[Cart.tsx] ▶︎ Calling FETCH", authUrl);
         const res = await fetch(authUrl, {
           credentials: "include",
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        console.log(
-          "[Cart.tsx] ← /user/auth/user status:",
-          res.status,
-          "ok?",
-          res.ok
-        );
         if (!res.ok) {
-          console.warn(
-            "[Cart.tsx] Token invalid or expired. Falling back to guest."
-          );
           localStorage.removeItem("token");
           setUserLoggedIn(false);
           const rawGuest2 = localStorage.getItem("guest_cart") || "[]";
@@ -165,20 +140,14 @@ export default function Cart() {
         }
 
         const userData = await res.json();
-        console.log("[Cart.tsx] ← /user/auth/user returned JSON:", userData);
         setUserLoggedIn(true);
         setUserData(userData);
 
         /** ─── GET /cart ─── **/
-        console.log(
-          "[Cart.tsx] ▶︎ Calling GET",
-          `${BACKEND_URL}/cart/${userData._id}`
-        );
         const cartRes = await axios.get<CartResponse>(
           `${BACKEND_URL}/cart/${userData._id}`,
           getAuthHeaders()
         );
-        console.log("[Cart.tsx] ← /cart responded with:", cartRes.data);
 
         const rawCart = cartRes.data.cart || [];
         const detailedCart: CartItem[] = rawCart.map((c) => {
@@ -207,13 +176,11 @@ export default function Cart() {
           return cartItem;
         });
 
-        console.log("[Cart.tsx] → setCart(...) to:", detailedCart);
         setCart(detailedCart);
 
         // Fetch extras after cart is loaded
         await fetchExtras();
-      } catch (error: unknown) {
-        console.error("[Cart.tsx] ❌ Error in fetchUserAndCart():", error);
+      } catch {
         localStorage.removeItem("token");
         setUserLoggedIn(false);
       }
@@ -227,10 +194,6 @@ export default function Cart() {
     if (userData?._id && cart.length > 0) {
       const fetchExtras = async () => {
         try {
-          console.log(
-            "[Cart.tsx] ▶︎ Refetching extras for user:",
-            userData._id
-          );
           const response = await axios.get<ExtrasResponse>(
             `${BACKEND_URL}/cart/extras/${userData._id}`,
             getAuthHeaders()
@@ -250,8 +213,7 @@ export default function Cart() {
           } else {
             setExtras([]);
           }
-        } catch (err) {
-          console.error("[Cart.tsx] ❌ Error refetching extras:", err);
+        } catch {
           setExtras([]);
         }
       };
@@ -265,15 +227,10 @@ export default function Cart() {
   const reFetchCart = async () => {
     try {
       if (!userData) return;
-      console.log(
-        "[Cart.tsx] ▶︎ reFetchCart → GET",
-        `${BACKEND_URL}/cart/${userData._id}`
-      );
       const cartRes = await axios.get<CartResponse>(
         `${BACKEND_URL}/cart/${userData._id}`,
         getAuthHeaders()
       );
-      console.log("[Cart.tsx] ← reFetchCart →", cartRes.data);
       const raw = cartRes.data.cart || [];
       const updated: CartItem[] = raw.map((c) => {
         const category = c.kind === "Retail" ? "Retail" : "Produce";
@@ -300,24 +257,18 @@ export default function Cart() {
         };
       });
       setCart(updated);
-    } catch (err: unknown) {
-      console.error("[Cart.tsx] ❌ reFetchCart error:", err);
+    } catch {
+      // Error refetching cart
     }
   };
 
   const increaseQty = (id: string) => {
     const thisItem = cart.find((i) => i._id === id);
     if (!thisItem) {
-      console.warn(
-        `[Cart.tsx] increaseQty: item ${id} not found in state.cart`
-      );
       return;
     }
 
     if (userLoggedIn && userData) {
-      console.log(
-        `[Cart.tsx] ▶︎ POST /cart/add-one/${userData._id} { itemId: ${id}, kind: ${thisItem.kind} }`
-      );
       axios
         .post(
           `${BACKEND_URL}/cart/add-one/${userData._id}`,
@@ -325,12 +276,10 @@ export default function Cart() {
           getAuthHeaders()
         )
         .then(() => {
-          console.log("[Cart.tsx] ← /cart/add-one succeeded, re-fetching cart");
           toast.success(`Increased quantity of ${thisItem.name}`);
           reFetchCart();
         })
         .catch((err) => {
-          console.error("[Cart.tsx] ❌ /cart/add-one error:", err);
           const errorMsg = err.response?.data?.message || "";
           if (errorMsg.includes("max quantity")) {
             toast.warning(`Maximum limit reached for ${thisItem.name}`);
@@ -348,7 +297,6 @@ export default function Cart() {
       const updatedCart = cart.map((item) =>
         item._id === id ? { ...item, quantity: item.quantity + 1 } : item
       ) as CartItem[];
-      console.log("[Cart.tsx] (guest) increaseQty → new cart:", updatedCart);
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.success(`Increased quantity of ${thisItem.name}`);
@@ -358,21 +306,14 @@ export default function Cart() {
   const decreaseQty = (id: string) => {
     const thisItem = cart.find((i) => i._id === id);
     if (!thisItem) {
-      console.warn(
-        `[Cart.tsx] decreaseQty: item ${id} not found in state.cart`
-      );
       return;
     }
 
     if (thisItem.quantity <= 0) {
-      console.log(`[Cart.tsx] decreaseQty blocked: quantity is already 1`);
       return;
     }
 
     if (userLoggedIn && userData) {
-      console.log(
-        `[Cart.tsx] ▶︎ POST /cart/remove-one/${userData._id} { itemId: ${id}, kind: ${thisItem.kind} }`
-      );
       axios
         .post(
           `${BACKEND_URL}/cart/remove-one/${userData._id}`,
@@ -380,14 +321,10 @@ export default function Cart() {
           getAuthHeaders()
         )
         .then(() => {
-          console.log(
-            `[Cart.tsx] ← /cart/remove-one succeeded, re-fetching cart`
-          );
           toast.info(`Decreased quantity of ${thisItem.name}`);
           reFetchCart();
         })
         .catch((err) => {
-          console.error(`[Cart.tsx] ❌ /cart/remove-one error:`, err);
           toast.error(
             err.response?.data?.message || "Failed to decrease quantity"
           );
@@ -396,7 +333,6 @@ export default function Cart() {
       const updatedCart = cart.map((item) =>
         item._id === id ? { ...item, quantity: item.quantity - 1 } : item
       ) as CartItem[];
-      console.log("[Cart.tsx] (guest) decreaseQty → new cart:", updatedCart);
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.info(`Decreased quantity of ${thisItem.name}`);
@@ -406,14 +342,10 @@ export default function Cart() {
   const removeItem = (id: string) => {
     const thisItem = cart.find((i) => i._id === id);
     if (!thisItem) {
-      console.warn(`[Cart.tsx] removeItem: item ${id} not found in cart`);
       return;
     }
 
     if (userLoggedIn && userData) {
-      console.log(
-        `[Cart.tsx] ▶︎ POST /cart/remove-item/${userData._id} { itemId: ${id}, kind: ${thisItem.kind} }`
-      );
       axios
         .post(
           `${BACKEND_URL}/cart/remove-item/${userData._id}`,
@@ -421,19 +353,14 @@ export default function Cart() {
           getAuthHeaders()
         )
         .then(() => {
-          console.log(
-            `[Cart.tsx] ← /cart/remove-item succeeded, re-fetching cart`
-          );
           toast.error(`${thisItem.name} removed from cart`);
           reFetchCart();
         })
         .catch((err) => {
-          console.error(`[Cart.tsx] ❌ /cart/remove-item error:`, err);
           toast.error(err.response?.data?.message || "Failed to remove item");
         });
     } else {
       const updatedCart = cart.filter((item) => item._id !== id) as CartItem[];
-      console.log("[Cart.tsx] (guest) removeItem → new cart:", updatedCart);
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.error(`${thisItem.name} removed from cart`);
@@ -449,9 +376,6 @@ export default function Cart() {
         return;
       }
 
-      console.log(
-        `[Cart.tsx] ▶︎ POST /cart/add/${userData._id} { itemId: ${item._id}, kind: ${item.kind}, quantity: 1, vendorId: ${vendorId} }`
-      );
       axios
         .post(
           `${BACKEND_URL}/cart/add/${userData._id}`,
@@ -464,12 +388,10 @@ export default function Cart() {
           getAuthHeaders()
         )
         .then(() => {
-          console.log("[Cart.tsx] ← /cart/add succeeded, re-fetching cart");
           toast.success(`${item.name} added to cart!`);
           reFetchCart();
         })
         .catch((err) => {
-          console.error("[Cart.tsx] ❌ /cart/add error:", err);
           const errorMsg = err.response?.data?.message || "";
           if (errorMsg.includes("max quantity")) {
             toast.warning(`Maximum limit reached for ${item.name}`);
@@ -510,7 +432,6 @@ export default function Cart() {
               category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
             },
           ];
-      console.log("[Cart.tsx] (guest) addToCart → new cart:", updatedCart);
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.success(`${item.name} added to cart!`);
@@ -620,7 +541,6 @@ export default function Cart() {
                 userId={userData._id}
                 items={cart}
                 onOrder={(orderId) => {
-                  console.log("Payment successful! Order ID: " + orderId);
                   // Clear cart and redirect to payment confirmation page
                   setCart([]);
                   window.location.href = `/payment?orderId=${orderId}`;
