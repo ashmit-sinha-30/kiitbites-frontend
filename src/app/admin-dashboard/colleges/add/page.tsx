@@ -40,7 +40,7 @@ const AddCollegePage: React.FC = () => {
       } else {
         router.push(`/admin-dashboard/colleges/verify-otp?email=${encodeURIComponent(form.email)}`);
       }
-    } catch (err) {
+    } catch {
       setError('Network error');
     } finally {
       setLoading(false);

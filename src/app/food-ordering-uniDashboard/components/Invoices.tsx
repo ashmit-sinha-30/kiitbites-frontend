@@ -26,12 +26,12 @@ export default function Invoices({ universityId }: Props) {
         const res = await fetch(`${ENV_CONFIG.BACKEND.URL}/admin/universities/${universityId}`);
         const json = await res.json();
         if (json.success) {
-          const list: Vendor[] = (json.data.vendors || []).map((v: any) => v.vendorId).filter(Boolean);
+          const list: Vendor[] = (json.data.vendors || []).map((v: { vendorId: Vendor }) => v.vendorId).filter(Boolean);
           setVendors(list);
         } else {
           setError(json.message || "Failed to load vendors");
         }
-      } catch (e) {
+      } catch {
         setError("Failed to load vendors");
       } finally {
         setLoading(false);
@@ -57,7 +57,7 @@ export default function Invoices({ universityId }: Props) {
       } else {
         alert("No downloadable invoice found");
       }
-    } catch (e) {
+    } catch {
       alert("Failed to download invoices");
     }
   };

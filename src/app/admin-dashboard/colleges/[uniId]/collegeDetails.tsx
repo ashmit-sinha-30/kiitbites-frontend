@@ -154,10 +154,10 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
           const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
           const assignJson = await assignRes.json();
           if (assignJson.success) {
-            setSelectedFeatureIds(assignJson.data.features.map((f: any) => f._id));
-            setSelectedServiceIds(assignJson.data.services.map((s: any) => s._id));
+            setSelectedFeatureIds(assignJson.data.features.map((f: { _id: string }) => f._id));
+            setSelectedServiceIds(assignJson.data.services.map((s: { _id: string }) => s._id));
           }
-        } catch (e) {
+        } catch {
           console.error('Failed to load assignments');
         }
       } else {
@@ -202,10 +202,10 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       if (allowedJson.success) setAllowedServices(allowedJson.data?.services || []);
       if (vendorJson.success) {
         const services = vendorJson.data?.services || [];
-        setVendorServices(services.filter((s: any) => s.isAssigned).map((s: any) => s._id));
+        setVendorServices(services.filter((s: { isAssigned: boolean }) => s.isAssigned).map((s: { _id: string }) => s._id));
       }
-    } catch (e) {
-      console.error('Failed to open assign services', e);
+    } catch {
+      console.error('Failed to open assign services');
     }
   };
 
@@ -283,7 +283,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   useEffect(() => {
     fetchUniversityDetails();
     fetchFeatureAndServiceCatalog();
-  }, [uniId]);
+  }, [uniId, fetchUniversityDetails]);
 
   // Format date
   const formatDate = (dateString: string) => {

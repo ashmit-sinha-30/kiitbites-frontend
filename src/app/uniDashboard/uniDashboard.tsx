@@ -4,14 +4,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ENV_CONFIG } from "@/config/environment";
 
-const segmentsMap: Record<string, string> = {};
-
 export default function UniDashboardPage() {
   const router = useRouter();
-  const [universityId, setUniversityId] = useState<string | null>(null);
-  const [universityName, setUniversityName] = useState<string>("University");
   const [features, setFeatures] = useState<{ _id: string; name: string }[]>([]);
-  const [services, setServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
@@ -42,13 +37,10 @@ export default function UniDashboardPage() {
         if (userRes.ok) {
           const user = await userRes.json();
           const uniId = user._id || user.id;
-          setUniversityId(uniId);
-          setUniversityName(user.fullName || "University");
           const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
           const assignJson = await assignRes.json();
           if (assignJson.success) {
             setFeatures(assignJson.data.features);
-            setServices(assignJson.data.services);
           }
         } else {
           router.push("/uni-login");

@@ -13,24 +13,7 @@ import Invoices from "./components/Invoices";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
-const segmentsMap: Record<string, string> = {
-  dashboard: "Dashboard",
-  "inventory-reports": "Inventory Reports",
-  "retail-inventory": "Retail Inventory",
-  "produce-inventory": "Produce Inventory",
-  "delivery-orders": "Delivery Orders",
-  "past-orders": "Past Orders",
-  "uni-cart": "University Cart",
-  // ...other segments
-  "add-vendor": "Add Vendor",
-  "delete-vendor": "Delete Vendor",
-  "addItem": "Add Food Item",
-  "manage-charges": "Manage Charges",
-  logout: "Logout",
-};
-
 export default function UniDashboardPage() {
-  const router = useRouter();
   const [universityId, setUniversityId] = useState<string | null>(null);
   const [universityName, setUniversityName] = useState<string>("University");
   const [features, setFeatures] = useState<{ _id: string; name: string }[]>([]);

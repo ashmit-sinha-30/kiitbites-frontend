@@ -8,9 +8,7 @@ import Invoices from "./components/VendorInvoices";
 import { RetailInventory } from "./components/RetailInventory";
 import { ProduceInventory } from "./components/ProduceInventory";
 import { RawMaterialInventory } from "./components/RawMaterialInventory";
-import DashboardAnalytics from "./components/DashboardAnalytics";
 import { InventoryTransfer } from "./components/InventoryTransfer";
-import VendorAvailabilityToggle from "./components/VendorAvailabilityToggle";
 import VendorDashboard from "./components/VendorDashboard";
 import { OrderList } from "./components/OrderList";
 import { PastOrdersList } from "./components/PastOrdersList";
@@ -26,18 +24,6 @@ import { Order, InventoryReport, transformApiReport } from "./types";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
-const segmentsMap: Record<string, string> = {
-  dashboard: "Dashboard",
-  "inventory-reports": "Inventory Reports",
-  "retail-inventory": "Retail Inventory",
-  "produce-inventory": "Produce Inventory",
-  "raw-materials": "Raw Materials",
-  "inventory-transfer": "Inventory Transfer",
-  "vendor-cart": "Vendor Cart",
-  "delivery-settings": "Delivery Settings",
-  "invoices": "Invoices",
-  logout: "Logout",
-};
 
 export default function VendorDashboardPage() {
   const router = useRouter();

@@ -35,7 +35,7 @@ export default function UniLoginPage() {
       }
       window.dispatchEvent(new Event('authChanged'));
       router.push('/uniDashboard');
-    } catch (err) {
+    } catch {
       setError('Network error');
     } finally {
       setLoading(false);

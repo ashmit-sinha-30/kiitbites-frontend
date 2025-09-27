@@ -33,7 +33,7 @@ const VerifyOtpPage: React.FC = () => {
       } else {
         setError(json.message || 'Invalid OTP');
       }
-    } catch (err) {
+    } catch {
       setError('Network error');
     } finally {
       setLoading(false);
