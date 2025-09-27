@@ -1,94 +1,102 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Sidebar from "./components/Sidebar";
-import { VendorManagement } from "./components/VendorManagement";
-import { AddVendorForm } from "./components/AddVendorForm";
-// import { ImageUploadSection } from "./components/ImageUploadSection";
-import { UploadItemForm } from "./components/UploadItemForm";
-import ManageItems from "./components/ManageItems";
-import ManageCharges from "./components/ManageCharges";
-import styles from "./styles/InventoryReport.module.scss";
-
-const segmentsMap: Record<string, string> = {
-  dashboard: "Dashboard",
-  "inventory-reports": "Inventory Reports",
-  "retail-inventory": "Retail Inventory",
-  "produce-inventory": "Produce Inventory",
-  "delivery-orders": "Delivery Orders",
-  "past-orders": "Past Orders",
-  "uni-cart": "University Cart",
-  // ...other segments
-  "add-vendor": "Add Vendor",
-  "delete-vendor": "Delete Vendor",
-  "addItem": "Add Food Item",
-  "manage-charges": "Manage Charges",
-  logout: "Logout",
-};
+import { useRouter } from "next/navigation";
+import { ENV_CONFIG } from "@/config/environment";
 
 export default function UniDashboardPage() {
-  const UNIVERSITY_ID = "68320fd75c6f79ec179ad3bb";
-
+  const router = useRouter();
+  const [features, setFeatures] = useState<{ _id: string; name: string }[]>([]);
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("activeSegment");
-    if (saved) setActiveSegment(saved);
+    // Always land on dashboard for this page
+    localStorage.removeItem("activeSegment");
+    setActiveSegment("dashboard");
   }, []);
 
   useEffect(() => {
     localStorage.setItem("activeSegment", activeSegment);
   }, [activeSegment]);
 
+  // Load university identity and assignments
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          router.push("/uni-login");
+          return;
+        }
+        const userRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/uni/auth/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        });
+        if (userRes.ok) {
+          const user = await userRes.json();
+          const uniId = user._id || user.id;
+          const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
+          const assignJson = await assignRes.json();
+          if (assignJson.success) {
+            setFeatures(assignJson.data.features);
+          }
+        } else {
+          router.push("/uni-login");
+        }
+      } catch (e) {
+        console.error("Failed to init uni dashboard", e);
+        setError("Failed to load dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
+  }, [router]);
+
+
   return (
-    <div className={styles.container}>
-      <Sidebar
-        active={activeSegment}
-        onSegmentChange={setActiveSegment}
-        universityName="KIIT University"
-        universityId={UNIVERSITY_ID}
-      />
+    <div >
+      {/* Sidebar removed: only feature selection remains in this page */}
 
-      <main className={activeSegment === "dashboard" ? styles.dashboardMain : styles.main}>
-        {/* Dashboard Segment: Vendor Management */}
+      <main >
+        {loading && (
+          <div className="p-4 text-sm text-gray-500">Loading your features…</div>
+        )}
+        {!!error && (
+          <div className="p-4 text-sm text-red-600">{error}</div>
+        )}
+        {/* Dashboard Segment: Feature selection */}
         {activeSegment === "dashboard" && (
-          <VendorManagement universityId={UNIVERSITY_ID} />
-        )}
-
-        {/* Add Vendor Segment */}
-        {activeSegment === "add-vendor" && (
-          <AddVendorForm universityId={UNIVERSITY_ID} />
-        )}
-
-        {/* Image Upload Section */}
-        {/* {activeSegment === "dashboard" && (
-          <ImageUploadSection universityId={UNIVERSITY_ID} />
-        )} */}
-
-        {/* Upload Item Segment */}
-        {activeSegment === "addItem" && (
-          <UploadItemForm universityId={UNIVERSITY_ID} />
-        )}
-
-        {/* Manage Items Segment */}
-        {activeSegment === "manage-items" && (
-          <ManageItems universityId={UNIVERSITY_ID} />
-        )}
-
-        {/* Manage Charges Segment */}
-        {activeSegment === "manage-charges" && (
-          <ManageCharges universityId={UNIVERSITY_ID} />
-        )}
-
-        {/* Other segments under construction */}
-        {!["dashboard", "add-vendor", "delete-vendor", "addItem", "manage-items", "manage-charges", "logout"].includes(activeSegment) && (
-          <div className={styles.underConstruction}>
-            {segmentsMap[activeSegment]
-              ? segmentsMap[activeSegment]
-              : activeSegment.replace(/-/g, " ")}{" "}
-            is under construction.
+          <div>
+            <h2 className="text-lg font-semibold mb-3">What would you like to monitor?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {features.map((f) => {
+                const slug = `${f.name}`
+                  .toLowerCase()
+                  .replace(/[^a-z0-9\s-]/g, "")
+                  .trim()
+                  .replace(/\s+/g, "-");
+                return (
+                  <button
+                    key={f._id}
+                    className="border rounded p-4 text-left hover:bg-gray-50"
+                    onClick={() => router.push(`/${slug}-uniDashboard`)}
+                  >
+                    <div className="font-medium">{f.name}</div>
+                    <div className="text-xs text-gray-500">Click to open related dashboard</div>
+                  </button>
+                );
+              })}
+              {!loading && features.length === 0 && (
+                <div className="text-sm text-gray-500">No features assigned to your university yet.</div>
+              )}
+            </div>
           </div>
         )}
+
+        {/* Other content removed; this page only lists features and navigates to their dashboards */}
       </main>
     </div>
   );

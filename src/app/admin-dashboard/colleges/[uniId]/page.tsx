@@ -1,21 +1,14 @@
+'use client';
+
 import React from 'react';
+import { useParams } from 'next/navigation';
 import CollegeDetails from './collegeDetails';
-import styles from '../styles/collegeDetails.module.scss';
 
-interface CollegeDetailsPageProps {
-  params: Promise<{
-    uniId: string;
-  }>;
-}
-
-const CollegeDetailsPage: React.FC<CollegeDetailsPageProps> = async ({ params }) => {
-  const { uniId } = await params;
-  
-  return (
-    <div className={styles.collegeDetailsPageContainer}>
-      <CollegeDetails uniId={uniId} />
-    </div>
-  );
+const CollegeDetailsPage: React.FC = () => {
+  const params = useParams();
+  const uniId = Array.isArray(params?.uniId) ? params.uniId[0] : (params?.uniId as string);
+  if (!uniId) return null;
+  return <CollegeDetails uniId={uniId} />;
 };
 
 export default CollegeDetailsPage;

@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Order, OrderType, Status, Item } from "../types";
 import styles from "../styles/OrderList.module.scss";
 
-const VENDOR_ID = "6834622e10d75a5ba7b7740d";
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 const PAGE_SIZE = 5; // number of orders per page
 const REFRESH_INTERVAL = 60000; // 60 seconds (less frequent for past orders)
@@ -40,10 +39,11 @@ interface InvoiceData {
 }
 
 interface PastOrdersListProps {
+  vendorId: string;
   onLoaded?: (vendorName: string, vendorId: string) => void;
 }
 
-export const PastOrdersList: React.FC<PastOrdersListProps> = ({ onLoaded }) => {
+export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoaded }) => {
   const [list, setList] = useState<OrderState[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ onLoaded }) => {
     setError(null);
     try {
       // Fetch past orders for the vendor
-      const res = await fetch(`${BASE}/order/vendor-past/${VENDOR_ID}`);
+      const res = await fetch(`${BASE}/order/vendor-past/${vendorId}`);
       if (!res.ok) throw new Error('Failed to load past orders');
       const data: ApiResponse = await res.json();
       

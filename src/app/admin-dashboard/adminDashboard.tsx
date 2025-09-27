@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import styles from './styles/adminDashboard.module.scss';
 
@@ -98,7 +97,7 @@ const AdminDashboard: React.FC = () => {
       description: 'Register a new college in the system',
       icon: <PlusIcon />,
       color: 'bg-green-500',
-      onClick: () => setSelectedOption('add-college')
+      onClick: () => router.push('/admin-dashboard/colleges/add')
     },
     {
       id: 'check-backlog',
@@ -107,6 +106,14 @@ const AdminDashboard: React.FC = () => {
       icon: <ClockIcon />,
       color: 'bg-yellow-500',
       onClick: () => setSelectedOption('check-backlog')
+    },
+    {
+      id: 'features-services',
+      title: 'Features & Services',
+      description: 'Manage features and their services',
+      icon: <SettingsIcon />,
+      color: 'bg-gray-700',
+      onClick: () => router.push('/admin-dashboard/services')
     },
     {
       id: 'check-invoices',
@@ -204,17 +211,6 @@ const AdminDashboard: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className={styles.cardContent}>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className={styles.actionButton}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOptionClick(option);
-                }}
-              >
-                Access
-              </Button>
             </CardContent>
           </Card>
         ))}
