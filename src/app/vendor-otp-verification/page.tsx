@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './styles/vendorOtpVerification.module.scss';
 
-const VendorOtpVerificationPage: React.FC = () => {
+const VendorOtpVerificationContent: React.FC = () => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -190,6 +190,14 @@ const VendorOtpVerificationPage: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const VendorOtpVerificationPage: React.FC = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VendorOtpVerificationContent />
+    </Suspense>
   );
 };
 
