@@ -31,17 +31,6 @@ const FileTextIcon = () => (
   </svg>
 );
 
-const DownloadIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-  </svg>
-);
-
-const DollarSignIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-  </svg>
-);
 
 const PercentIcon = () => (
   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,8 +118,8 @@ const AdminDashboard: React.FC = () => {
     },
     {
       id: 'check-invoices',
-      title: 'Check Invoices',
-      description: 'View and manage all generated invoices',
+      title: 'Platform Invoices',
+      description: 'View and manage platform fee invoices and earnings',
       icon: <FileTextIcon />,
       color: 'bg-purple-500',
       onClick: () => router.push('/admin-dashboard/invoices')
@@ -150,22 +139,6 @@ const AdminDashboard: React.FC = () => {
       icon: <MessageSquareIcon />,
       color: 'bg-teal-500',
       onClick: () => router.push('/admin-dashboard/help-messages')
-    },
-    {
-      id: 'download-invoices',
-      title: 'Download Invoices',
-      description: 'Download invoice files and reports',
-      icon: <DownloadIcon />,
-      color: 'bg-indigo-500',
-      onClick: () => setSelectedOption('download-invoices')
-    },
-    {
-      id: 'total-earnings',
-      title: 'Total Amount Earned',
-      description: 'View revenue analytics and earnings summary',
-      icon: <DollarSignIcon />,
-      color: 'bg-emerald-500',
-      onClick: () => setSelectedOption('total-earnings')
     },
     {
       id: 'user-management',

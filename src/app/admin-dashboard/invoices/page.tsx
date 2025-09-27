@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileTextIcon, DownloadIcon, EyeIcon, BuildingIcon, UserIcon, DollarSignIcon } from 'lucide-react';
+import { FileTextIcon, DownloadIcon, EyeIcon, DollarSignIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from './styles/invoices.module.scss';
 
@@ -48,19 +48,15 @@ const InvoicesPage: React.FC = () => {
     startDate: '',
     endDate: '',
     status: '',
-    invoiceType: '',
+    invoiceType: 'platform', // Default to platform invoices only
     recipientType: '',
     searchTerm: '',
     page: 1,
     limit: 25
   });
   const [stats, setStats] = useState({
-    totalInvoices: 0,
-    totalAmount: 0,
-    vendorInvoices: 0,
     platformInvoices: 0,
-    paidInvoices: 0,
-    pendingInvoices: 0
+    platformFeeAmount: 0,
   });
 
   const router = useRouter();
@@ -98,18 +94,15 @@ const InvoicesPage: React.FC = () => {
       const queryParams = new URLSearchParams();
       if (filters.startDate) queryParams.append('startDate', filters.startDate);
       if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      queryParams.append('invoiceType', 'platform'); // Only fetch platform invoice stats
 
       const response = await fetch(`${API_BASE}/api/invoices/stats?${queryParams}`);
       const data = await response.json();
 
       if (data.success) {
         setStats({
-          totalInvoices: data.data.counts.total,
-          totalAmount: data.data.amounts.total,
-          vendorInvoices: data.data.counts.vendor,
-          platformInvoices: data.data.counts.platform,
-          paidInvoices: data.data.statusDistribution.find((s: { _id: string; count: number }) => s._id === 'paid')?.count || 0,
-          pendingInvoices: data.data.statusDistribution.find((s: { _id: string; count: number }) => s._id === 'sent')?.count || 0
+          platformInvoices: data.data.counts.platform || 0,
+          platformFeeAmount: data.data.amounts.platform || 0,
         });
       }
     } catch (error) {
@@ -227,8 +220,8 @@ const InvoicesPage: React.FC = () => {
       <div className={styles.header}>
         <div className={styles.headerContent}>
           <div className={styles.titleSection}>
-            <h1 className={styles.title}>Invoice Management</h1>
-            <p className={styles.subtitle}>View and manage all generated invoices</p>
+            <h1 className={styles.title}>Platform Invoice Management</h1>
+            <p className={styles.subtitle}>View and manage platform fee invoices and earnings</p>
           </div>
           <Button 
             onClick={() => router.back()}
@@ -248,8 +241,8 @@ const InvoicesPage: React.FC = () => {
               <FileTextIcon />
             </div>
             <div className={styles.statInfo}>
-              <div className={styles.statNumber}>{stats.totalInvoices}</div>
-              <div className={styles.statLabel}>Total Invoices</div>
+              <div className={styles.statNumber}>{stats.platformInvoices}</div>
+              <div className={styles.statLabel}>Platform Invoices</div>
             </div>
           </CardContent>
         </Card>
@@ -260,32 +253,8 @@ const InvoicesPage: React.FC = () => {
               <DollarSignIcon />
             </div>
             <div className={styles.statInfo}>
-              <div className={styles.statNumber}>₹{stats.totalAmount.toLocaleString()}</div>
-              <div className={styles.statLabel}>Total Amount</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={styles.statCard}>
-          <CardContent className={styles.statContent}>
-            <div className={styles.statIcon}>
-              <UserIcon />
-            </div>
-            <div className={styles.statInfo}>
-              <div className={styles.statNumber}>{stats.vendorInvoices}</div>
-              <div className={styles.statLabel}>Vendor Invoices</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={styles.statCard}>
-          <CardContent className={styles.statContent}>
-            <div className={styles.statIcon}>
-              <BuildingIcon />
-            </div>
-            <div className={styles.statInfo}>
-              <div className={styles.statNumber}>{stats.platformInvoices}</div>
-              <div className={styles.statLabel}>Platform Invoices</div>
+              <div className={styles.statNumber}>₹{stats.platformFeeAmount.toLocaleString()}</div>
+              <div className={styles.statLabel}>Total Platform Fee Earned</div>
             </div>
           </CardContent>
         </Card>
@@ -337,12 +306,10 @@ const InvoicesPage: React.FC = () => {
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Invoice Type</label>
               <Select value={filters.invoiceType} onValueChange={(value: string) => handleFilterChange('invoiceType', value)}>
-                <SelectTrigger className={styles.filterInput}>
-                  <SelectValue placeholder="All Types" />
+                <SelectTrigger className={`${styles.filterInput} ${styles.disabledInput}`}>
+                  <SelectValue placeholder="Platform Only" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
-                  <SelectItem value="vendor">Vendor</SelectItem>
                   <SelectItem value="platform">Platform</SelectItem>
                 </SelectContent>
               </Select>
@@ -409,7 +376,7 @@ const InvoicesPage: React.FC = () => {
       {/* Invoices Table */}
       <Card className={styles.invoicesCard}>
         <CardHeader>
-          <CardTitle>Invoices ({pagination.totalInvoices})</CardTitle>
+          <CardTitle>Platform Invoices ({pagination.totalInvoices})</CardTitle>
         </CardHeader>
         <CardContent>
           {error ? (
@@ -419,8 +386,8 @@ const InvoicesPage: React.FC = () => {
           ) : invoices.length === 0 ? (
             <div className={styles.emptyState}>
               <FileTextIcon className={styles.emptyIcon} />
-              <h3>No invoices found</h3>
-              <p>No invoices match your current filter criteria.</p>
+              <h3>No platform invoices found</h3>
+              <p>No platform fee invoices match your current filter criteria.</p>
             </div>
           ) : (
             <>
@@ -501,7 +468,7 @@ const InvoicesPage: React.FC = () => {
                 <div className={styles.pagination}>
                   <div className={styles.paginationInfo}>
                     Page {pagination.currentPage} of {pagination.totalPages}
-                    ({pagination.totalInvoices} total invoices)
+                    ({pagination.totalInvoices} total platform invoices)
                   </div>
                   <div className={styles.paginationButtons}>
                     <Button
