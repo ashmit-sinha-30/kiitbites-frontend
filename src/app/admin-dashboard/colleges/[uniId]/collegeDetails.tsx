@@ -130,6 +130,12 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [featureToAdd, setFeatureToAdd] = useState<string>("");
   const [serviceToAdd, setServiceToAdd] = useState<string>("");
+  // Vendor service assignment modal state
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignVendorId, setAssignVendorId] = useState<string>("");
+  const [allowedServices, setAllowedServices] = useState<{ _id: string; name: string; feature?: { _id: string; name: string } }[]>([]);
+  const [vendorServices, setVendorServices] = useState<string[]>([]);
+  const [savingVendorServices, setSavingVendorServices] = useState(false);
 
   // Fetch university details
   const fetchUniversityDetails = async () => {
@@ -178,6 +184,51 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       if (sJson.success) setAllServices(sJson.data);
     } catch (e) {
       console.error('Failed to fetch feature/service catalog', e);
+    }
+  };
+
+  // Open vendor service assignment modal
+  const openAssignServices = async (vendorId: string) => {
+    try {
+      setAssignVendorId(vendorId);
+      setAssignOpen(true);
+      // load allowed services for this uni
+      const [allowedRes, vendorRes] = await Promise.all([
+        fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/allowed-services`),
+        fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/vendors/${vendorId}/services`),
+      ]);
+      const allowedJson = await allowedRes.json();
+      const vendorJson = await vendorRes.json();
+      if (allowedJson.success) setAllowedServices(allowedJson.data?.services || []);
+      if (vendorJson.success) {
+        const services = vendorJson.data?.services || [];
+        setVendorServices(services.filter((s: any) => s.isAssigned).map((s: any) => s._id));
+      }
+    } catch (e) {
+      console.error('Failed to open assign services', e);
+    }
+  };
+
+  const toggleVendorService = (serviceId: string) => {
+    setVendorServices(prev => prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]);
+  };
+
+  const saveVendorServices = async () => {
+    try {
+      setSavingVendorServices(true);
+      const res = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/vendors/${assignVendorId}/services`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ services: vendorServices })
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || 'Failed to update vendor services');
+      setAssignOpen(false);
+    } catch (e) {
+      console.error('Failed to save vendor services', e);
+      alert('Failed to save vendor services');
+    } finally {
+      setSavingVendorServices(false);
     }
   };
 
@@ -655,6 +706,9 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                       </div>
                     </div>
                   </div>
+                  <div style={{ marginTop: 12 }}>
+                    <Button size="sm" onClick={() => openAssignServices(vendor._id)}>Assign Services</Button>
+                  </div>
                 </CardContent>
               </Card>
             ))
@@ -666,6 +720,34 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       <div className={styles.footer}>
         <p>Showing {filteredVendors.length} of {university.vendors.length} vendors</p>
       </div>
+
+      {assignOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: 'white', borderRadius: 8, padding: 16, width: 'min(720px, 90vw)', maxHeight: '80vh', overflow: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 className="text-lg font-semibold">Assign Services to Vendor</h3>
+              <button onClick={() => setAssignOpen(false)} style={{ fontSize: 20, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ marginBottom: 8, fontSize: 12, color: '#666' }}>Only services that are assigned to this university are available.</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
+              {allowedServices.length === 0 && (
+                <div className="text-sm text-gray-500">No services are assigned to this university yet.</div>
+              )}
+              {allowedServices.map(s => (
+                <label key={s._id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, border: '1px solid #ddd', borderRadius: 6 }}>
+                  <input type="checkbox" checked={vendorServices.includes(s._id)} onChange={() => toggleVendorService(s._id)} />
+                  <span style={{ fontWeight: 500 }}>{s.name}</span>
+                  {s.feature?.name ? <span style={{ fontSize: 12, color: '#666' }}>— {s.feature.name}</span> : null}
+                </label>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+              <Button variant="outline" onClick={() => setAssignOpen(false)}>Cancel</Button>
+              <Button onClick={saveVendorServices} disabled={savingVendorServices}>{savingVendorServices ? 'Saving...' : 'Save'}</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

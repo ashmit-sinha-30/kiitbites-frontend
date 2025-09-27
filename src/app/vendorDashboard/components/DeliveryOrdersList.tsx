@@ -5,7 +5,6 @@ import { Order } from "../types";
 import { OrderCard, LocalStatus } from "./OrderCard";
 import styles from "../styles/OrderList.module.scss";
 
-const VENDOR_ID = "6834622e10d75a5ba7b7740d";
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 const PAGE_SIZE = 5; // number of orders per page
 const REFRESH_INTERVAL = 30000; // 30 seconds
@@ -36,6 +35,7 @@ interface ApiOrder {
 }
 
 interface DeliveryOrdersListProps {
+  vendorId: string;
   onLoaded?: (vendorName: string, vendorId: string) => void;
   onOrderStatusChange?: (orderId: string, newStatus: string, orderData?: Order) => void;
   orderStatusChanges?: {
@@ -68,7 +68,7 @@ const OrderSkeleton = () => (
   </div>
 );
 
-export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ onLoaded, onOrderStatusChange, orderStatusChanges }) => {
+export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ vendorId, onLoaded, onOrderStatusChange, orderStatusChanges }) => {
   const [list, setList] = useState<OrderState[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ onLoaded
     setError(null);
     try {
       // Fetch only delivery orders that are on the way
-      const res = await fetch(`${BASE}/order/delivery/${VENDOR_ID}`);
+      const res = await fetch(`${BASE}/order/delivery/${vendorId}`);
       if (!res.ok) throw new Error('Failed to load delivery orders');
       const data = await res.json();
       
