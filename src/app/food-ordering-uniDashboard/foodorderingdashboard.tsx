@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 import { VendorManagement } from "./components/VendorManagement";
 import { AddVendorForm } from "./components/AddVendorForm";
@@ -16,7 +15,6 @@ import { ENV_CONFIG } from "@/config/environment";
 export default function UniDashboardPage() {
   const [universityId, setUniversityId] = useState<string | null>(null);
   const [universityName, setUniversityName] = useState<string>("University");
-  const [features, setFeatures] = useState<{ _id: string; name: string }[]>([]);
   const [services, setServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
 
@@ -47,7 +45,6 @@ export default function UniDashboardPage() {
           const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
           const assignJson = await assignRes.json();
           if (assignJson.success) {
-            setFeatures(assignJson.data.features);
             setServices(assignJson.data.services);
           }
         }

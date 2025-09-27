@@ -14,7 +14,6 @@ const VendorOtpVerificationPage: React.FC = () => {
   const searchParams = useSearchParams();
   
   const email = searchParams.get('email')?.toLowerCase(); // Ensure lowercase consistency
-  const from = searchParams.get('from');
 
   useEffect(() => {
     if (!email) {
@@ -139,7 +138,7 @@ const VendorOtpVerificationPage: React.FC = () => {
       <div className={styles.card}>
         <div className={styles.header}>
           <h1>Verify Your Account</h1>
-          <p>We've sent a 6-digit verification code to</p>
+          <p>We&apos;ve sent a 6-digit verification code to</p>
           <p className={styles.email}>{email}</p>
         </div>
 
@@ -170,7 +169,7 @@ const VendorOtpVerificationPage: React.FC = () => {
         </form>
 
         <div className={styles.footer}>
-          <p>Didn't receive the code?</p>
+          <p>Didn&apos;t receive the code?</p>
           <button
             type="button"
             onClick={handleResendOtp}

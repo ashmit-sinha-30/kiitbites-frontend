@@ -53,9 +53,8 @@ export default function UniDashboardPage() {
       }
     };
     init();
-  }, []);
+  }, [router]);
 
-  const sidebarSegments = useMemo(() => [], []);
 
   return (
     <div >
