@@ -205,7 +205,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       toast.success(
         isAlreadyFav ? "Removed from favorites" : "Added to favorites"
       );
-    } catch (err) {
+    } catch {
       toast.error("Something went wrong");
 
       // Revert UI if error
@@ -258,7 +258,7 @@ const FavouriteFoodPageContent: React.FC = () => {
 
           setVendors(vendorsMap);
         }
-      } catch (error) {
+      } catch {
         // Error fetching vendors
       }
     };
@@ -295,7 +295,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         } else {
           setCurrentVendorId(null);
         }
-      } catch (error) {
+      } catch {
         // Error fetching cart items
       }
     };
@@ -388,7 +388,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       }
       
       return false;
-    } catch (error) {
+    } catch {
       return false;
     }
   };
@@ -611,7 +611,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       setCartItems([]);
       setCurrentVendorId(null);
       toast.success("Cart cleared successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to clear cart");
     }
   };

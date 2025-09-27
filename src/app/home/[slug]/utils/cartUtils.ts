@@ -62,7 +62,7 @@ export const checkItemAvailability = async (
 
     // Return all available vendors if no currentVendorId is provided
     return { isAvailable: true, vendors: availableVendors };
-  } catch (error) {
+  } catch {
     return { isAvailable: false, vendors: undefined };
   }
 };
@@ -94,7 +94,7 @@ export const addToCart = async (
       throw new Error(error.message);
     }
 
-    const result = await response.json();
+    await response.json();
 
     toast.success(`${item.title} added to cart!`);
     return true;
@@ -131,7 +131,7 @@ export const increaseQuantity = async (
       throw new Error(error.message);
     }
 
-    const result = await response.json();
+    await response.json();
 
     toast.success(`Increased quantity of ${item.title}`);
     return true;
@@ -168,7 +168,7 @@ export const decreaseQuantity = async (
       throw new Error(error.message);
     }
 
-    const result = await response.json();
+    await response.json();
 
     toast.info(`Decreased quantity of ${item.title}`);
     return true;
@@ -197,7 +197,7 @@ export const fetchCartItems = async (userId: string): Promise<CartItem[]> => {
     const cartItems = data.cart || [];
 
     return cartItems;
-  } catch (error) {
+  } catch {
     return [];
   }
 }; 

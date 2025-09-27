@@ -96,7 +96,7 @@ export default function Cart() {
         } else {
           setExtras([]);
         }
-      } catch (err: unknown) {
+      } catch {
         setExtras([]);
       }
     };
@@ -180,7 +180,7 @@ export default function Cart() {
 
         // Fetch extras after cart is loaded
         await fetchExtras();
-      } catch (error: unknown) {
+      } catch {
         localStorage.removeItem("token");
         setUserLoggedIn(false);
       }
@@ -213,7 +213,7 @@ export default function Cart() {
           } else {
             setExtras([]);
           }
-        } catch (err) {
+        } catch {
           setExtras([]);
         }
       };
@@ -257,7 +257,7 @@ export default function Cart() {
         };
       });
       setCart(updated);
-    } catch (err: unknown) {
+    } catch {
       // Error refetching cart
     }
   };
