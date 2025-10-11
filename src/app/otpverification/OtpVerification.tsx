@@ -130,14 +130,42 @@ function OtpForm({
           if (fromPage === "forgotpassword" || fromPage === "/forgotpassword") {
             console.log("Redirecting to resetpassword");
             router.push(`/resetpassword?email=${encodeURIComponent(email)}`);
-          } else if (fromPage === "signup") {
-            console.log("Redirecting to home after signup");
-            router.push("/home");
-            // Force a page reload after a short delay
-            setTimeout(() => {
-              window.location.href = "/home";
-            }, 100);
           } else {
+            // For both signup and login, redirect to user's university home page
+            const uniId = userData?.uniID || userData?.college?._id;
+            
+            if (uniId) {
+              try {
+                // Fetch college data to get the slug
+                const collegeResponse = await fetch(`${BACKEND_URL}/api/user/auth/list`);
+                if (collegeResponse.ok) {
+                  const colleges = await collegeResponse.json();
+                  const userCollege = colleges.find((college: { _id: string; fullName: string }) => college._id === uniId);
+                  
+                  if (userCollege) {
+                    // Generate slug from college name
+                    const generateSlug = (name: string): string => {
+                      return name
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/^-+|-+$/g, "");
+                    };
+                    const collegeSlug = generateSlug(userCollege.fullName);
+                    console.log(`Redirecting to home/${collegeSlug} after ${fromPage}`);
+                    router.push(`/home/${collegeSlug}`);
+                    // Force a page reload after a short delay
+                    setTimeout(() => {
+                      window.location.href = `/home/${collegeSlug}`;
+                    }, 100);
+                    return;
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching college data for redirect:", error);
+              }
+            }
+            
+            // Fallback to generic home page
             console.log("Redirecting to home");
             router.push("/home");
             // Force a page reload after a short delay
