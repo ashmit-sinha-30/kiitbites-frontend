@@ -1,0 +1,89 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.order {
+  font-weight: 600;
+}
+
+.meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.vendor {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.rating {
+  font-size: 16px;
+  color: #f59e0b;
+}
+
+.comment {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.info {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.error {
+  font-size: 13px;
+  color: #dc2626;
+}
+
+.items {
+  margin-top: 8px;
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.itemName {
+  font-weight: 500;
+}
+
+.itemMeta {
+  color: #6b7280;
+}
+
+

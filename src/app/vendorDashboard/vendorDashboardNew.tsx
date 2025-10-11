@@ -99,11 +99,17 @@ export default function VendorDashboardPage() {
             setServices(assignJson.data.services);
           }
         } else {
+          // Token is invalid or expired, redirect to login
+          localStorage.removeItem("token");
           router.push("/vendor-login");
+          return;
         }
       } catch (e) {
         console.error("Failed to init vendor dashboard", e);
-        setError("Failed to load dashboard");
+        // On error, remove token and redirect to login
+        localStorage.removeItem("token");
+        router.push("/vendor-login");
+        return;
       } finally {
         setLoading(false);
       }

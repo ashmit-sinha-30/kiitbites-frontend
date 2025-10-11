@@ -2,22 +2,34 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { ENV_CONFIG } from '@/config/environment';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import styles from "./styles/login.module.scss";
 
 export default function UniLoginPage() {
   const router = useRouter();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === 'identifier') {
+      setIdentifier(value);
+    } else if (name === 'password') {
+      setPassword(value);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    setIsLoading(true);
     try {
       const res = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/uni/auth/login`, {
         method: 'POST',
@@ -27,50 +39,97 @@ export default function UniLoginPage() {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.message || 'Login failed');
+        toast.error(json.message || 'Login failed');
         return;
       }
       if (json.token) {
         localStorage.setItem('token', json.token);
+        toast.success('Login successful!');
       }
       window.dispatchEvent(new Event('authChanged'));
       router.push('/uniDashboard');
     } catch {
-      setError('Network error');
+      toast.error('Network error. Please try again.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>University Login</CardTitle>
-          <CardDescription>Sign in to access your dashboard</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <Input
-              placeholder="Email or Phone"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              required
-            />
-            <Input
-              type="password"
+    <div className={styles.container}>
+      <div className={styles.box}>
+        <h1>Login</h1>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="identifier"
+            placeholder="Email or Phone"
+            value={identifier}
+            onChange={handleInputChange}
+            required
+            style={{ color: "black" }}
+          />
+          <div className={styles.passwordField}>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleInputChange}
               required
+              style={{ color: "black" }}
             />
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+            <span
+              className={styles.eyeIcon}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEye /> : <FaEyeSlash />}
+            </span>
+          </div>
+          <div className={styles.forgotPassword}>
+            <Link href="/forgotpassword">Forgot Password?</Link>
+          </div>
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+        {/* <div className={styles.divider}>
+          <span>OR</span>
+        </div>
+        <div
+          style={{
+            backgroundColor: "#1e90fc",
+            color: "black",
+            padding: "12px",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "1em",
+            textAlign: "center",
+            margin: "10px 0",
+          }}
+          className={styles.googleSignUp}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor = "#01796f")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor = "#1e90fc")
+          }
+        >
+          <GoogleLogin />
+        </div> */}
+      </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 }

@@ -34,6 +34,7 @@ const defaultSegments = [
     label: "Manage Charges",
     icon: <AiOutlineDollar />,
   },
+  // Note: dynamic services loaded from assignments will include Review/Invoice/DeleteVendorList etc.
   { key: "logout", label: "Logout", icon: <AiOutlineLogout /> },
 ];
 
@@ -78,12 +79,12 @@ export default function Sidebar({
 
       // Clear token and redirect
       localStorage.removeItem("token");
-      router.push("/login");
+      router.push("/uni-login");
     } catch (error) {
       console.error("Logout failed:", error);
       // Still redirect even if backend call fails
       localStorage.removeItem("token");
-      router.push("/login");
+      router.push("/uni-login");
     }
   };
 

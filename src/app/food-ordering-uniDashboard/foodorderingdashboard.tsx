@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 import { VendorManagement } from "./components/VendorManagement";
 import { AddVendorForm } from "./components/AddVendorForm";
@@ -9,10 +10,12 @@ import { UploadItemForm } from "./components/UploadItemForm";
 import ManageItems from "./components/ManageItems";
 import ManageCharges from "./components/ManageCharges";
 import Invoices from "./components/Invoices";
+import Review from "./components/Review";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
 export default function UniDashboardPage() {
+  const router = useRouter();
   const [universityId, setUniversityId] = useState<string | null>(null);
   const [universityName, setUniversityName] = useState<string>("University");
   const [services, setServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
@@ -32,7 +35,10 @@ export default function UniDashboardPage() {
     const init = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
+        if (!token) {
+          router.push("/uni-login");
+          return;
+        }
         const userRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/uni/auth/user`, {
           headers: { Authorization: `Bearer ${token}` },
           credentials: "include",
@@ -47,13 +53,22 @@ export default function UniDashboardPage() {
           if (assignJson.success) {
             setServices(assignJson.data.services);
           }
+        } else {
+          // Token is invalid or expired, redirect to login
+          localStorage.removeItem("token");
+          router.push("/uni-login");
+          return;
         }
       } catch (e) {
         console.error("Failed to init uni dashboard", e);
+        // On error, remove token and redirect to login
+        localStorage.removeItem("token");
+        router.push("/uni-login");
+        return;
       }
     };
     init();
-  }, []);
+  }, [router]);
 
   const sidebarSegments = useMemo(() => {
     const serviceSegments = services.map((s) => ({ key: s._id, label: s.name, icon: <></> }));
@@ -96,6 +111,9 @@ export default function UniDashboardPage() {
           }
           if (name === "invoice" || name.includes("invoice")) {
             return <Invoices universityId={universityId || ""} />;
+          }
+          if (name === "review" || name.includes("review")) {
+            return <Review universityId={universityId || ""} />;
           }
           return null;
         })()}

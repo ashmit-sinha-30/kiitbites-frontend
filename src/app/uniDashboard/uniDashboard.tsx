@@ -43,11 +43,17 @@ export default function UniDashboardPage() {
             setFeatures(assignJson.data.features);
           }
         } else {
+          // Token is invalid or expired, redirect to login
+          localStorage.removeItem("token");
           router.push("/uni-login");
+          return;
         }
       } catch (e) {
         console.error("Failed to init uni dashboard", e);
-        setError("Failed to load dashboard");
+        // On error, remove token and redirect to login
+        localStorage.removeItem("token");
+        router.push("/uni-login");
+        return;
       } finally {
         setLoading(false);
       }

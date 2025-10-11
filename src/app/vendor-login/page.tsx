@@ -2,6 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import styles from './styles/vendorLogin.module.scss';
 import { checkBackendHealth, getBackendUrl } from '@/utils/backendCheck';
 
@@ -13,6 +17,8 @@ const VendorLoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [backendStatus, setBackendStatus] = useState<'checking' | 'healthy' | 'unhealthy'>('checking');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // Check backend health on component mount
@@ -25,7 +31,7 @@ const VendorLoginPage: React.FC = () => {
       setBackendStatus(health.isHealthy ? 'healthy' : 'unhealthy');
       
       if (!health.isHealthy) {
-        setError(`Backend connection failed: ${health.error}`);
+        toast.error(`Backend connection failed: ${health.error}`);
       }
     };
 
@@ -66,7 +72,7 @@ const VendorLoginPage: React.FC = () => {
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Non-JSON response:', text);
-        setError('Server returned invalid response. Please check if backend is running.');
+        toast.error('Server returned invalid response. Please check if backend is running.');
         return;
       }
 
@@ -76,94 +82,101 @@ const VendorLoginPage: React.FC = () => {
         // Store token and redirect to vendor dashboard
         localStorage.setItem('token', data.token);
         localStorage.setItem('vendorRole', 'seller'); // Default role, can be updated later
+        toast.success('Login successful!');
         router.push('/vendorDashboard');
       } else {
         if (data.redirectTo) {
           // User not verified, redirect to OTP verification
-          // Extract email from redirectTo URL or use the identifier
+          toast.info('Please verify your account');
           const email = data.email || formData.identifier.toLowerCase();
           router.push(`/vendor-otp-verification?email=${encodeURIComponent(email)}&from=login`);
         } else {
-          setError(data.message || 'Login failed');
+          toast.error(data.message || 'Login failed');
         }
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('Network error. Please try again.');
+      toast.error('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className={styles.loginContainer}>
-      <div className={styles.loginCard}>
-        <div className={styles.header}>
-          <h1>Vendor Login</h1>
-          <p>Sign in to your vendor account</p>
-          {backendStatus === 'checking' && (
-            <div className={styles.status}>Checking backend connection...</div>
-          )}
-          {backendStatus === 'unhealthy' && (
-            <div className={styles.statusError}>⚠️ Backend connection failed</div>
-          )}
-          {backendStatus === 'healthy' && (
-            <div className={styles.statusSuccess}>✅ Backend connected</div>
-          )}
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <label htmlFor="identifier">Email or Phone</label>
+    <div className={styles.container}>
+      <div className={styles.box}>
+        <h1>Login</h1>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="identifier"
+            placeholder="Email or Phone"
+            value={formData.identifier}
+            onChange={handleChange}
+            required
+            style={{ color: "black" }}
+          />
+          <div className={styles.passwordField}>
             <input
-              type="text"
-              id="identifier"
-              name="identifier"
-              value={formData.identifier}
-              onChange={handleChange}
-              placeholder="Enter email or phone number"
-              required
-            />
-          </div>
-
-          <div className={styles.inputGroup}>
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
+              type={showPassword ? "text" : "password"}
               name="password"
+              placeholder="Password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Enter your password"
               required
+              style={{ color: "black" }}
             />
+            <span
+              className={styles.eyeIcon}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEye /> : <FaEyeSlash />}
+            </span>
           </div>
-
-          {error && <div className={styles.error}>{error}</div>}
-
-          <button 
-            type="submit" 
-            className={styles.submitButton}
-            disabled={loading}
-          >
-            {loading ? 'Signing In...' : 'Sign In'}
+          <div className={styles.forgotPassword}>
+            <Link href="/forgotpassword">Forgot Password?</Link>
+          </div>
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        <div className={styles.footer}>
-          <p>
-            Don&apos;t have an account?{' '}
-            <a href="/vendor-signup" className={styles.link}>
-              Sign up here
-            </a>
-          </p>
-          <p>
-            <a href="/vendor-forgot-password" className={styles.link}>
-              Forgot Password?
-            </a>
-          </p>
+        {/* <div className={styles.divider}>
+          <span>OR</span>
         </div>
+        <div
+          style={{
+            backgroundColor: "#1e90fc",
+            color: "black",
+            padding: "12px",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "1em",
+            textAlign: "center",
+            margin: "10px 0",
+          }}
+          className={styles.googleSignUp}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor = "#01796f")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor = "#1e90fc")
+          }
+        >
+          <GoogleLogin />
+        </div> */}
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 };
