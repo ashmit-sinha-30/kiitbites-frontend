@@ -32,7 +32,6 @@ export default function VendorDashboardPage() {
   const [services, setServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
 
   // Inventory Reports state
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
@@ -99,11 +98,17 @@ export default function VendorDashboardPage() {
             setServices(assignJson.data.services);
           }
         } else {
+          // Token is invalid or expired, redirect to login
+          localStorage.removeItem("token");
           router.push("/vendor-login");
+          return;
         }
       } catch (e) {
         console.error("Failed to init vendor dashboard", e);
-        setError("Failed to load dashboard");
+        // On error, remove token and redirect to login
+        localStorage.removeItem("token");
+        router.push("/vendor-login");
+        return;
       } finally {
         setLoading(false);
       }
@@ -195,9 +200,6 @@ export default function VendorDashboardPage() {
       <main className={styles.main}>
         {loading && (
           <div className="p-4 text-sm text-gray-500">Loading your services…</div>
-        )}
-        {!!error && (
-          <div className="p-4 text-sm text-red-600">{error}</div>
         )}
 
         {/* Service-specific content mapping */}

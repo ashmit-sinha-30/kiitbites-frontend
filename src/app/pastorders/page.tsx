@@ -3,8 +3,9 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import styles from "./styles/pastorder.module.scss";
 import axios from "axios";
+import ReviewForm from "./components/ReviewForm";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const BACKEND_URL =
@@ -62,6 +63,8 @@ const PastOrdersPageContent: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [allowedReview, setAllowedReview] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<string | null>(null);
 
   // Get auth token
   const getAuthToken = () => {
@@ -96,6 +99,17 @@ const PastOrdersPageContent: React.FC = () => {
           getAuthConfig()
         );
         setUser(response.data);
+        try {
+          const uniId = response.data?.uniID || response.data?.college?._id;
+          if (uniId) {
+            const assignRes = await axios.get(`${BACKEND_URL}/api/university/universities/${uniId}/assignments`);
+            const services = assignRes.data?.data?.services || [];
+            const isAllowed = services.some((s: { name: string }) => String(s.name).toLowerCase().includes('review'));
+            setAllowedReview(!!isAllowed);
+          }
+        } catch {
+          setAllowedReview(false);
+        }
       } catch (error) {
         console.error("Error fetching user details:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -104,7 +118,7 @@ const PastOrdersPageContent: React.FC = () => {
       }
     };
     fetchUserDetails();
-  }, [router]);
+  }, [router, getAuthConfig]);
 
   // Fetch colleges list
   useEffect(() => {
@@ -123,7 +137,7 @@ const PastOrdersPageContent: React.FC = () => {
       }
     };
     fetchColleges();
-  }, [router]);
+  }, [router, getAuthConfig]);
 
   // Fetch past orders based on selected college
   useEffect(() => {
@@ -150,7 +164,7 @@ const PastOrdersPageContent: React.FC = () => {
     };
 
     fetchPastOrders();
-  }, [user?._id, selectedCollege, router]);
+  }, [user?._id, selectedCollege, router, getAuthConfig]);
 
   // Handle URL query parameter on initial load
   useEffect(() => {
@@ -367,11 +381,34 @@ const PastOrdersPageContent: React.FC = () => {
                       ))}
                     </div>
 
-                    <div className={styles.orderTotal}>
-                      <p className={styles.totalAmount}>
-                        Total: ₹{order.total}
-                      </p>
+                  <div className={styles.orderTotal}>
+                    <p className={styles.totalAmount}>
+                      Total: ₹{order.total}
+                    </p>
+                  </div>
+                  {allowedReview && (
+                    <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <ReviewForm
+                        orderNumber={order.orderNumber}
+                        disabled={submitting === order._id}
+                        onSubmit={async (rating, comment) => {
+                          try {
+                            setSubmitting(order._id);
+                            const token = getAuthToken();
+                            await axios.post(`${BACKEND_URL}/api/reviews/order/${order._id}`,
+                              { rating, comment },
+                              { headers: { Authorization: `Bearer ${token}` } }
+                            );
+                            toast.success('Review submitted');
+                          } catch {
+                            toast.error('Failed to submit review');
+                          } finally {
+                            setSubmitting(null);
+                          }
+                        }}
+                      />
                     </div>
+                  )}
                   </div>
                 </div>
               );

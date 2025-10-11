@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -138,7 +138,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   const [savingVendorServices, setSavingVendorServices] = useState(false);
 
   // Fetch university details
-  const fetchUniversityDetails = async () => {
+  const fetchUniversityDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -169,10 +169,10 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [uniId]);
 
   // Fetch catalog for features/services
-  const fetchFeatureAndServiceCatalog = async () => {
+  const fetchFeatureAndServiceCatalog = useCallback(async () => {
     try {
       const [fRes, sRes] = await Promise.all([
         fetch(`${ENV_CONFIG.BACKEND.URL}/api/admin/features`),
@@ -185,7 +185,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
     } catch (e) {
       console.error('Failed to fetch feature/service catalog', e);
     }
-  };
+  }, []);
 
   // Open vendor service assignment modal
   const openAssignServices = async (vendorId: string) => {
@@ -279,11 +279,11 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
     }
   }, [searchTerm, university]);
 
-  // Load data on component mount
+  // Load data on component mount or when uniId changes
   useEffect(() => {
     fetchUniversityDetails();
     fetchFeatureAndServiceCatalog();
-  }, [uniId, fetchUniversityDetails]);
+  }, [fetchUniversityDetails, fetchFeatureAndServiceCatalog]);
 
   // Format date
   const formatDate = (dateString: string) => {
