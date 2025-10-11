@@ -140,7 +140,7 @@ function OtpForm({
                 const collegeResponse = await fetch(`${BACKEND_URL}/api/user/auth/list`);
                 if (collegeResponse.ok) {
                   const colleges = await collegeResponse.json();
-                  const userCollege = colleges.find((college: any) => college._id === uniId);
+                  const userCollege = colleges.find((college: { _id: string; fullName: string }) => college._id === uniId);
                   
                   if (userCollege) {
                     // Generate slug from college name
