@@ -9,7 +9,6 @@ export default function UniDashboardPage() {
   const [features, setFeatures] = useState<{ _id: string; name: string }[]>([]);
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     // Always land on dashboard for this page
@@ -69,9 +68,6 @@ export default function UniDashboardPage() {
       <main >
         {loading && (
           <div className="p-4 text-sm text-gray-500">Loading your features…</div>
-        )}
-        {!!error && (
-          <div className="p-4 text-sm text-red-600">{error}</div>
         )}
         {/* Dashboard Segment: Feature selection */}
         {activeSegment === "dashboard" && (

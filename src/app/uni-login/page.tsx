@@ -13,7 +13,6 @@ export default function UniLoginPage() {
   const router = useRouter();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,7 +27,6 @@ export default function UniLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
     try {
       const res = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/uni/auth/login`, {

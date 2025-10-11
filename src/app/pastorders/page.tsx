@@ -104,10 +104,10 @@ const PastOrdersPageContent: React.FC = () => {
           if (uniId) {
             const assignRes = await axios.get(`${BACKEND_URL}/api/university/universities/${uniId}/assignments`);
             const services = assignRes.data?.data?.services || [];
-            const isAllowed = services.some((s: any) => String(s.name).toLowerCase().includes('review'));
+            const isAllowed = services.some((s: { name: string }) => String(s.name).toLowerCase().includes('review'));
             setAllowedReview(!!isAllowed);
           }
-        } catch (e) {
+        } catch {
           setAllowedReview(false);
         }
       } catch (error) {
@@ -118,7 +118,7 @@ const PastOrdersPageContent: React.FC = () => {
       }
     };
     fetchUserDetails();
-  }, [router]);
+  }, [router, getAuthConfig]);
 
   // Fetch colleges list
   useEffect(() => {
@@ -137,7 +137,7 @@ const PastOrdersPageContent: React.FC = () => {
       }
     };
     fetchColleges();
-  }, [router]);
+  }, [router, getAuthConfig]);
 
   // Fetch past orders based on selected college
   useEffect(() => {
@@ -164,7 +164,7 @@ const PastOrdersPageContent: React.FC = () => {
     };
 
     fetchPastOrders();
-  }, [user?._id, selectedCollege, router]);
+  }, [user?._id, selectedCollege, router, getAuthConfig]);
 
   // Handle URL query parameter on initial load
   useEffect(() => {
@@ -389,7 +389,6 @@ const PastOrdersPageContent: React.FC = () => {
                   {allowedReview && (
                     <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <ReviewForm
-                        orderId={order._id}
                         orderNumber={order.orderNumber}
                         disabled={submitting === order._id}
                         onSubmit={async (rating, comment) => {
@@ -401,7 +400,7 @@ const PastOrdersPageContent: React.FC = () => {
                               { headers: { Authorization: `Bearer ${token}` } }
                             );
                             toast.success('Review submitted');
-                          } catch (e) {
+                          } catch {
                             toast.error('Failed to submit review');
                           } finally {
                             setSubmitting(null);

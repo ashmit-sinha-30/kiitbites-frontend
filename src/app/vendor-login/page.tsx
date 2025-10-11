@@ -7,49 +7,28 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from './styles/vendorLogin.module.scss';
-import { checkBackendHealth, getBackendUrl } from '@/utils/backendCheck';
+import { getBackendUrl } from '@/utils/backendCheck';
 
 const VendorLoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
     identifier: '',
     password: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [backendStatus, setBackendStatus] = useState<'checking' | 'healthy' | 'unhealthy'>('checking');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Check backend health on component mount
-  useEffect(() => {
-    const checkBackend = async () => {
-      const backendUrl = getBackendUrl();
-      console.log('Checking backend health at:', backendUrl);
-      
-      const health = await checkBackendHealth(backendUrl);
-      setBackendStatus(health.isHealthy ? 'healthy' : 'unhealthy');
-      
-      if (!health.isHealthy) {
-        toast.error(`Backend connection failed: ${health.error}`);
-      }
-    };
-
-    checkBackend();
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
-    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setIsLoading(true);
 
     try {
       const backendUrl = getBackendUrl();
@@ -98,7 +77,7 @@ const VendorLoginPage: React.FC = () => {
       console.error('Login error:', error);
       toast.error('Network error. Please try again.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 

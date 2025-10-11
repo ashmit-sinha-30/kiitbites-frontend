@@ -3,13 +3,12 @@
 import React, { useState } from "react";
 
 interface Props {
-  orderId: string;
   orderNumber: string;
   disabled?: boolean;
   onSubmit: (rating: number, comment: string) => Promise<void> | void;
 }
 
-export default function ReviewForm({ orderId, orderNumber, disabled, onSubmit }: Props) {
+export default function ReviewForm({ orderNumber, disabled, onSubmit }: Props) {
   const [rating, setRating] = useState<number>(5);
   const [comment, setComment] = useState<string>("");
 

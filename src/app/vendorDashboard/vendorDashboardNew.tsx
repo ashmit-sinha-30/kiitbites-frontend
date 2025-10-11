@@ -32,7 +32,6 @@ export default function VendorDashboardPage() {
   const [services, setServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
 
   // Inventory Reports state
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
@@ -201,9 +200,6 @@ export default function VendorDashboardPage() {
       <main className={styles.main}>
         {loading && (
           <div className="p-4 text-sm text-gray-500">Loading your services…</div>
-        )}
-        {!!error && (
-          <div className="p-4 text-sm text-red-600">{error}</div>
         )}
 
         {/* Service-specific content mapping */}
