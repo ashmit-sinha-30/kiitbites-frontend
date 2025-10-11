@@ -37,7 +37,7 @@ export default function Review({ universityId }: Props) {
         const json = await res.json();
         if (json.success) setReviews(json.data);
         else setError(json.message || "Failed to load reviews");
-      } catch (e) {
+      } catch {
         setError("Failed to load reviews");
       } finally {
         setLoading(false);
