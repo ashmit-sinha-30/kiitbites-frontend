@@ -62,18 +62,20 @@ export default function UniDashboardPage() {
 
 
   return (
-    <div >
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
       {/* Sidebar removed: only feature selection remains in this page */}
 
-      <main >
+      <main className="w-full max-w-6xl mx-auto p-6">
         {loading && (
-          <div className="p-4 text-sm text-gray-500">Loading your features…</div>
+          <div className="flex justify-center items-center min-h-32">
+            <div className="p-4 text-sm text-gray-500">Loading your features…</div>
+          </div>
         )}
         {/* Dashboard Segment: Feature selection */}
         {activeSegment === "dashboard" && (
-          <div>
-            <h2 className="text-lg font-semibold mb-3">What would you like to monitor?</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-8 text-gray-800">What would you like to monitor?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {features.map((f) => {
                 const slug = `${f.name}`
                   .toLowerCase()
@@ -83,16 +85,22 @@ export default function UniDashboardPage() {
                 return (
                   <button
                     key={f._id}
-                    className="border rounded p-4 text-left hover:bg-gray-50"
-                    onClick={() => router.push(`/${slug}-uniDashboard`)}
+                    className="border border-gray-200 rounded-lg p-6 text-left hover:bg-white hover:shadow-md transition-all duration-200 bg-white shadow-sm"
+                    onClick={() => {
+                      // Clear any existing activeSegment to ensure dashboard is active by default
+                      localStorage.removeItem("activeSegment");
+                      router.push(`/${slug}-uniDashboard`);
+                    }}
                   >
-                    <div className="font-medium">{f.name}</div>
-                    <div className="text-xs text-gray-500">Click to open related dashboard</div>
+                    <div className="font-semibold text-gray-800 mb-2">{f.name}</div>
+                    <div className="text-sm text-gray-500">Click to open related dashboard</div>
                   </button>
                 );
               })}
               {!loading && features.length === 0 && (
-                <div className="text-sm text-gray-500">No features assigned to your university yet.</div>
+                <div className="col-span-full text-center">
+                  <div className="text-gray-500 py-8">No features assigned to your university yet.</div>
+                </div>
               )}
             </div>
           </div>

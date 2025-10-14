@@ -4,6 +4,7 @@ import {
   AiOutlineFileText,
   AiOutlinePlusCircle,
   AiOutlineDollar,
+  AiOutlineSetting,
   AiOutlineLogout,
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
@@ -33,6 +34,11 @@ const defaultSegments = [
     key: "manage-charges",
     label: "Manage Charges",
     icon: <AiOutlineDollar />,
+  },
+  {
+    key: "tax-updating",
+    label: "Tax Updating — Food Ordering",
+    icon: <AiOutlineSetting />,
   },
   // Note: dynamic services loaded from assignments will include Review/Invoice/DeleteVendorList etc.
   { key: "logout", label: "Logout", icon: <AiOutlineLogout /> },

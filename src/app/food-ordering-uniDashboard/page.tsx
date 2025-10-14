@@ -1,7 +1,12 @@
 "use client";
 
 import FoodOrderingUniDashboardPage from "./foodorderingdashboard";
+import { Suspense } from "react";
 
 export default function UniDashboard() {
-  return <FoodOrderingUniDashboardPage />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <FoodOrderingUniDashboardPage />
+    </Suspense>
+  );
 } 

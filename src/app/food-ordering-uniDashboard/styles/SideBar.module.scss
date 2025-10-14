@@ -1,17 +1,20 @@
 /* styles/sidebar.module.scss */
 
 .sidebar {
-  position: fixed;
-  top: 64px; // your header height
+  position: sticky;
+  top: 0;
   left: 0;
-  bottom: 0; // Changed from 425px to 0 to allow full height
+  height: 100vh;
   overflow-y: auto;
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
   width: 240px;
-  padding: 1rem 0.5rem;
-  border-right: 1px solid #eee;
+  padding: 1.5rem 1rem;
+  border-right: 1px solid #e1e5e9;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+  z-index: 10;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  backdrop-filter: blur(10px);
   &::-webkit-scrollbar {
     display: none;
   }
@@ -26,53 +29,81 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
+  padding: 1rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 12px;
   cursor: pointer;
-  color: #333;
-  transition: background 0.15s;
+  color: #374151;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  position: relative;
+  border: 1px solid transparent;
 }
 .menu li:hover {
-  background: #f5f5ff;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  transform: translateX(4px);
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 .active {
-  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
   color: #fff;
+  box-shadow: 0 6px 20px rgba(78, 161, 153, 0.4);
+  transform: translateX(2px);
+  border-color: #4ea199;
 }
 
 // Special styling for logout button
 .menu li[data-segment="logout"] {
-  margin-top: auto;
-  background: #fef2f2;
+  margin-top: 2rem;
+  background: linear-gradient(135deg, #fef2f2 0%, #fce7e7 100%);
   color: #dc2626;
   border: 1px solid #fecaca;
+  font-weight: 600;
 }
 
 .menu li[data-segment="logout"]:hover {
-  background: #fee2e2;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #b91c1c;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
 }
 
 .menu li[data-segment="logout"].active {
-  background: linear-gradient(90deg, #dc2626, #ef4444);
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
   color: #fff;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
 }
 
 .icon {
   font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
 }
 .footer {
   text-align: left;
   font-size: 0.85rem;
   color: #555;
   margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 16px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
 }
 .universityName {
-  //font-weight: 600;
   color: #4ea199;
-  font-weight: 600;
-  font-size: large;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 1px 2px rgba(78, 161, 153, 0.1);
 }
 .universityId {
   color: #6fc3bd;
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0.9;
 } 

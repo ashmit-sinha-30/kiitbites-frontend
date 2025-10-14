@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 import { VendorManagement } from "./components/VendorManagement";
 import { AddVendorForm } from "./components/AddVendorForm";
@@ -11,11 +11,13 @@ import ManageItems from "./components/ManageItems";
 import ManageCharges from "./components/ManageCharges";
 import Invoices from "./components/Invoices";
 import Review from "./components/Review";
+import TaxUpdating from "./components/TaxUpdating";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
 export default function UniDashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [universityId, setUniversityId] = useState<string | null>(null);
   const [universityName, setUniversityName] = useState<string>("University");
   const [services, setServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
@@ -23,8 +25,53 @@ export default function UniDashboardPage() {
 
   useEffect(() => {
     const saved = localStorage.getItem("activeSegment");
-    if (saved) setActiveSegment(saved);
+    // If no saved segment or coming from uniDashboard, default to dashboard
+    if (saved && saved !== "dashboard") {
+      setActiveSegment(saved);
+    } else {
+      setActiveSegment("dashboard");
+    }
   }, []);
+
+  // Auto-select Uni Dashboard when services are loaded
+  useEffect(() => {
+    if (services.length > 0) {
+      const uniDashboardService = services.find(s => 
+        s.name.toLowerCase() === "uni dashboard" || 
+        s.name.toLowerCase().includes("uni dashboard") ||
+        s.name.toLowerCase() === "dashboard"
+      );
+      
+      if (uniDashboardService) {
+        // If current active segment is "dashboard" or doesn't match any service, set to uni dashboard
+        const currentService = services.find(s => s._id === activeSegment);
+        if (!currentService || activeSegment === "dashboard") {
+          setActiveSegment(uniDashboardService._id);
+        }
+      }
+    }
+  }, [services, activeSegment]);
+
+  // Reset to Uni Dashboard when coming back from vendor page
+  useEffect(() => {
+    const fromVendor = searchParams.get('fromVendor');
+    
+    if (fromVendor === 'true' && services.length > 0) {
+      const uniDashboardService = services.find(s => 
+        s.name.toLowerCase() === "uni dashboard" || 
+        s.name.toLowerCase().includes("uni dashboard") ||
+        s.name.toLowerCase() === "dashboard"
+      );
+      
+      if (uniDashboardService) {
+        setActiveSegment(uniDashboardService._id);
+        // Clean up the URL parameter
+        const url = new URL(window.location.href);
+        url.searchParams.delete('fromVendor');
+        window.history.replaceState({}, '', url.toString());
+      }
+    }
+  }, [services, searchParams]);
 
   useEffect(() => {
     localStorage.setItem("activeSegment", activeSegment);
@@ -109,6 +156,9 @@ export default function UniDashboardPage() {
           if (name === "manage charges" || name.includes("manage charges")) {
             return <ManageCharges universityId={universityId || ""} />;
           }
+          if (name.includes("tax updating")) {
+            return <TaxUpdating universityId={universityId || ""} />;
+          }
           if (name === "invoice" || name.includes("invoice")) {
             return <Invoices universityId={universityId || ""} />;
           }
@@ -126,6 +176,11 @@ export default function UniDashboardPage() {
         {/* Upload Item Segment */}
         {activeSegment === "addItem" && (
           <UploadItemForm universityId={universityId || ""} />
+        )}
+
+        {/* Tax Updating Segment (fallback when using default segments) */}
+        {activeSegment === "tax-updating" && (
+          <TaxUpdating universityId={universityId || ""} />
         )}
 
         {/* Manage Items Segment */}
