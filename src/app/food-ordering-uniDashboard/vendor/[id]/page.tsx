@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "../../styles/VendorManagement.module.scss";
 import * as XLSX from "xlsx";
@@ -760,6 +760,7 @@ export default function VendorMenuPage({ params }: { params: Promise<{ id: strin
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div className={styles.container}>
       <div className={styles.vendorDetailHeader}>
         <button onClick={handleBackClick} className={styles.retryButton}>
@@ -1026,5 +1027,6 @@ export default function VendorMenuPage({ params }: { params: Promise<{ id: strin
         </div>
       </section>
     </div>
+    </Suspense>
   );
 } 
