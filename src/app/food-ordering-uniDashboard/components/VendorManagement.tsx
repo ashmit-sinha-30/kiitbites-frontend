@@ -23,6 +23,8 @@ export function VendorManagement({ universityId }: Props) {
   const [deleteVendorId, setDeleteVendorId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [openingVendor, setOpeningVendor] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchVendors = async () => {
     try {
@@ -134,6 +136,14 @@ export function VendorManagement({ universityId }: Props) {
     }
   };
 
+  const handleOpenVendor = (vendorId: string) => {
+    setOpeningVendor(vendorId);
+    // Use router.push with a small delay to ensure the loading state is visible
+    setTimeout(() => {
+      router.push(`/food-ordering-uniDashboard/vendor/${vendorId}?fromDashboard=true`);
+    }, 100);
+  };
+
   useEffect(() => {
     fetchVendors();
   }, [universityId]);
@@ -159,8 +169,24 @@ export function VendorManagement({ universityId }: Props) {
     );
   }
 
-  const availableVendors = vendors.filter(v => v.isAvailable === "Y");
-  const unavailableVendors = vendors.filter(v => v.isAvailable === "N");
+  // Filter vendors based on search query
+  const filteredVendors = vendors.filter(vendor => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const sellerTypeText = vendor.sellerType === "SELLER" ? "seller" : "non-seller";
+    
+    return (
+      vendor.fullName.toLowerCase().includes(query) ||
+      vendor.email.toLowerCase().includes(query) ||
+      vendor.phone.toLowerCase().includes(query) ||
+      (vendor.location && vendor.location.toLowerCase().includes(query)) ||
+      sellerTypeText.includes(query)
+    );
+  });
+
+  const availableVendors = filteredVendors.filter(v => v.isAvailable === "Y");
+  const unavailableVendors = filteredVendors.filter(v => v.isAvailable === "N");
 
   return (
     <div className={styles.container}>
@@ -179,18 +205,47 @@ export function VendorManagement({ universityId }: Props) {
           <span className={styles.statLabel}>Unavailable Vendors</span>
         </div>
         <div className={styles.statCard}>
-          <span className={styles.statNumber}>{vendors.length}</span>
-          <span className={styles.statLabel}>Total Vendors</span>
+          <span className={styles.statNumber}>{searchQuery ? filteredVendors.length : vendors.length}</span>
+          <span className={styles.statLabel}>{searchQuery ? 'Filtered Vendors' : 'Total Vendors'}</span>
         </div>
       </div>
 
+      {/* Search Section */}
+      <div className={styles.searchSection}>
+        <div className={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Search vendors by name, email, phone, location, or seller type..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.searchInput}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className={styles.clearButton}
+              title="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <div className={styles.searchResults}>
+            Found {filteredVendors.length} vendor{filteredVendors.length !== 1 ? 's' : ''} matching "{searchQuery}"
+          </div>
+        )}
+      </div>
+
       <div className={styles.vendorsList}>
-        <h3>All Vendors</h3>
+        <h3>{searchQuery ? `Search Results for "${searchQuery}"` : 'All Vendors'}</h3>
         {vendors.length === 0 ? (
           <p className={styles.noVendors}>No vendors found for this university.</p>
+        ) : filteredVendors.length === 0 ? (
+          <p className={styles.noVendors}>No vendors found matching your search criteria.</p>
         ) : (
           <div className={styles.vendorsGrid}>
-            {vendors.map((vendor) => {
+            {filteredVendors.map((vendor) => {
               const isActive = vendor.isAvailable === "Y";
               return (
                 <div
@@ -205,6 +260,11 @@ export function VendorManagement({ universityId }: Props) {
                     {vendor.location && (
                       <p className={styles.vendorLocation}>{vendor.location}</p>
                     )}
+                    <div className={styles.vendorType}>
+                      <span className={`${styles.sellerTypeBadge} ${vendor.sellerType === "SELLER" ? styles.seller : styles.nonSeller}`}>
+                        {vendor.sellerType === "SELLER" ? "Seller" : "Non-Seller"}
+                      </span>
+                    </div>
                   </div>
                   <div className={styles.vendorStatus}>
                     <span className={`${styles.statusBadge} ${vendor.isAvailable === "Y" ? styles.available : styles.unavailable}`}>
@@ -225,16 +285,16 @@ export function VendorManagement({ universityId }: Props) {
                       )}
                     </button>
                   </div>
-                  <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                  <div className={styles.actionButtons}>
                     <button
-                      className={styles.toggleButton}
+                      className={`${styles.actionButton} ${styles.editButton}`}
                       onClick={e => {
                         e.stopPropagation();
                         handleEditVendor(vendor);
                       }}
                     >Edit</button>
                     <button
-                      className={styles.toggleButton + ' ' + styles.turnOff}
+                      className={`${styles.actionButton} ${styles.deleteButton}`}
                       onClick={e => {
                         e.stopPropagation();
                         setDeleteVendorId(vendor._id);
@@ -242,14 +302,14 @@ export function VendorManagement({ universityId }: Props) {
                       }}
                       disabled={deleteLoading && deleteVendorId === vendor._id}
                     >{deleteLoading && deleteVendorId === vendor._id ? 'Deleting...' : 'Delete'}</button>
-                    {/* Show Open button for all vendors */}
                     <button
-                      className={styles.toggleButton}
+                      className={`${styles.actionButton} ${styles.openButton}`}
                       onClick={e => {
                         e.stopPropagation();
-                        router.push(`/food-ordering-uniDashboard/vendor/${vendor._id}`);
+                        handleOpenVendor(vendor._id);
                       }}
-                    >Open</button>
+                      disabled={openingVendor === vendor._id}
+                    >{openingVendor === vendor._id ? 'Opening...' : 'Open'}</button>
                   </div>
                 </div>
               );

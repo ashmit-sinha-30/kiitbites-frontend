@@ -24,7 +24,9 @@ export interface Vendor {
   email: string;
   phone: string;
   location?: string;
+  sellerType: "SELLER" | "NON_SELLER";
   isAvailable: "Y" | "N";
+  createdAt?: string;
 }
 
 export interface VendorAvailabilityUpdate {

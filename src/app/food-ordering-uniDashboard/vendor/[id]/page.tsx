@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import styles from "../../styles/VendorManagement.module.scss";
 import * as XLSX from "xlsx";
 import Modal from "react-modal";
@@ -16,7 +16,9 @@ interface Vendor {
   email: string;
   phone: string;
   location?: string;
+  sellerType: "SELLER" | "NON_SELLER";
   isAvailable: "Y" | "N";
+  createdAt?: string;
 }
 
 interface Order {
@@ -69,6 +71,7 @@ interface RawInventoryReportEntry {
 
 export default function VendorMenuPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { id: vendorId } = React.use(params);
   const [universityId, setUniversityId] = useState<string>("");
 
@@ -747,10 +750,19 @@ export default function VendorMenuPage({ params }: { params: Promise<{ id: strin
     }
   }
 
+  const handleBackClick = () => {
+    const fromDashboard = searchParams.get('fromDashboard');
+    if (fromDashboard === 'true') {
+      router.push('/food-ordering-uniDashboard?fromVendor=true');
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.vendorDetailHeader}>
-        <button onClick={() => router.back()} className={styles.retryButton}>
+        <button onClick={handleBackClick} className={styles.retryButton}>
           ← Back
         </button>
         <h2 className={styles.vendorDetailTitle}>Vendor Details</h2>

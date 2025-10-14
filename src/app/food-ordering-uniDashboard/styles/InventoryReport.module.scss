@@ -3,11 +3,9 @@
   display: flex;
 }
 
-.main {
-  margin-left: 240px; /* sidebar width */
+.main {/* sidebar width */
   flex: 1;
   padding: 2rem;
-  padding-top: 80px;
   background: #f9f9fc;
   min-height: calc(100vh - 64px);
   overflow-y: auto;
@@ -26,7 +24,6 @@
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  margin: 1rem 0;
 }
 
 .stats {
