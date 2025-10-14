@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Vendor } from "../types";
 import styles from "../styles/VendorManagement.module.scss";
@@ -26,7 +26,7 @@ export function VendorManagement({ universityId }: Props) {
   const [openingVendor, setOpeningVendor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchVendors = async () => {
+  const fetchVendors = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -45,7 +45,7 @@ export function VendorManagement({ universityId }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [universityId]);
 
   const toggleVendorAvailability = async (vendorId: string, currentStatus: "Y" | "N") => {
     try {
@@ -146,7 +146,7 @@ export function VendorManagement({ universityId }: Props) {
 
   useEffect(() => {
     fetchVendors();
-  }, [universityId]);
+  }, [fetchVendors]);
 
   if (loading) {
     return (
@@ -232,7 +232,7 @@ export function VendorManagement({ universityId }: Props) {
         </div>
         {searchQuery && (
           <div className={styles.searchResults}>
-            Found {filteredVendors.length} vendor{filteredVendors.length !== 1 ? 's' : ''} matching "{searchQuery}"
+            Found {filteredVendors.length} vendor{filteredVendors.length !== 1 ? 's' : ''} matching &quot;{searchQuery}&quot;
           </div>
         )}
       </div>

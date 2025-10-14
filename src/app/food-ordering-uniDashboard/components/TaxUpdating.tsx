@@ -23,9 +23,6 @@ export default function TaxUpdating({ universityId }: Props) {
   const [resultMsg, setResultMsg] = useState<string>("");
   const [previousHsn, setPreviousHsn] = useState<string>("");
   const [previousGst, setPreviousGst] = useState<number | null>(null);
-  const [currentItemsSample, setCurrentItemsSample] = useState<
-    { name?: string; hsnCode?: string; gstPercentage?: number | null }[]
-  >([]);
   const [detailedItems, setDetailedItems] = useState<
     { _id?: string; name?: string; hsnCode?: string; gstPercentage?: number | null }[]
   >([]);
@@ -59,7 +56,7 @@ export default function TaxUpdating({ universityId }: Props) {
         setSelectedType("");
         setPreviousHsn("");
         setPreviousGst(null);
-      } catch (e) {
+      } catch {
         setTypes([]);
         setResultMsg("Error loading types. Check network and backend.");
       }
@@ -68,11 +65,16 @@ export default function TaxUpdating({ universityId }: Props) {
   }, [category, baseUrl]);
 
   useEffect(() => {
+    interface FetchedItem {
+      _id?: string;
+      name?: string;
+      hsnCode?: string;
+      gstPercentage?: number | null;
+    }
     const fetchPrev = async () => {
       try {
         setPreviousHsn("");
         setPreviousGst(null);
-        setCurrentItemsSample([]);
         if (!baseUrl || !selectedType || !universityId) return;
         const url = `${baseUrl}/api/item/${category}/${encodeURIComponent(selectedType)}/${universityId}/detailed?t=${Date.now()}`;
         const res = await fetch(url);
@@ -83,21 +85,13 @@ export default function TaxUpdating({ universityId }: Props) {
           return;
         }
         const data = await res.json();
-        const items = Array.isArray(data?.items) ? data.items : [];
+        const items: FetchedItem[] = Array.isArray(data?.items) ? data.items : [];
         setDetailedItems(
-          items.map((it: any) => ({
+          items.map((it: FetchedItem) => ({
             _id: it?._id,
             name: it?.name,
             hsnCode: it?.hsnCode,
             gstPercentage: typeof it?.gstPercentage === "number" ? it.gstPercentage : null,
-          }))
-        );
-        setCurrentItemsSample(
-          items.slice(0, 5).map((it: any) => ({
-            name: it?.name,
-            hsnCode: it?.hsnCode,
-            gstPercentage:
-              typeof it?.gstPercentage === "number" ? it.gstPercentage : null,
           }))
         );
         // Compute most frequent HSN and associated GST from real items
@@ -132,11 +126,11 @@ export default function TaxUpdating({ universityId }: Props) {
                 typeof top.gstPercentage === "number" ? top.gstPercentage : null
               );
             }
-          } catch (_) {
+          } catch {
             // ignore
           }
         }
-      } catch (_) {
+      } catch {
         setResultMsg("Error loading current HSN/GST. Check network and backend.");
       }
     };
@@ -166,7 +160,8 @@ export default function TaxUpdating({ universityId }: Props) {
       } as Record<string, string>;
 
       // Build body with optional fields
-      const bodyPayload: any = {};
+      type UpdatePayload = { hsnCode?: string; gstPercentage?: number };
+      const bodyPayload: UpdatePayload = {};
       if (enableHsn && hsnCode.trim().length > 0) {
         bodyPayload.hsnCode = hsnCode.trim();
       }
@@ -213,8 +208,8 @@ export default function TaxUpdating({ universityId }: Props) {
         setSelectedItemIds([]);
         setRefreshKey((k) => k + 1);
       }
-    } catch (err: any) {
-      setResultMsg(err?.message || "Unexpected error");
+    } catch (err: unknown) {
+      setResultMsg(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setIsSubmitting(false);
     }
