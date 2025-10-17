@@ -16,7 +16,7 @@ export const ENV_CONFIG = {
   
   // App Configuration
   APP: {
-    NAME: process.env.NEXT_PUBLIC_APP_NAME || 'BitesBay',
+    NAME: process.env.NEXT_PUBLIC_APP_NAME || 'KAMPYN',
     VERSION: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
     ENVIRONMENT: process.env.NODE_ENV || 'development',
   },

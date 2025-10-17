@@ -270,11 +270,11 @@
   }
   
   &.turnOff {
-    background: #dc3545;
+    background: #10b981;
     color: white;
     
     &:hover:not(:disabled) {
-      background: #c82333;
+      background: #059669;
     }
   }
 }

@@ -242,7 +242,7 @@ const AdminDashboard: React.FC = () => {
       {/* Footer */}
       <div className={styles.footer}>
         <p className={styles.footerText}>
-          BitesBay Admin Dashboard - Secure Access
+          KAMPYN Admin Dashboard - Secure Access
         </p>
       </div>
     </div>
