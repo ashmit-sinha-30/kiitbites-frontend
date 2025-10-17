@@ -29,7 +29,7 @@ interface Props {
 }
 
 export default function Invoices({ universityId }: Props) {
-  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [, setInvoices] = useState<InvoiceRow[]>([]);
   const [vendorGroups, setVendorGroups] = useState<VendorInvoiceGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export default function Invoices({ universityId }: Props) {
       } else {
         setError(json?.message || "Failed to load invoices");
       }
-    } catch (e) {
+    } catch {
       setError("Failed to load invoices");
     } finally {
       setLoading(false);
