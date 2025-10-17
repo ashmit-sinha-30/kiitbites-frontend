@@ -16,22 +16,21 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({
 }) => {
   return (
     <div className={styles.dashboardContainer}>
-      {/* Welcome Message Section */}
+      {/* Welcome Message and Vendor Status Section */}
       <div className={styles.header}>
-        <h1>Welcome, {vendorName}!</h1>
-        <p>Manage your inventory, orders, and business operations</p>
-      </div>
-
-      {/* Vendor Availability Toggle Section */}
-      <div className={styles.availabilitySection}>
-        <h2>Vendor Status</h2>
-        <div className={styles.availabilityContainer}>
-          <VendorAvailabilityToggle 
-            vendorId={vendorId} 
-            onAvailabilityChange={(isAvailable) => {
-              console.log(`Vendor ${vendorName} availability changed to: ${isAvailable ? 'Available' : 'Unavailable'}`);
-            }}
-          />
+        <div className={styles.headerContent}>
+          <div className={styles.headerText}>
+            <h1>Welcome, {vendorName}!</h1>
+            <p>Manage your inventory, orders, and business operations</p>
+          </div>
+          <div className={styles.vendorStatusContainer}>
+            <VendorAvailabilityToggle 
+              vendorId={vendorId} 
+              onAvailabilityChange={(isAvailable) => {
+                console.log(`Vendor ${vendorName} availability changed to: ${isAvailable ? 'Available' : 'Unavailable'}`);
+              }}
+            />
+          </div>
         </div>
       </div>
 

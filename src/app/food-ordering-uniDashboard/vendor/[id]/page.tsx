@@ -801,7 +801,7 @@ export default function VendorMenuPage({ params }: { params: Promise<{ id: strin
         {vendor && (
           <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
             <button className={styles.toggleButton} onClick={handleEditVendor}>Edit</button>
-            <button className={styles.toggleButton + ' ' + styles.turnOff} onClick={() => setShowDeleteModal(true)} disabled={deleteLoading}>{deleteLoading ? 'Deleting...' : 'Delete'}</button>
+            <button className={styles.actionButton + ' ' + styles.deleteButton} onClick={() => setShowDeleteModal(true)} disabled={deleteLoading}>{deleteLoading ? 'Deleting...' : 'Delete'}</button>
           </div>
         )}
       </section>

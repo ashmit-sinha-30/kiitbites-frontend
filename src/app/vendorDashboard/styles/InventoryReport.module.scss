@@ -3,7 +3,6 @@
   display: flex;
   min-height: 100vh;
   background: linear-gradient(120deg, #f7fafc 60%, #e6fffa 100%);
-  margin-top: 2rem;
 }
 
 /* Sidebar base styles (for reference, should be in sidebar SCSS):
@@ -23,12 +22,10 @@
 
 .main {
   flex: 1;
-  padding: 2.5rem 3vw 2.5rem 3vw;
   overflow-y: auto;
   background: transparent;
   transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-  min-height: 100vh;
-  margin-left: 240px; /* Prevent content behind sidebar */
+  min-height: 100vh; /* Prevent content behind sidebar */
   
   /* Custom scrollbar */
   scrollbar-width: thin;
@@ -116,13 +113,15 @@
   margin-bottom: 2rem;
   padding: 1.5rem 1.5rem 1.25rem 1.5rem;
   background: #fff;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  transition: box-shadow 0.3s;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
   gap: 1.5rem;
   
   &:hover {
-    box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
   }
 }
 
@@ -156,7 +155,6 @@
 .inventoryContainer {
   background: white;
   border-radius: 8px;
-  padding: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -168,19 +166,22 @@
 }
 
 .addButton {
-  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 0.875rem;
-  transition: background 0.2s;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
 }
 
 .addButton:hover {
-  background: linear-gradient(90deg, #4ea199, #6fc3bd);
-  opacity: 0.9;
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(78, 161, 153, 0.3);
 }
 
 // Form Styles
@@ -238,30 +239,38 @@
 }
 
 .formActions button {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
 }
 
 .formActions button[type="submit"] {
-  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
   color: white;
 }
 
 .formActions button[type="submit"]:hover {
-  background: linear-gradient(90deg, #4ea199, #6fc3bd);
-  opacity: 0.9;
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(78, 161, 153, 0.3);
 }
 
 .formActions button[type="button"] {
-  background: #f5f5f5;
-  color: #333;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e5e7eb;
 }
 
 .formActions button[type="button"]:hover {
-  background: #e0e0e0;
+  background: #f1f5f9;
+  border-color: #4ea199;
+  color: #4ea199;
+  transform: translateY(-2px);
 }
 
 // Search Styles
@@ -401,8 +410,6 @@
 @media (max-width: 768px) {
   .main {
     margin-left: 0;
-    padding: 1rem;
-    padding-top: 60px;
     padding-bottom: 1.5rem;
   }
   
@@ -438,32 +445,41 @@
 }
 
 .editButton {
-  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
   color: white;
   border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
 }
 
 .editButton:hover {
-  background: linear-gradient(90deg, #4ea199, #6fc3bd);
-  opacity: 0.9;
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(78, 161, 153, 0.3);
 }
 
 .deleteButton {
-  background: #d32f2f;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
   color: white;
   border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
 }
 
 .deleteButton:hover {
-  background: #b71c1c;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(220, 53, 69, 0.3);
 }
 
 .noItems {
@@ -494,18 +510,25 @@
 
 .analyticsDashboard {
   background: #fff;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
   padding: 2rem 2.5rem;
   margin-bottom: 2rem;
   margin-top: 1rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  }
 }
 
 .analyticsDashboard h2 {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
-  color: #2d3748;
+  color: #0f172a;
 }
 
 .analyticsGrid {
@@ -518,18 +541,25 @@
 .analyticsSection {
   flex: 1 1 300px;
   min-width: 250px;
-  background: #f7fafc;
-  border-radius: 0.75rem;
+  background: #f8fafc;
+  border-radius: 12px;
   padding: 1.5rem 1.25rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  border: 1px solid #e5e7eb;
   margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
 }
 
 .analyticsSection h3 {
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 1rem;
-  color: #319795;
+  color: #0f766e;
 }
 
 .analyticsSection ul {
@@ -541,7 +571,8 @@
 .analyticsSection li {
   font-size: 1rem;
   margin-bottom: 0.5rem;
-  color: #2d3748;
+  color: #0f172a;
+  font-weight: 500;
 }
 
 .analyticsSummaryGrid {
@@ -555,21 +586,28 @@
 .analyticsSummaryCard {
   flex: 1 1 220px;
   min-width: 200px;
-  background: #e6fffa;
-  border-radius: 0.75rem;
+  background: #ecfeff;
+  border-radius: 12px;
   padding: 1.25rem 1rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  border: 1px solid #99f6e4;
   margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
 }
 
 .analyticsSummaryCard h4 {
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
-  color: #319795;
+  color: #0f766e;
 }
 
 .analyticsSummaryCard ul {
@@ -581,7 +619,8 @@
 .analyticsSummaryCard li {
   font-size: 1rem;
   margin-bottom: 0.4rem;
-  color: #2d3748;
+  color: #0f172a;
+  font-weight: 500;
 }
 
 /* Responsive adjustments */
@@ -626,20 +665,22 @@
 
 .analyticsDateLabel {
   font-size: 1rem;
-  font-weight: 600;
-  color: #319795;
+  font-weight: 700;
+  color: #0f766e;
 }
 
 .analyticsDatePicker {
   font-size: 1rem;
   padding: 0.4rem 0.7rem;
-  border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-  background: #f7fafc;
-  color: #2d3748;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #0f172a;
   outline: none;
-  transition: border 0.2s;
+  transition: all 0.2s;
+  font-weight: 500;
 }
 .analyticsDatePicker:focus {
-  border: 1.5px solid #319795;
+  border: 1.5px solid #4ea199;
+  box-shadow: 0 0 0 3px rgba(78, 161, 153, 0.1);
 }

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ENV_CONFIG } from "@/config/environment";
+import styles from "./styles/UniDashboard.module.scss";
 
 export default function UniDashboardPage() {
   const router = useRouter();
@@ -61,52 +62,87 @@ export default function UniDashboardPage() {
   }, [router]);
 
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      {/* Sidebar removed: only feature selection remains in this page */}
+  // Helper function to get appropriate icon for each feature
+  const getFeatureIcon = (featureName: string) => {
+    const name = featureName.toLowerCase();
+    if (name.includes('food') || name.includes('ordering')) return '🍽️';
+    if (name.includes('vendor') || name.includes('merchant')) return '🏪';
+    if (name.includes('inventory') || name.includes('stock')) return '📦';
+    if (name.includes('analytics') || name.includes('report')) return '📊';
+    if (name.includes('payment') || name.includes('billing')) return '💳';
+    if (name.includes('user') || name.includes('customer')) return '👥';
+    if (name.includes('notification') || name.includes('alert')) return '🔔';
+    if (name.includes('setting') || name.includes('config')) return '⚙️';
+    return '📋'; // Default icon
+  };
 
-      <main className="w-full max-w-6xl mx-auto p-6">
+  return (
+    <div className={styles.dashboardContainer}>
+      <main className={styles.main}>
+        {/* Header Section */}
+        <div className={styles.header}>
+          <h1>University Dashboard</h1>
+          <p>Select a feature to access its dedicated management dashboard</p>
+        </div>
+
+        {/* Loading State */}
         {loading && (
-          <div className="flex justify-center items-center min-h-32">
-            <div className="p-4 text-sm text-gray-500">Loading your features…</div>
-          </div>
-        )}
-        {/* Dashboard Segment: Feature selection */}
-        {activeSegment === "dashboard" && (
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-8 text-gray-800">What would you like to monitor?</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              {features.map((f) => {
-                const slug = `${f.name}`
-                  .toLowerCase()
-                  .replace(/[^a-z0-9\s-]/g, "")
-                  .trim()
-                  .replace(/\s+/g, "-");
-                return (
-                  <button
-                    key={f._id}
-                    className="border border-gray-200 rounded-lg p-6 text-left hover:bg-white hover:shadow-md transition-all duration-200 bg-white shadow-sm"
-                    onClick={() => {
-                      // Clear any existing activeSegment to ensure dashboard is active by default
-                      localStorage.removeItem("activeSegment");
-                      router.push(`/${slug}-uniDashboard`);
-                    }}
-                  >
-                    <div className="font-semibold text-gray-800 mb-2">{f.name}</div>
-                    <div className="text-sm text-gray-500">Click to open related dashboard</div>
-                  </button>
-                );
-              })}
-              {!loading && features.length === 0 && (
-                <div className="col-span-full text-center">
-                  <div className="text-gray-500 py-8">No features assigned to your university yet.</div>
-                </div>
-              )}
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingContent}>
+              <div className={styles.spinner}></div>
+              <p>Loading your available features...</p>
             </div>
           </div>
         )}
 
-        {/* Other content removed; this page only lists features and navigates to their dashboards */}
+        {/* Dashboard Segment: Feature selection */}
+        {activeSegment === "dashboard" && !loading && (
+          <div className={styles.featuresSection}>
+            <h2 className={styles.sectionTitle}>Available Features</h2>
+            
+            {features.length > 0 ? (
+              <div className={styles.featuresGrid}>
+                {features.map((feature) => {
+                  const slug = `${feature.name}`
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, "")
+                    .trim()
+                    .replace(/\s+/g, "-");
+                  
+                  return (
+                    <div
+                      key={feature._id}
+                      className={`${styles.featureCard} ${styles.fadeInUp}`}
+                      onClick={() => {
+                        // Clear any existing activeSegment to ensure dashboard is active by default
+                        localStorage.removeItem("activeSegment");
+                        router.push(`/${slug}-uniDashboard`);
+                      }}
+                    >
+                      <div className={styles.cardContent}>
+                        <div className={styles.featureIcon}>
+                          {getFeatureIcon(feature.name)}
+                        </div>
+                        <h3 className={styles.featureTitle}>{feature.name}</h3>
+                        <p className={styles.featureDescription}>
+                          Access and manage your {feature.name.toLowerCase()} dashboard
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>📋</div>
+                <h3 className={styles.emptyTitle}>No Features Available</h3>
+                <p className={styles.emptyDescription}>
+                  No features have been assigned to your university yet. Please contact your administrator.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

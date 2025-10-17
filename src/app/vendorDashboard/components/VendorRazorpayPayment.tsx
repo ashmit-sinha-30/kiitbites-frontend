@@ -172,7 +172,7 @@ export const VendorRazorpayPayment: React.FC<VendorRazorpayPaymentProps> = ({
         })()),
         currency: "INR",
         order_id: razorpayOrder.id,
-        name: "KIITBites",
+        name: "KAMPYN",
         description: "Complete your payment",
         prefill: {
           name: collectorName,
@@ -222,7 +222,7 @@ export const VendorRazorpayPayment: React.FC<VendorRazorpayPaymentProps> = ({
           },
         },
         notes: {
-          address: "KIITBites Food Order",
+          address: "KAMPYN Food Order",
           merchant_order_id: `vendor-${Date.now()}`,
         },
         retry: {

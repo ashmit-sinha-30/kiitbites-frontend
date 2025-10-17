@@ -1,0 +1,586 @@
+.invoicesContainer {
+  background: linear-gradient(120deg, #f7fafc 60%, #e6fffa 100%);
+  min-height: 100vh;
+  padding: 2rem;
+  font-family: "Poppins", sans-serif;
+}
+
+.header {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+  
+  .title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a202c;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+    color: #64748b;
+    margin: 0 0 2rem 0;
+    font-weight: 500;
+  }
+  
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .dateFilters {
+      display: flex;
+      gap: 0.75rem;
+      
+      @media (max-width: 480px) {
+        flex-direction: column;
+      }
+      
+      input {
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        background: white;
+        transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        
+        &:focus {
+          outline: none;
+          border-color: #4ea199;
+          box-shadow: 0 0 0 3px rgba(78, 161, 153, 0.1);
+        }
+        
+        &::placeholder {
+          color: #9ca3af;
+        }
+      }
+    }
+    
+    .actionButtons {
+      display: flex;
+      gap: 0.75rem;
+      
+      @media (max-width: 480px) {
+        flex-direction: column;
+      }
+      
+      button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        
+        &.expandCollapseBtn {
+          background: #6b7280;
+          color: white;
+          
+          &:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(107, 114, 128, 0.3);
+          }
+        }
+        
+        &.downloadBtn {
+          background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
+          color: white;
+          
+          &:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(78, 161, 153, 0.3);
+          }
+          
+          &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+          }
+        }
+      }
+    }
+  }
+}
+
+.loadingState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  
+  .loadingContent {
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    border: 1px solid #e5e7eb;
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e5e7eb;
+      border-top: 3px solid #4ea199;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem auto;
+    }
+    
+    .loadingText {
+      color: #6b7280;
+      font-size: 1rem;
+      margin: 0;
+      font-weight: 500;
+    }
+  }
+}
+
+.errorState {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  border: 1px solid #fecaca;
+  margin-bottom: 2rem;
+  
+  .errorText {
+    color: #dc2626;
+    font-size: 1rem;
+    margin: 0;
+    font-weight: 500;
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 2rem;
+  
+  .emptyIcon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem auto;
+    background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #94a3b8;
+  }
+  
+  .emptyTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 0.75rem 0;
+  }
+  
+  .emptyDescription {
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+.vendorGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.vendorCard {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  
+  &:hover {
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+  
+  .vendorHeader {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #e5e7eb;
+    
+    &:hover {
+      background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
+    }
+    
+    .headerContent {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      
+      @media (max-width: 768px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .vendorInfo {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        
+        .vendorName {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #1a202c;
+          margin: 0;
+        }
+        
+        .invoiceBadge {
+          background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
+          color: white;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+      }
+      
+      .vendorStats {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        
+        @media (max-width: 768px) {
+          align-self: stretch;
+          justify-content: space-between;
+        }
+        
+        .totalAmount {
+          text-align: right;
+          
+          .amountLabel {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 500;
+            margin: 0 0 0.25rem 0;
+          }
+          
+          .amountValue {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #059669;
+            margin: 0;
+          }
+        }
+        
+        .expandIcon {
+          color: #9ca3af;
+          font-size: 1.25rem;
+          transition: transform 0.3s ease;
+          
+          &.expanded {
+            transform: rotate(180deg);
+          }
+        }
+      }
+    }
+  }
+  
+  .invoicesTable {
+    overflow-x: auto;
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      
+      thead {
+        background: #f8fafc;
+        
+        th {
+          padding: 1rem;
+          text-align: left;
+          font-weight: 600;
+          color: #374151;
+          font-size: 0.875rem;
+          border-bottom: 2px solid #e5e7eb;
+          
+          &:last-child {
+            text-align: center;
+          }
+          
+          &:nth-child(3) {
+            text-align: right;
+          }
+        }
+      }
+      
+      tbody {
+        tr {
+          transition: background-color 0.2s ease;
+          
+          &:hover {
+            background-color: #f9fafb;
+          }
+          
+          &:last-child td {
+            border-bottom: none;
+          }
+          
+          td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+            
+            &:last-child {
+              text-align: center;
+            }
+            
+            &:nth-child(3) {
+              text-align: right;
+            }
+            
+            .invoiceNumber {
+              font-weight: 600;
+              color: #4ea199;
+            }
+            
+            .statusBadge {
+              display: inline-flex;
+              align-items: center;
+              padding: 0.25rem 0.75rem;
+              border-radius: 20px;
+              font-size: 0.75rem;
+              font-weight: 600;
+              
+              &.paid {
+                background: #dcfce7;
+                color: #166534;
+              }
+              
+              &.sent {
+                background: #dbeafe;
+                color: #1e40af;
+              }
+              
+              &.draft {
+                background: #fef3c7;
+                color: #92400e;
+              }
+              
+              &.cancelled {
+                background: #fee2e2;
+                color: #dc2626;
+              }
+            }
+            
+            .amount {
+              font-weight: 600;
+              color: #059669;
+            }
+            
+            .date {
+              color: #6b7280;
+            }
+            
+            .downloadBtn {
+              background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
+              color: white;
+              border: none;
+              padding: 0.5rem 1rem;
+              border-radius: 8px;
+              font-size: 0.75rem;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+              
+              &:hover {
+                background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(78, 161, 153, 0.3);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.summaryStats {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+  
+  .statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    text-align: center;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .statItem {
+      .statValue {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0 0 0.5rem 0;
+        
+        &.vendors {
+          color: #4ea199;
+        }
+        
+        &.invoices {
+          color: #059669;
+        }
+        
+        &.amount {
+          color: #7c3aed;
+        }
+      }
+      
+      .statLabel {
+        font-size: 1rem;
+        color: #64748b;
+        font-weight: 500;
+        margin: 0;
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fadeInUp {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .invoicesContainer {
+    padding: 1rem;
+  }
+  
+  .header {
+    padding: 1.5rem;
+    
+    .title {
+      font-size: 1.75rem;
+    }
+    
+    .controls {
+      .dateFilters {
+        input {
+          padding: 0.625rem 0.875rem;
+          font-size: 0.8125rem;
+        }
+      }
+      
+      .actionButtons {
+        button {
+          padding: 0.625rem 1.25rem;
+          font-size: 0.8125rem;
+        }
+      }
+    }
+  }
+  
+  .vendorCard {
+    .vendorHeader {
+      padding: 1.25rem;
+    }
+    
+    .invoicesTable {
+      table {
+        thead th,
+        tbody td {
+          padding: 0.75rem;
+          font-size: 0.8125rem;
+        }
+      }
+    }
+  }
+  
+  .summaryStats {
+    padding: 1.5rem;
+    
+    .statsGrid {
+      .statItem {
+        .statValue {
+          font-size: 2rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .invoicesContainer {
+    padding: 0.5rem;
+  }
+  
+  .header {
+    padding: 1rem;
+    
+    .title {
+      font-size: 1.5rem;
+    }
+  }
+  
+  .vendorCard {
+    .vendorHeader {
+      padding: 1rem;
+    }
+  }
+}

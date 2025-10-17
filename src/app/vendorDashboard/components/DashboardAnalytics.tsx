@@ -166,7 +166,6 @@ const DashboardAnalytics: React.FC = () => {
             className={styles.analyticsDatePicker}
           />
         </div>
-        <h2>Sales Analytics</h2>
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <p>Loading analytics...</p>
         </div>
@@ -187,7 +186,6 @@ const DashboardAnalytics: React.FC = () => {
             className={styles.analyticsDatePicker}
           />
         </div>
-        <h2>Sales Analytics</h2>
         <div style={{ textAlign: 'center', padding: '2rem', color: '#e53e3e' }}>
           <p>Error: {error}</p>
           <button onClick={() => fetchAnalytics(selectedDate)} style={{ marginTop: '1rem', padding: '0.5rem 1rem', backgroundColor: '#319795', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}>
@@ -210,7 +208,6 @@ const DashboardAnalytics: React.FC = () => {
           className={styles.analyticsDatePicker}
         />
       </div>
-      <h2>Sales Analytics</h2>
       <div className={styles.analyticsSummaryGrid}>
         <div className={styles.analyticsSummaryCard}>
           <h4>Total Revenue</h4>
