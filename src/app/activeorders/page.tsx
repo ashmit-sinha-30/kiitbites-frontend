@@ -8,7 +8,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 interface OrderItem {
   name: string;

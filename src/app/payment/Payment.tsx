@@ -36,7 +36,7 @@ interface OrderDetails {
   items: OrderItem[];
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 const PaymentPage = () => {
   const searchParams = useSearchParams();
