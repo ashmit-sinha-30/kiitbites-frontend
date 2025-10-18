@@ -47,7 +47,7 @@ const VendorOtpVerificationContent: React.FC = () => {
     try {
       console.log('Submitting OTP verification:', { email, otp });
       
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const response = await fetch(`${backendUrl}/api/vendor/auth/otpverification`, {
         method: 'POST',
         headers: {
@@ -94,7 +94,7 @@ const VendorOtpVerificationContent: React.FC = () => {
     setError('');
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const response = await fetch(`${backendUrl}/api/vendor/auth/forgotpassword`, {
         method: 'POST',
         headers: {

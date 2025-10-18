@@ -108,7 +108,7 @@ export default function Sidebar({
         const params = new URLSearchParams({ uniId });
         if (vendorId && vendorId !== '—') params.set('vendorId', vendorId);
         if (role) params.set('role', role);
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
         const res = await fetch(`${backendUrl}/api/access/features?${params.toString()}`, { credentials: 'include' });
         const json = await res.json();
         const featureMap: Record<string, boolean> = json.features || {};
@@ -149,7 +149,7 @@ export default function Sidebar({
       const token = localStorage.getItem("token");
       if (token) {
         // Optional: Notify backend to invalidate the session
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
         await fetch(`${backendUrl}/api/vendor/auth/logout`, {
           method: "POST",
           credentials: "include",

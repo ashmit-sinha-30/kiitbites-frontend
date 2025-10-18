@@ -12,8 +12,8 @@ Disallow: /404
 Disallow: /500
 
 # Host
-Host: https://kampyn.com
+Host: https://kiitbites.com
 
 # Sitemaps
-Sitemap: https://kampyn.com/sitemap.xml
+Sitemap: https://kiitbites.com/sitemap.xml
 Sitemap: https://kampyn.com/sitemap.xml

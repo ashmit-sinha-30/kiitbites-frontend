@@ -26,5 +26,5 @@ export const checkBackendHealth = async (backendUrl: string): Promise<{ isHealth
 };
 
 export const getBackendUrl = (): string => {
-  return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+  return process.env.NEXT_PUBLIC_BACKEND_URL || '';
 };
