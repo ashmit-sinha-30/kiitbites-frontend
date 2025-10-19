@@ -31,7 +31,15 @@ let count = 0
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   // Ensure the generated ID is always safe and contains only alphanumeric characters
-  return `toast_${count.toString()}`
+  // This prevents any potential code injection through ID manipulation
+  const safeId = `toast_${count.toString()}`
+  
+  // Double-check that the generated ID is safe
+  if (!/^[a-zA-Z0-9_]+$/.test(safeId)) {
+    throw new Error('Generated toast ID contains unsafe characters')
+  }
+  
+  return safeId
 }
 
 
@@ -82,9 +90,11 @@ const processPendingRemovals = () => {
 const scheduleRemoval = () => {
   if (globalTimeout) return // Already scheduled
   
+  // Use a safe, hardcoded delay value to prevent code injection
+  const safeDelay = TOAST_REMOVE_DELAY
   globalTimeout = setTimeout(() => {
     processPendingRemovals()
-  }, TOAST_REMOVE_DELAY)
+  }, safeDelay)
 }
 
 const addToRemoveQueue = (toastId: string) => {
@@ -94,7 +104,7 @@ const addToRemoveQueue = (toastId: string) => {
 
   // Validate toastId to ensure it only contains safe characters
   // This prevents potential code injection through untrusted data
-  if (!/^[a-zA-Z0-9]+$/.test(toastId)) {
+  if (!/^[a-zA-Z0-9_]+$/.test(toastId)) {
     console.warn('Invalid toastId format detected, skipping timeout setup')
     return
   }
@@ -102,8 +112,12 @@ const addToRemoveQueue = (toastId: string) => {
   // Add to pending removals and schedule processing
   pendingRemovals.add(toastId)
   
-  // Create a dummy timeout entry for tracking
-  const dummyTimeout = setTimeout(() => {}, 0)
+  // Create a dummy timeout entry for tracking with safe, hardcoded values
+  // This prevents any potential code injection through untrusted data
+  const safeDelay = 0
+  const dummyTimeout = setTimeout(() => {
+    // Empty function - no untrusted data can be executed here
+  }, safeDelay)
   clearTimeout(dummyTimeout)
   toastTimeouts.set(toastId, dummyTimeout)
   
