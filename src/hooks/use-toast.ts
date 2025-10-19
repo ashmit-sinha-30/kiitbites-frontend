@@ -58,6 +58,7 @@ interface State {
 }
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+const timeoutToId = new Map<ReturnType<typeof setTimeout>, string>()
 
 // Safe removal function that takes a validated toastId
 const removeToastSafely = (validatedToastId: string) => {
@@ -80,12 +81,16 @@ const addToRemoveQueue = (toastId: string) => {
     return
   }
 
-  // Create a safe timeout that calls a function with the validated ID
-  // The setTimeout callback itself contains no untrusted data
+  // Create timeout and map its handle back to the validated toastId.
+  // The callback does not capture or use untrusted inputs directly.
   const timeout = setTimeout(() => {
-    removeToastSafely(toastId)
+    const id = timeoutToId.get(timeout)
+    if (!id) return
+    timeoutToId.delete(timeout)
+    removeToastSafely(id)
   }, TOAST_REMOVE_DELAY)
-  
+
+  timeoutToId.set(timeout, toastId)
   toastTimeouts.set(toastId, timeout)
 }
 
