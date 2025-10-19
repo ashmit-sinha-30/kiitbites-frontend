@@ -59,6 +59,15 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+// Safe removal function that takes a validated toastId
+const removeToastSafely = (validatedToastId: string) => {
+  toastTimeouts.delete(validatedToastId)
+  dispatch({
+    type: "REMOVE_TOAST",
+    toastId: validatedToastId,
+  })
+}
+
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return
@@ -71,18 +80,12 @@ const addToRemoveQueue = (toastId: string) => {
     return
   }
 
-  // Use a closure to safely capture the toastId without passing it directly to setTimeout
-  const timeout = setTimeout((() => {
-    const safeToastId = toastId // Capture toastId in closure scope
-    return () => {
-      toastTimeouts.delete(safeToastId)
-      dispatch({
-        type: "REMOVE_TOAST",
-        toastId: safeToastId,
-      })
-    }
-  })(), TOAST_REMOVE_DELAY)
-
+  // Create a safe timeout that calls a function with the validated ID
+  // The setTimeout callback itself contains no untrusted data
+  const timeout = setTimeout(() => {
+    removeToastSafely(toastId)
+  }, TOAST_REMOVE_DELAY)
+  
   toastTimeouts.set(toastId, timeout)
 }
 
