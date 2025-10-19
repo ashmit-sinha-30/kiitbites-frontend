@@ -58,15 +58,33 @@ interface State {
 }
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
-const timeoutToId = new Map<ReturnType<typeof setTimeout>, string>()
+const pendingRemovals = new Set<string>()
 
-// Safe removal function that takes a validated toastId
-const removeToastSafely = (validatedToastId: string) => {
-  toastTimeouts.delete(validatedToastId)
-  dispatch({
-    type: "REMOVE_TOAST",
-    toastId: validatedToastId,
+// Global timeout handler that processes all pending removals
+let globalTimeout: ReturnType<typeof setTimeout> | null = null
+
+const processPendingRemovals = () => {
+  if (pendingRemovals.size === 0) return
+  
+  // Process all pending removals
+  pendingRemovals.forEach((toastId) => {
+    toastTimeouts.delete(toastId)
+    dispatch({
+      type: "REMOVE_TOAST",
+      toastId: toastId,
+    })
   })
+  
+  pendingRemovals.clear()
+  globalTimeout = null
+}
+
+const scheduleRemoval = () => {
+  if (globalTimeout) return // Already scheduled
+  
+  globalTimeout = setTimeout(() => {
+    processPendingRemovals()
+  }, TOAST_REMOVE_DELAY)
 }
 
 const addToRemoveQueue = (toastId: string) => {
@@ -81,17 +99,16 @@ const addToRemoveQueue = (toastId: string) => {
     return
   }
 
-  // Create timeout and map its handle back to the validated toastId.
-  // The callback does not capture or use untrusted inputs directly.
-  const timeout = setTimeout(() => {
-    const id = timeoutToId.get(timeout)
-    if (!id) return
-    timeoutToId.delete(timeout)
-    removeToastSafely(id)
-  }, TOAST_REMOVE_DELAY)
-
-  timeoutToId.set(timeout, toastId)
-  toastTimeouts.set(toastId, timeout)
+  // Add to pending removals and schedule processing
+  pendingRemovals.add(toastId)
+  
+  // Create a dummy timeout entry for tracking
+  const dummyTimeout = setTimeout(() => {}, 0)
+  clearTimeout(dummyTimeout)
+  toastTimeouts.set(toastId, dummyTimeout)
+  
+  // Schedule the global removal handler
+  scheduleRemoval()
 }
 
 export const reducer = (state: State, action: Action): State => {
