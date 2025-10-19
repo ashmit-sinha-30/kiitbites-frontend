@@ -378,7 +378,7 @@ export default function VendorDashboardPage() {
                   <h1>Inventory Transfer</h1>
                   <p>Send and receive inventory from other vendors</p>
                 </div>
-                <InventoryTransfer />
+                <InventoryTransfer vendorId={vendorId || ""} />
               </>
             );
           }

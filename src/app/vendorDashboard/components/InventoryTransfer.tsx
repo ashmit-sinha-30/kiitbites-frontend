@@ -32,7 +32,11 @@ interface Vendor {
   fullName: string;
 }
 
-export const InventoryTransfer: React.FC = () => {
+interface InventoryTransferProps {
+  vendorId: string;
+}
+
+export const InventoryTransfer: React.FC<InventoryTransferProps> = ({ vendorId }) => {
   const [activeTab, setActiveTab] = useState<"send" | "receive">("send");
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedReceiverId, setSelectedReceiverId] = useState<string>("");
@@ -41,8 +45,6 @@ export const InventoryTransfer: React.FC = () => {
   const [transferOrders, setTransferOrders] = useState<TransferOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  const currentVendorId = "6834622e10d75a5ba7b7740d"; // TODO: replace with auth context
 
   useEffect(() => {
     fetchVendors();
@@ -54,7 +56,7 @@ export const InventoryTransfer: React.FC = () => {
   const fetchVendors = async () => {
     try {
       // First get current vendor's uniID
-      const vendorResp = await fetch(`${BASE_URL}/api/item/getvendors/${currentVendorId}`);
+      const vendorResp = await fetch(`${BASE_URL}/api/item/getvendors/${vendorId}`);
       if (!vendorResp.ok) return;
       const vendorJson = await vendorResp.json();
       const uniId: string | undefined = vendorJson?.uniID;
@@ -63,7 +65,7 @@ export const InventoryTransfer: React.FC = () => {
       const response = await fetch(`${BASE_URL}/api/vendor/list/uni/${uniId}`);
       if (response.ok) {
         const data: Vendor[] = await response.json();
-        const otherVendors = data.filter((v) => v._id !== currentVendorId);
+        const otherVendors = data.filter((v) => v._id !== vendorId);
         setVendors(otherVendors);
       }
     } catch (error) {
@@ -74,7 +76,7 @@ export const InventoryTransfer: React.FC = () => {
   // Load current vendor retail items (available to transfer)
   const fetchAvailableItems = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/api/item/getvendors/${currentVendorId}/retail`);
+      const response = await fetch(`${BASE_URL}/api/item/getvendors/${vendorId}/retail`);
       if (response.ok) {
         const json = await response.json();
         const rawItems = json?.data?.retailItems ?? json?.items ?? [];
@@ -94,7 +96,7 @@ export const InventoryTransfer: React.FC = () => {
   // Load pending transfers for this vendor as receiver
   const fetchTransferOrders = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/api/transfer-orders/${currentVendorId}`);
+      const response = await fetch(`${BASE_URL}/api/transfer-orders/${vendorId}`);
       if (response.ok) {
         const data = await response.json();
         const orders = (data?.orders ?? []).map((o: { _id: string; status: string; items: Array<{ itemId: string; quantity: number; itemName?: string; itemType?: string; unit?: string }>; createdAt: string }) => ({
@@ -137,7 +139,7 @@ export const InventoryTransfer: React.FC = () => {
     setLoading(true);
     try {
       const transferRequest: TransferRequest = {
-        senderId: currentVendorId,
+        senderId: vendorId,
         receiverId: selectedReceiverId,
         items: selectedItems.filter((i) => i.quantity > 0),
       };
@@ -182,7 +184,7 @@ export const InventoryTransfer: React.FC = () => {
         },
         body: JSON.stringify({
           orderId,
-          receiverVendorId: currentVendorId,
+          receiverVendorId: vendorId,
         }),
       });
 

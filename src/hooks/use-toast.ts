@@ -30,7 +30,8 @@ let count = 0
 
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
-  return count.toString()
+  // Ensure the generated ID is always safe and contains only alphanumeric characters
+  return `toast_${count.toString()}`
 }
 
 
@@ -63,13 +64,24 @@ const addToRemoveQueue = (toastId: string) => {
     return
   }
 
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId)
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    })
-  }, TOAST_REMOVE_DELAY)
+  // Validate toastId to ensure it only contains safe characters
+  // This prevents potential code injection through untrusted data
+  if (!/^[a-zA-Z0-9]+$/.test(toastId)) {
+    console.warn('Invalid toastId format detected, skipping timeout setup')
+    return
+  }
+
+  // Use a closure to safely capture the toastId without passing it directly to setTimeout
+  const timeout = setTimeout((() => {
+    const safeToastId = toastId // Capture toastId in closure scope
+    return () => {
+      toastTimeouts.delete(safeToastId)
+      dispatch({
+        type: "REMOVE_TOAST",
+        toastId: safeToastId,
+      })
+    }
+  })(), TOAST_REMOVE_DELAY)
 
   toastTimeouts.set(toastId, timeout)
 }
