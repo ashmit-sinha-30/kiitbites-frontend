@@ -92,6 +92,7 @@ const scheduleRemoval = () => {
   
   // Use a safe, hardcoded delay value to prevent code injection
   const safeDelay = TOAST_REMOVE_DELAY
+  // DevSkim: ignore DS172411 - static callback and constant delay; no untrusted data
   globalTimeout = setTimeout(() => {
     processPendingRemovals()
   }, safeDelay)
@@ -115,6 +116,7 @@ const addToRemoveQueue = (toastId: string) => {
   // Create a dummy timeout entry for tracking with safe, hardcoded values
   // This prevents any potential code injection through untrusted data
   const safeDelay = 0
+  // DevSkim: ignore DS172411 - static empty callback with constant delay; tracking only
   const dummyTimeout = setTimeout(() => {
     // Empty function - no untrusted data can be executed here
   }, safeDelay)
