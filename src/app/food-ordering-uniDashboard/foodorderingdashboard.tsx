@@ -12,6 +12,7 @@ import ManageCharges from "./components/ManageCharges";
 import Invoices from "./components/Invoices";
 import Review from "./components/Review";
 import TaxUpdating from "./components/TaxUpdating";
+import UniGrievances from "../uniDashboard/components/UniGrievances";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
@@ -95,6 +96,10 @@ export default function UniDashboardPage() {
           const uniId = user._id || user.id;
           setUniversityId(uniId);
           setUniversityName(user.fullName || "University");
+          
+          // Store uniId in localStorage for grievance system
+          localStorage.setItem("uniId", uniId);
+          
           const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
           const assignJson = await assignRes.json();
           if (assignJson.success) {
@@ -191,6 +196,11 @@ export default function UniDashboardPage() {
         {/* Manage Charges Segment */}
         {activeSegment === "manage-charges" && (
           <ManageCharges universityId={universityId || ""} />
+        )}
+
+        {/* Grievances Segment */}
+        {activeSegment === "grievances" && (
+          <UniGrievances />
         )}
       </main>
     </div>

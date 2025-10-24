@@ -3,77 +3,75 @@ import {
   AiOutlineDashboard,
   AiOutlineAppstore,
   AiOutlineApple,
-  AiOutlineShopping,
   AiOutlineFileText,
   AiOutlineLogout,
   AiOutlineHistory,
   AiOutlineCar,
   AiOutlineShoppingCart,
   AiOutlineTruck,
-  AiOutlineSwap,
   AiOutlineFileZip,
+  AiOutlineExclamationCircle,
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import React from "react";
 import styles from "../styles/SideBar.module.scss";
 
 const allSegments = [
-  { key: "dashboard", label: "Dashboard", icon: <AiOutlineDashboard />, featureKey: "service.food_ordering.dashboard" },
-  { key: "active-orders", label: "Active Orders", icon: <AiOutlineAppstore />, featureKey: "service.food_ordering.active_orders" },
+  { key: "dashboard", label: "Dashboard", icon: <AiOutlineDashboard />, featureKey: "dashboard" },
+  { key: "active-orders", label: "Active Order", icon: <AiOutlineAppstore />, featureKey: "active_order" },
   {
     key: "retail-inventory",
     label: "Retail Inventory",
     icon: <AiOutlineAppstore />,
-    featureKey: "service.food_ordering.retail_inventory",
+    featureKey: "retail_inventory",
   },
   {
     key: "produce-inventory",
     label: "Produce Inventory",
     icon: <AiOutlineApple />,
-    featureKey: "service.food_ordering.produce_inventory",
+    featureKey: "produce_inventory",
   },
-  { key: "raw-materials", label: "Raw Materials", icon: <AiOutlineShopping />, featureKey: "service.food_ordering.raw_inventory" },
   {
     key: "inventory-reports",
-    label: "Inventory Reports",
+    label: "Inventory Report",
     icon: <AiOutlineFileText />,
-    featureKey: "service.food_ordering.inventory_report",
-  },
-  {
-    key: "inventory-transfer",
-    label: "Inventory Transfer",
-    icon: <AiOutlineSwap />,
-    featureKey: "service.food_ordering.inventory_transfer",
+    featureKey: "inventory_report",
   },
   {
     key: "delivery-orders",
-    label: "Delivery Orders",
+    label: "Delivery Order",
     icon: <AiOutlineCar />,
-    featureKey: "service.food_ordering.delivery",
+    featureKey: "delivery_order",
   },
   {
     key: "past-orders",
-    label: "Past Orders",
+    label: "Past Order",
     icon: <AiOutlineHistory />,
-    featureKey: "service.food_ordering.past_orders",
+    featureKey: "past_order",
   },
   {
     key: "invoices",
-    label: "Invoices",
+    label: "Invoice",
     icon: <AiOutlineFileZip />,
-    featureKey: "service.food_ordering.invoices",
+    featureKey: "invoice",
   },
   {
     key: "vendor-cart",
     label: "Vendor Cart",
     icon: <AiOutlineShoppingCart />,
-    featureKey: "service.food_ordering.vendor_cart",
+    featureKey: "vendor_cart",
   },
   {
     key: "delivery-settings",
     label: "Delivery Settings",
     icon: <AiOutlineTruck />,
-    featureKey: "service.food_ordering.delivery_settings",
+    featureKey: "delivery_settings",
+  },
+  {
+    key: "grievances",
+    label: "Grievances",
+    icon: <AiOutlineExclamationCircle />,
+    featureKey: "grievances",
   },
   { key: "logout", label: "Logout", icon: <AiOutlineLogout />, featureKey: null }, // Always visible
 ];
@@ -109,14 +107,35 @@ export default function Sidebar({
         if (vendorId && vendorId !== '—') params.set('vendorId', vendorId);
         if (role) params.set('role', role);
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-        const res = await fetch(`${backendUrl}/api/access/features?${params.toString()}`, { credentials: 'include' });
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${backendUrl}/api/access/features?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         const json = await res.json();
-        const featureMap: Record<string, boolean> = json.features || {};
+        const features = json.features || {};
+        
+        // Create a map of service names to check if they're available
+        const serviceMap: Record<string, boolean> = {};
+        Object.values(features as Record<string, { enabled: boolean; services?: Array<{ name: string }> }>).forEach((feature) => {
+          if (feature.enabled && feature.services) {
+            feature.services.forEach((service: { name: string }) => {
+              // Map service names to lowercase with underscores for matching
+              const serviceKey = service.name.toLowerCase().replace(/\s+/g, '_');
+              serviceMap[serviceKey] = true;
+            });
+          }
+        });
+        
         const allowedMap: Record<string, boolean> = {};
         
         segmentsToUse.forEach((seg) => {
           if (seg.featureKey) {
-            allowedMap[seg.key] = !!featureMap[seg.featureKey];
+            // Extract service name from featureKey (e.g., "service.food_ordering.dashboard" -> "dashboard")
+            const serviceName = seg.featureKey.split('.').pop() || '';
+            allowedMap[seg.key] = !!serviceMap[serviceName];
           } else {
             allowedMap[seg.key] = true; // Always allow logout and segments without featureKey
           }

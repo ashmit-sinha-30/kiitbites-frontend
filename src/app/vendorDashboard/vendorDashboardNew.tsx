@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 
@@ -20,6 +20,7 @@ import StatCard from "./components/StatCard";
 import InventoryTable from "./components/InventoryTable";
 import DateFilter from "./components/DateFilter";
 import DownloadButton from "./components/DownloadButton";
+import VendorGrievances from "./components/VendorGrievances";
 import { Order, InventoryReport, transformApiReport } from "./types";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
@@ -62,7 +63,7 @@ export default function VendorDashboardPage() {
     // Always land on dashboard for this page
     localStorage.removeItem("activeSegment");
     setActiveSegment("dashboard");
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     localStorage.setItem("activeSegment", activeSegment);
@@ -89,6 +90,11 @@ export default function VendorDashboardPage() {
           const vendorIdFromUser = user._id || user.id;
           setVendorId(vendorIdFromUser);
           setVendorName(user.fullName || "Vendor");
+
+          // Store uniID in localStorage for grievance system
+          if (user.uniID) {
+            localStorage.setItem("uniId", user.uniID);
+          }
 
           // Get vendor assignments (services)
           const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/vendor/${vendorIdFromUser}/assignments`);
@@ -141,7 +147,7 @@ export default function VendorDashboardPage() {
   };
 
   // Fetch inventory report
-  const fetchReport = async (date: string) => {
+  const fetchReport = useCallback(async (date: string) => {
     if (!vendorId) return;
     
     setLoadingReport(true);
@@ -174,7 +180,7 @@ export default function VendorDashboardPage() {
     } finally {
       setLoadingReport(false);
     }
-  };
+  }, [vendorId]);
 
   const applyFilter = () => {
     setAppliedDate(selectedDate);
@@ -185,7 +191,7 @@ export default function VendorDashboardPage() {
     if (activeSegment === "inventory-reports" && vendorId) {
       fetchReport(appliedDate);
     }
-  }, [appliedDate, activeSegment, vendorId]);
+  }, [appliedDate, activeSegment, vendorId, fetchReport]);
 
   return (
     <div className={styles.container}>
@@ -466,6 +472,17 @@ export default function VendorDashboardPage() {
                   <p>Configure your delivery preferences and availability</p>
                 </div>
                 <DeliverySettings vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
+              </>
+            );
+          }
+          if (name === "grievances" || name.includes("grievances")) {
+            return (
+              <>
+                <div className={styles.header}>
+                  <h1>Grievances</h1>
+                  <p>Raise and track your grievances</p>
+                </div>
+                <VendorGrievances />
               </>
             );
           }
