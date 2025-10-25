@@ -12,6 +12,7 @@ import ManageCharges from "./components/ManageCharges";
 import Invoices from "./components/Invoices";
 import Review from "./components/Review";
 import TaxUpdating from "./components/TaxUpdating";
+import UniGrievances from "./components/UniGrievances";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
@@ -168,6 +169,9 @@ export default function UniDashboardPage() {
           }
           if (name === "review" || name.includes("review")) {
             return <Review universityId={universityId || ""} />;
+          }
+          if (name.includes("grievances") || name.includes("grievance")) {
+            return <UniGrievances universityId={universityId || ""} />;
           }
           return null;
         })()}

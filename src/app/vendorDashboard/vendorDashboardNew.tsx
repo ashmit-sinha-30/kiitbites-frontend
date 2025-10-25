@@ -16,6 +16,7 @@ import { DeliveryOrdersList } from "./components/DeliveryOrdersList";
 import { VendorCartComponent } from "./components/VendorCart";
 import { DeliverySettings } from "./components/DeliverySettings";
 import VendorInvoices from "./components/VendorInvoices";
+import VendorGrievances from "./components/VendorGrievances";
 import StatCard from "./components/StatCard";
 import InventoryTable from "./components/InventoryTable";
 import DateFilter from "./components/DateFilter";
@@ -62,7 +63,8 @@ export default function VendorDashboardPage() {
     // Always land on dashboard for this page
     localStorage.removeItem("activeSegment");
     setActiveSegment("dashboard");
-  }, [router]);
+     
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("activeSegment", activeSegment);
@@ -119,6 +121,7 @@ export default function VendorDashboardPage() {
       }
     };
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const sidebarSegments = useMemo(() => {
@@ -460,6 +463,17 @@ export default function VendorDashboardPage() {
                   <p>View and download your invoices</p>
                 </div>
                 <VendorInvoices vendorId={vendorId || ""} />
+              </>
+            );
+          }
+          if (name.includes("grievances") || name.includes("grievance")) {
+            return (
+              <>
+                <div className={styles.header}>
+                  <h1>Grievances</h1>
+                  <p>Submit and track your grievances</p>
+                </div>
+                <VendorGrievances vendorId={vendorId || ""} />
               </>
             );
           }
