@@ -38,7 +38,7 @@ export default function UniDashboardPage() {
           const user = await userRes.json();
           const uniId = user._id || user.id;
           
-          // Store uniId in localStorage for grievance system
+          // Store uniId in localStorage
           localStorage.setItem("uniId", uniId);
           
           const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);

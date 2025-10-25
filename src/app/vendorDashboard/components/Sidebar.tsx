@@ -10,7 +10,6 @@ import {
   AiOutlineShoppingCart,
   AiOutlineTruck,
   AiOutlineFileZip,
-  AiOutlineExclamationCircle,
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -66,12 +65,6 @@ const allSegments = [
     label: "Delivery Settings",
     icon: <AiOutlineTruck />,
     featureKey: "delivery_settings",
-  },
-  {
-    key: "grievances",
-    label: "Grievances",
-    icon: <AiOutlineExclamationCircle />,
-    featureKey: "grievances",
   },
   { key: "logout", label: "Logout", icon: <AiOutlineLogout />, featureKey: null }, // Always visible
 ];

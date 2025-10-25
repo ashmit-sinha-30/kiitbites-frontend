@@ -6,7 +6,6 @@ import {
   AiOutlineDollar,
   AiOutlineSetting,
   AiOutlineLogout,
-  AiOutlineExclamationCircle,
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import styles from "../styles/SideBar.module.scss";
@@ -40,11 +39,6 @@ const defaultSegments = [
     key: "tax-updating",
     label: "Tax Updating — Food Ordering",
     icon: <AiOutlineSetting />,
-  },
-  {
-    key: "grievances",
-    label: "Grievances",
-    icon: <AiOutlineExclamationCircle />,
   },
   // Note: dynamic services loaded from assignments will include Review/Invoice/DeleteVendorList etc.
   { key: "logout", label: "Logout", icon: <AiOutlineLogout /> },

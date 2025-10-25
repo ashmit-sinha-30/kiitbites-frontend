@@ -20,7 +20,6 @@ import StatCard from "./components/StatCard";
 import InventoryTable from "./components/InventoryTable";
 import DateFilter from "./components/DateFilter";
 import DownloadButton from "./components/DownloadButton";
-import VendorGrievances from "./components/VendorGrievances";
 import { Order, InventoryReport, transformApiReport } from "./types";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
@@ -91,7 +90,7 @@ export default function VendorDashboardPage() {
           setVendorId(vendorIdFromUser);
           setVendorName(user.fullName || "Vendor");
 
-          // Store uniID in localStorage for grievance system
+          // Store uniID in localStorage
           if (user.uniID) {
             localStorage.setItem("uniId", user.uniID);
           }
@@ -472,17 +471,6 @@ export default function VendorDashboardPage() {
                   <p>Configure your delivery preferences and availability</p>
                 </div>
                 <DeliverySettings vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
-              </>
-            );
-          }
-          if (name === "grievances" || name.includes("grievances")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Grievances</h1>
-                  <p>Raise and track your grievances</p>
-                </div>
-                <VendorGrievances />
               </>
             );
           }
