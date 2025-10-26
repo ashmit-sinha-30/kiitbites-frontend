@@ -346,7 +346,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
       allergens: [],
       dietaryRestrictions: [],
       estimatedCost: 0,
-      costPerServing: 0
+      costPerServing: 0,
+      status: "draft"
     });
   };
 
