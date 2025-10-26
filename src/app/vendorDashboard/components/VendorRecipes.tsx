@@ -248,84 +248,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
     }
   };
 
-  const handleDeleteRecipe = async (recipeId: string) => {
-    if (!confirm("Are you sure you want to delete this recipe?")) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-
-      const response = await fetch(`${backendUrl}/api/recipes/vendor/${recipeId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      const json = await response.json();
-
-      if (json.success) {
-        toast({
-          title: "Success",
-          description: "Recipe deleted successfully"
-        });
-        fetchRecipes();
-      } else {
-        toast({
-          title: "Error",
-          description: json.message || "Failed to delete recipe",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting recipe:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete recipe",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleStatusChange = async (recipeId: string, newStatus: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-
-      const response = await fetch(`${backendUrl}/api/recipes/vendor/${recipeId}/status`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      const json = await response.json();
-
-      if (json.success) {
-        toast({
-          title: "Success",
-          description: `Recipe ${newStatus} successfully`
-        });
-        fetchRecipes();
-      } else {
-        toast({
-          title: "Error",
-          description: json.message || "Failed to update recipe status",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error updating recipe status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update recipe status",
-        variant: "destructive"
-      });
-    }
-  };
+  // Vendors can no longer delete recipes or change status
+  // Only universities can manage recipe status
 
   const resetForm = () => {
     setFormData({
@@ -553,21 +477,9 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                 >
                   Edit
                 </button>
-                <select
-                  value={recipe.status}
-                  onChange={(e) => handleStatusChange(recipe._id, e.target.value)}
-                  className={styles.statusSelect}
-                >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="archived">Archived</option>
-                </select>
-                <button 
-                  onClick={() => handleDeleteRecipe(recipe._id)}
-                  className={styles.deleteButton}
-                >
-                  Delete
-                </button>
+                <span className={`${styles.statusBadge} ${styles[recipe.status]}`}>
+                  {recipe.status}
+                </span>
               </div>
             </div>
           ))}

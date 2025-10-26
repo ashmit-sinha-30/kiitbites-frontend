@@ -101,7 +101,7 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
       
       let url = `${backendUrl}/api/recipes/university`;
       const params = new URLSearchParams();
-      params.append("status", "published"); // Only show published recipes
+      // Don't filter by status - show all recipes (draft, published, archived)
       if (categoryFilter) params.append("category", categoryFilter);
       if (cuisineFilter) params.append("cuisine", cuisineFilter);
       if (vendorFilter) params.append("vendorId", vendorFilter);
@@ -206,40 +206,51 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
     fetchVendors();
   }, [fetchRecipes]);
 
-  const handleLikeRecipe = async (recipeId: string) => {
+  const handleStatusChange = async (recipeId: string, newStatus: string) => {
     try {
       const token = localStorage.getItem("token");
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
-      const response = await fetch(`${backendUrl}/api/recipes/public/${recipeId}/like`, {
-        method: "POST",
+      const response = await fetch(`${backendUrl}/api/recipes/university/${recipeId}/status`, {
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ action: "like" })
+        body: JSON.stringify({ status: newStatus })
       });
 
       const json = await response.json();
 
       if (json.success) {
+        toast({
+          title: "Success",
+          description: `Recipe ${newStatus} successfully`
+        });
+        
         // Update the recipe in the list
         setRecipes(prev => prev.map(recipe => 
           recipe._id === recipeId 
-            ? { ...recipe, likes: recipe.likes + 1 }
+            ? { ...recipe, status: newStatus as 'draft' | 'published' | 'archived' }
             : recipe
         ));
         
         // Update the viewing recipe if it's the same one
         if (viewingRecipe && viewingRecipe._id === recipeId) {
-          setViewingRecipe(prev => prev ? { ...prev, likes: prev.likes + 1 } : null);
+          setViewingRecipe(prev => prev ? { ...prev, status: newStatus as 'draft' | 'published' | 'archived' } : null);
         }
+      } else {
+        toast({
+          title: "Error",
+          description: json.message || "Failed to update recipe status",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error("Error liking recipe:", error);
+      console.error("Error updating recipe status:", error);
       toast({
         title: "Error",
-        description: "Failed to like recipe",
+        description: "Failed to update recipe status",
         variant: "destructive"
       });
     }
@@ -251,6 +262,15 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
       case "medium": return "#f59e0b";
       case "hard": return "#ef4444";
       case "expert": return "#dc2626";
+      default: return "#6b7280";
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "draft": return "#f59e0b";
+      case "published": return "#10b981";
+      case "archived": return "#6b7280";
       default: return "#6b7280";
     }
   };
@@ -380,6 +400,12 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
                 <div className={styles.badges}>
                   <span 
                     className={styles.badge}
+                    style={{ backgroundColor: getStatusColor(recipe.status) }}
+                  >
+                    {recipe.status.toUpperCase()}
+                  </span>
+                  <span 
+                    className={styles.badge}
                     style={{ backgroundColor: getDifficultyColor(recipe.difficulty) }}
                   >
                     {recipe.difficulty.toUpperCase()}
@@ -403,11 +429,6 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
                   <span>Cook: {formatTime(recipe.cookTime)}</span>
                   <span>Serves: {recipe.servings}</span>
                 </div>
-                <div className={styles.stats}>
-                  <span>👁️ {recipe.views}</span>
-                  <span>❤️ {recipe.likes}</span>
-                  <span>⭐ {recipe.averageRating.toFixed(1)}</span>
-                </div>
               </div>
               
               <div className={styles.tags}>
@@ -425,12 +446,6 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
                   className={styles.viewButton}
                 >
                   View Recipe
-                </button>
-                <button 
-                  onClick={() => handleLikeRecipe(recipe._id)}
-                  className={styles.likeButton}
-                >
-                  ❤️ {recipe.likes}
                 </button>
               </div>
             </div>
@@ -569,12 +584,56 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
             </div>
 
             <div className={styles.modalActions}>
-              <button
-                onClick={() => handleLikeRecipe(viewingRecipe._id)}
-                className={styles.likeButton}
-              >
-                ❤️ Like Recipe
-              </button>
+              <div className={styles.statusActions}>
+                {viewingRecipe.status === 'draft' && (
+                  <>
+                    <button 
+                      onClick={() => handleStatusChange(viewingRecipe._id, 'published')}
+                      className={styles.publishButton}
+                    >
+                      ✓ Publish Recipe
+                    </button>
+                    <button 
+                      onClick={() => handleStatusChange(viewingRecipe._id, 'archived')}
+                      className={styles.archiveButton}
+                    >
+                      📦 Archive Recipe
+                    </button>
+                  </>
+                )}
+                {viewingRecipe.status === 'published' && (
+                  <>
+                    <button 
+                      onClick={() => handleStatusChange(viewingRecipe._id, 'draft')}
+                      className={styles.draftButton}
+                    >
+                      📝 Move to Draft
+                    </button>
+                    <button 
+                      onClick={() => handleStatusChange(viewingRecipe._id, 'archived')}
+                      className={styles.archiveButton}
+                    >
+                      📦 Archive Recipe
+                    </button>
+                  </>
+                )}
+                {viewingRecipe.status === 'archived' && (
+                  <>
+                    <button 
+                      onClick={() => handleStatusChange(viewingRecipe._id, 'draft')}
+                      className={styles.draftButton}
+                    >
+                      📝 Restore to Draft
+                    </button>
+                    <button 
+                      onClick={() => handleStatusChange(viewingRecipe._id, 'published')}
+                      className={styles.publishButton}
+                    >
+                      ✓ Publish Recipe
+                    </button>
+                  </>
+                )}
+              </div>
               <button
                 onClick={() => setViewingRecipe(null)}
                 className={styles.closeButton}

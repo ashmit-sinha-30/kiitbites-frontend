@@ -1,4 +1,6 @@
 .container {
+  background: linear-gradient(120deg, #f7fafc 60%, #e6fffa 100%);
+  min-height: 100vh;
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -17,29 +19,41 @@
   text-align: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 1.5px solid #e2e8f0;
+  background: transparent;
 
   h2 {
     font-size: 2.5rem;
-    font-weight: bold;
-    color: #1f2937;
+    font-weight: 800;
+    color: #1a202c;
     margin: 0 0 0.5rem 0;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   p {
     font-size: 1.125rem;
-    color: #6b7280;
+    color: #4a5568;
     margin: 0;
+    font-weight: 500;
   }
 }
 
 .filtersSection {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
+  border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  }
 }
 
 .searchRow {
@@ -131,17 +145,19 @@
   }
 
   .clearFiltersButton {
-    background: #3b82f6;
+    background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(78, 161, 153, 0.3);
 
     &:hover {
-      background: #2563eb;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(78, 161, 153, 0.4);
     }
   }
 }
@@ -155,17 +171,17 @@
 .recipeCard {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 1rem;
+  border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 
   &:hover {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    transform: translateY(-4px);
-    border-color: #3b82f6;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+    border-color: #4ea199;
   }
 
   &::before {
@@ -175,7 +191,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #3b82f6, #10b981);
+    background: linear-gradient(90deg, #4ea199, #6fc3bd);
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -318,13 +334,13 @@
 }
 
 .viewButton {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
   color: white;
   flex: 1;
 
   &:hover {
-    background: #2563eb;
     transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(78, 161, 153, 0.3);
   }
 }
 
@@ -358,14 +374,14 @@
 
 .modalContent {
   background: white;
-  border-radius: 1rem;
+  border-radius: 16px;
   padding: 0;
   max-width: 95vw;
   max-height: 95vh;
   overflow: hidden;
   width: 100%;
   max-width: 900px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
 .modalHeader {
@@ -631,6 +647,86 @@
   padding: 1.5rem 2rem;
   border-top: 1px solid #e5e7eb;
   background: #f9fafb;
+}
+
+.statusActions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+
+  .statusSelect {
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 150px;
+
+    &:hover {
+      border-color: #3b82f6;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+  }
+
+  .publishButton {
+    background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(78, 161, 153, 0.3);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(78, 161, 153, 0.4);
+    }
+  }
+
+  .draftButton {
+    background: #f59e0b;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+
+    &:hover {
+      background: #d97706;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    }
+  }
+
+  .archiveButton {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #4b5563;
+      transform: translateY(-2px);
+    }
+  }
 }
 
 .likeButton {
