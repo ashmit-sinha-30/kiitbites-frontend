@@ -17,6 +17,7 @@ import { VendorCartComponent } from "./components/VendorCart";
 import { DeliverySettings } from "./components/DeliverySettings";
 import VendorInvoices from "./components/VendorInvoices";
 import VendorGrievances from "./components/VendorGrievances";
+import VendorRecipes from "./components/VendorRecipes";
 import StatCard from "./components/StatCard";
 import InventoryTable from "./components/InventoryTable";
 import DateFilter from "./components/DateFilter";
@@ -474,6 +475,17 @@ export default function VendorDashboardPage() {
                   <p>Submit and track your grievances</p>
                 </div>
                 <VendorGrievances vendorId={vendorId || ""} />
+              </>
+            );
+          }
+          if (name === "recipes" || name.includes("recipes")) {
+            return (
+              <>
+                <div className={styles.header}>
+                  <h1>Recipe Management</h1>
+                  <p>Create and manage your recipes</p>
+                </div>
+                <VendorRecipes vendorId={vendorId || ""} />
               </>
             );
           }

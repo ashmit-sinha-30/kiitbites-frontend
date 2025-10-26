@@ -10,6 +10,7 @@ import {
   AiOutlineShoppingCart,
   AiOutlineTruck,
   AiOutlineFileZip,
+  AiOutlineBook,
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -35,6 +36,12 @@ const allSegments = [
     label: "Inventory Report",
     icon: <AiOutlineFileText />,
     featureKey: "inventory_report",
+  },
+  {
+    key: "recipes",
+    label: "Recipes",
+    icon: <AiOutlineBook />,
+    featureKey: "recipes",
   },
   {
     key: "delivery-orders",

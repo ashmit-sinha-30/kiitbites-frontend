@@ -6,6 +6,7 @@ import {
   AiOutlineDollar,
   AiOutlineSetting,
   AiOutlineLogout,
+  AiOutlineBook,
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import styles from "../styles/SideBar.module.scss";
@@ -29,6 +30,11 @@ const defaultSegments = [
     key: "manage-items",
     label: "Manage Items",
     icon: <AiOutlineFileText />,
+  },
+  {
+    key: "recipes",
+    label: "Recipes",
+    icon: <AiOutlineBook />,
   },
   {
     key: "manage-charges",

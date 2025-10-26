@@ -13,6 +13,7 @@ import Invoices from "./components/Invoices";
 import Review from "./components/Review";
 import TaxUpdating from "./components/TaxUpdating";
 import UniGrievances from "./components/UniGrievances";
+import UniversityRecipes from "./components/UniversityRecipes";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
@@ -173,6 +174,9 @@ export default function UniDashboardPage() {
           if (name.includes("grievances") || name.includes("grievance")) {
             return <UniGrievances universityId={universityId || ""} />;
           }
+          if (name === "recipes" || name.includes("recipes")) {
+            return <UniversityRecipes universityId={universityId || ""} />;
+          }
           return null;
         })()}
 
@@ -199,6 +203,11 @@ export default function UniDashboardPage() {
         {/* Manage Charges Segment */}
         {activeSegment === "manage-charges" && (
           <ManageCharges universityId={universityId || ""} />
+        )}
+
+        {/* Recipes Segment */}
+        {activeSegment === "recipes" && (
+          <UniversityRecipes universityId={universityId || ""} />
         )}
 
       </main>
