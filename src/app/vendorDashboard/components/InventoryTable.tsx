@@ -1,9 +1,12 @@
-import { InventoryItem } from "../types";
+import { InventoryItem, InventoryReport } from "../types";
 import styles from "../styles/InventoryTable.module.scss";
 
 interface Props {
   items: InventoryItem[];
   date: string;
+  // Optional movement breakdowns
+  sent?: InventoryReport["sent"];
+  sentTo?: InventoryReport["sentTo"];
 }
 
 // Helper function to format date safely
@@ -19,11 +22,41 @@ function formatDate(dateString: string): string {
   }
 }
 
-export default function InventoryTable({ items, date }: Props) {
+export default function InventoryTable({ items, date, sent, sentTo }: Props) {
   // Split items by type
   const retailItems = items.filter((it) => it.itemType === "Retail");
   const produceItems = items.filter((it) => it.itemType === "Produce");
   const rawItems = items.filter((it) => it.itemType === "Raw");
+
+  // Create lookup maps for sent data
+  const sentMap = new Map<string, number>();
+  const sentToMap = new Map<string, { total: number; targets: string[] }>();
+  
+  if (sent) {
+    sent.forEach((s) => {
+      if (s.item?._id) sentMap.set(s.item._id, s.quantity);
+    });
+  }
+  
+  if (sentTo) {
+    sentTo.forEach((s) => {
+      if (s.item?._id) {
+        const existing = sentToMap.get(s.item._id) || { total: 0, targets: [] };
+        existing.total += s.quantity;
+        if (s.to?.name && !existing.targets.includes(s.to.name)) {
+          existing.targets.push(s.to.name);
+        }
+        sentToMap.set(s.item._id, existing);
+      }
+    });
+  }
+
+  // Merge sent data into retail items using itemId
+  const retailItemsWithSent = retailItems.map((item) => ({
+    ...item,
+    sentQty: item.itemId ? sentMap.get(item.itemId) || 0 : 0,
+    sentToNames: item.itemId ? sentToMap.get(item.itemId)?.targets.join(", ") || "" : "",
+  }));
 
   return (
     <div className={styles.tableWrap}>
@@ -41,20 +74,26 @@ export default function InventoryTable({ items, date }: Props) {
               <tr>
                 <th>Item Name</th>
                 <th>Opening Stock</th>
+                <th>Produced</th>
                 <th>Received</th>
                 <th>Sold</th>
+                <th>Sent</th>
+                <th>Sent To</th>
                 <th>Closing Stock</th>
               </tr>
             </thead>
             <tbody>
-              {retailItems.length === 0 ? (
-                <tr><td colSpan={5} style={{ textAlign: "center" }}>No retail items</td></tr>
-              ) : retailItems.map((it, idx) => (
+              {retailItemsWithSent.length === 0 ? (
+                <tr><td colSpan={8} style={{ textAlign: "center" }}>No retail items</td></tr>
+              ) : retailItemsWithSent.map((it, idx) => (
                 <tr key={idx}>
                   <td>{it.name}</td>
                   <td>{it.opening}</td>
+                  <td className={styles.received}>+{it.produced}</td>
                   <td className={styles.received}>+{it.received}</td>
                   <td className={styles.sold}>-{it.sold}</td>
+                  <td className={styles.sold}>-{it.sentQty}</td>
+                  <td>{it.sentToNames}</td>
                   <td>{it.closing}</td>
                 </tr>
               ))}
@@ -116,6 +155,7 @@ export default function InventoryTable({ items, date }: Props) {
           </table>
         </div>
       </div>
+
     </div>
   );
 }

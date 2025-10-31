@@ -46,6 +46,7 @@ interface Recipe {
   estimatedCost?: number;
   costPerServing?: number;
   status: 'draft' | 'published' | 'archived';
+  outputType?: 'retail' | 'produce' | null;
   views: number;
   likes: number;
   averageRating: number;
@@ -119,7 +120,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
     dietaryRestrictions: [] as string[],
     estimatedCost: 0,
     costPerServing: 0,
-    status: "draft" as 'draft' | 'published' | 'archived'
+    status: "draft" as 'draft' | 'published' | 'archived',
+    outputType: null as 'retail' | 'produce' | null
   });
 
   const fetchRecipes = useCallback(async () => {
@@ -271,7 +273,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
       dietaryRestrictions: [],
       estimatedCost: 0,
       costPerServing: 0,
-      status: "draft"
+      status: "draft",
+      outputType: null
     });
   };
 
@@ -296,7 +299,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
       dietaryRestrictions: recipe.dietaryRestrictions || [],
       estimatedCost: recipe.estimatedCost || 0,
       costPerServing: recipe.costPerServing || 0,
-      status: recipe.status
+      status: recipe.status,
+      outputType: recipe.outputType || null
     });
     setShowCreateForm(true);
   };
@@ -454,6 +458,14 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                   >
                     {recipe.difficulty.toUpperCase()}
                   </span>
+                  {recipe.outputType && (
+                    <span 
+                      className={styles.badge}
+                      style={{ backgroundColor: '#10b981' }}
+                    >
+                      {recipe.outputType.toUpperCase()}
+                    </span>
+                  )}
                 </div>
               </div>
               <p className={styles.description}>{recipe.description}</p>
@@ -461,8 +473,7 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                 <span>Prep: {recipe.prepTime}m</span>
                 <span>Cook: {recipe.cookTime}m</span>
                 <span>Serves: {recipe.servings}</span>
-                <span>Views: {recipe.views}</span>
-                <span>Likes: {recipe.likes}</span>
+                
               </div>
               <div className={styles.actions}>
                 <button 
@@ -590,6 +601,28 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                   onChange={(e) => setFormData(prev => ({ ...prev, servings: parseInt(e.target.value) || 1 }))}
                   min="1"
                 />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Recipe Output Type</label>
+                <select
+                  value={formData.outputType || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const outputType: 'retail' | 'produce' | null = value === '' ? null : (value === 'retail' ? 'retail' : value === 'produce' ? 'produce' : null);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      outputType
+                    }));
+                  }}
+                >
+                  <option value="">Select Output Type (Optional)</option>
+                  <option value="retail">Retail</option>
+                  <option value="produce">Produce</option>
+                </select>
+                <small style={{ color: '#666', fontSize: '0.875rem' }}>
+                  Select this if you want to use this recipe in Recipe Works to create items
+                </small>
               </div>
 
             </div>
@@ -723,6 +756,9 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                 <p><strong>Cook Time:</strong> {viewingRecipe.cookTime} minutes</p>
                 <p><strong>Total Time:</strong> {viewingRecipe.totalTime} minutes</p>
                 <p><strong>Servings:</strong> {viewingRecipe.servings}</p>
+                {viewingRecipe.outputType && (
+                  <p><strong>Output Type:</strong> {viewingRecipe.outputType.toUpperCase()}</p>
+                )}
                 <p><strong>Status:</strong> {viewingRecipe.status.toUpperCase()}</p>
                 <p><strong>Views:</strong> {viewingRecipe.views}</p>
                 <p><strong>Likes:</strong> {viewingRecipe.likes}</p>

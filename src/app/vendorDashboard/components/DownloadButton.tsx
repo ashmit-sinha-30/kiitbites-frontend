@@ -8,7 +8,7 @@ import { InventoryReport } from "../types";
 
 type Props = Pick<
   InventoryReport,
-  "vendorName" | "reportDate" | "stats" | "items"
+  "vendorName" | "reportDate" | "stats" | "items" | "receivedFrom" | "sent" | "sentTo"
 >;
 
 export default function DownloadButton({
@@ -16,6 +16,9 @@ export default function DownloadButton({
   reportDate,
   stats,
   items,
+  receivedFrom,
+  sent,
+  sentTo,
 }: Props) {
   const handleDownload = () => {
     // 1) Create a new workbook
@@ -38,8 +41,10 @@ export default function DownloadButton({
     sheetData.push(["SUMMARY STATISTICS"]);
     sheetData.push(["Metric", "Value"]);
     sheetData.push(["Total Items Tracked", stats.totalTracked]);
-    sheetData.push(["Items Sold Today", stats.soldToday]);
-    sheetData.push(["Items Received", stats.receivedToday]);
+    sheetData.push(["Produced Today", stats.producedToday]);
+    sheetData.push(["Received Today", stats.receivedToday]);
+    sheetData.push(["Sold Today", stats.soldToday]);
+    sheetData.push(["Sent Today", stats.sentToday]);
     sheetData.push([]); // Empty row
 
     // Retail Inventory Section
@@ -47,20 +52,61 @@ export default function DownloadButton({
     sheetData.push([
       "Item Name",
       "Opening Stock",
+      "Produced",
       "Received",
+      "Received From",
       "Sold",
+      "Sent",
+      "Sent To",
       "Closing Stock"
     ]);
     
     if (retailItems.length === 0) {
-      sheetData.push(["No retail items found", "", "", "", ""]);
+      sheetData.push(["No retail items found", "", "", "", "", "", "", "", ""]);
     } else {
+      // Create maps for sent and received data
+      const sentMap = new Map<string, number>();
+      const sentToMap = new Map<string, string>();
+      const receivedFromMap = new Map<string, string>();
+      
+      if (sent) {
+        sent.forEach((s) => {
+          if (s.item?._id) sentMap.set(s.item._id, s.quantity);
+        });
+      }
+      
+      if (sentTo) {
+        sentTo.forEach((s) => {
+          if (s.item?._id) {
+            const key = s.item._id;
+            const existing = sentToMap.get(key) || "";
+            const newEntry = `${s.to?.name || "Unknown"}: ${s.quantity}`;
+            sentToMap.set(key, existing ? `${existing}; ${newEntry}` : newEntry);
+          }
+        });
+      }
+
+      if (receivedFrom) {
+        receivedFrom.forEach((r) => {
+          if (r.item?._id) {
+            const key = r.item._id;
+            const existing = receivedFromMap.get(key) || "";
+            const newEntry = `${r.from?.name || "Unknown"}: ${r.quantity}`;
+            receivedFromMap.set(key, existing ? `${existing}; ${newEntry}` : newEntry);
+          }
+        });
+      }
+
       retailItems.forEach((item) => {
         sheetData.push([
           item.name,
           item.opening,
+          item.produced,
           item.received,
+          item.itemId ? (receivedFromMap.get(item.itemId) || "") : "",
           item.sold,
+          item.itemId ? (sentMap.get(item.itemId) || 0) : 0,
+          item.itemId ? (sentToMap.get(item.itemId) || "") : "",
           item.closing
         ]);
       });
@@ -167,41 +213,35 @@ export default function DownloadButton({
           else if (cellValue === "SUMMARY STATISTICS") {
             cell.s = styles.sectionHeader;
           }
-          // Retail Inventory header
+          // Retail Inventory section header
           else if (cellValue === "RETAIL INVENTORY") {
             cell.s = { ...styles.sectionHeader, fill: { fgColor: { rgb: "1976D2" } } };
           }
-          // Produce Inventory header
+          // Produce Inventory section header
           else if (cellValue === "PRODUCE INVENTORY") {
             cell.s = { ...styles.sectionHeader, fill: { fgColor: { rgb: "388E3C" } } };
           }
-          // Raw Material Inventory header
+          // Raw Material Inventory section header
           else if (cellValue === "RAW MATERIAL INVENTORY") {
             cell.s = { ...styles.sectionHeader, fill: { fgColor: { rgb: "F57C00" } } };
           }
-          // Retail table headers
-          else if (R === 12 && C <= 4) {
-            cell.s = styles.retailHeader;
+          // Retail table headers (row after "RETAIL INVENTORY")
+          else if (sheetData[R - 1] && sheetData[R - 1].includes && sheetData[R - 1].includes("RETAIL INVENTORY")) {
+            if (C < 9) {
+              cell.s = styles.retailHeader;
+            }
           }
-          // Produce table headers
-          else if (cellValue === "Item Name" && R > 15 && R < 20) {
-            cell.s = styles.produceHeader;
+          // Produce table headers (row after "PRODUCE INVENTORY")
+          else if (sheetData[R - 1] && sheetData[R - 1].includes && sheetData[R - 1].includes("PRODUCE INVENTORY")) {
+            if (C < 2) {
+              cell.s = styles.produceHeader;
+            }
           }
-          // Raw table headers
-          else if (cellValue === "Item Name" && R > 20) {
-            cell.s = styles.rawHeader;
-          }
-          // Retail data rows
-          else if (R > 12 && R < 12 + retailItems.length + 1 && retailItems.length > 0) {
-            cell.s = styles.retailRow;
-          }
-          // Produce data rows
-          else if (R > 16 && R < 16 + produceItems.length + 1 && produceItems.length > 0) {
-            cell.s = styles.produceRow;
-          }
-          // Raw data rows
-          else if (R > 20 && R < 20 + rawItems.length + 1 && rawItems.length > 0) {
-            cell.s = styles.rawRow;
+          // Raw table headers (row after "RAW MATERIAL INVENTORY")
+          else if (sheetData[R - 1] && sheetData[R - 1].includes && sheetData[R - 1].includes("RAW MATERIAL INVENTORY")) {
+            if (C < 4) {
+              cell.s = styles.rawHeader;
+            }
           }
         }
       }
@@ -210,9 +250,13 @@ export default function DownloadButton({
     // 6) Set column widths
     ws['!cols'] = [
       { width: 25 }, // Item Name
-      { width: 15 }, // Opening Stock/Amount
-      { width: 15 }, // Received/Closing Amount
-      { width: 15 }, // Sold/Unit
+      { width: 15 }, // Opening Stock
+      { width: 15 }, // Produced
+      { width: 15 }, // Received
+      { width: 40 }, // Received From
+      { width: 15 }, // Sold
+      { width: 15 }, // Sent
+      { width: 40 }, // Sent To
       { width: 15 }  // Closing Stock
     ];
 

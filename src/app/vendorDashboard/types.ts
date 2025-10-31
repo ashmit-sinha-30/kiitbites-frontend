@@ -6,6 +6,7 @@ export interface ApiEntry {
   soldQty: number;
   closingQty: number;
   receivedQty: number;
+  producedQty?: number;
 }
 
 export interface RawApiEntry {
@@ -21,11 +22,16 @@ export interface ApiReport {
   retailEntries?: ApiEntry[];
   produceEntries?: ApiEntry[];
   rawEntries?: RawApiEntry[];
+  receivedFrom?: Array<{ item: { _id: string; name: string }; quantity: number; from: { _id: string; name: string } | null }>;
+  sent?: Array<{ item: { _id: string; name: string }; quantity: number }>;
+  sentTo?: Array<{ item: { _id: string; name: string }; quantity: number; to: { _id: string; name: string } | null }>;
 }
 
 export interface InventoryItem {
   name: string;
+  itemId?: string;
   opening: number;
+  produced: number;
   received: number;
   sold: number;
   closing: number;
@@ -42,8 +48,10 @@ export interface RawMaterialItem {
 
 export interface InventoryStats {
   totalTracked: number;
-  soldToday: number;
+  producedToday: number;
   receivedToday: number;
+  soldToday: number;
+  sentToday: number;
 }
 
 export function transformApiReport(r: ApiReport) {
@@ -54,16 +62,23 @@ export function transformApiReport(r: ApiReport) {
 
   const retailItems: InventoryItem[] = retailEntries.map((e) => ({
     name: e.item.name,
+    itemId: e.item._id,
     opening: e.openingQty,
     sold: e.soldQty,
     closing: e.closingQty,
+    // Received as provided by API or derived from conservation equation
     received: e.receivedQty !== undefined ? e.receivedQty : (e.closingQty - e.openingQty + e.soldQty),
+    // Prefer backend-provided producedQty; fall back to derived equation
+    produced: e.producedQty !== undefined
+      ? e.producedQty
+      : Math.max(0, (e.closingQty - e.openingQty + e.soldQty) - (e.receivedQty !== undefined ? e.receivedQty : (e.closingQty - e.openingQty + e.soldQty))),
     itemType: "Retail",
   }));
 
   const produceItems: InventoryItem[] = produceEntries.map((e) => ({
     name: e.item.name,
     opening: 0,
+    produced: 0,
     sold: e.soldQty,
     closing: 0,
     received: 0,
@@ -73,6 +88,7 @@ export function transformApiReport(r: ApiReport) {
   const rawItems: InventoryItem[] = rawEntries.map((e) => ({
     name: e.item.name,
     opening: e.openingQty,
+    produced: 0,
     sold: 0,
     closing: e.closingQty,
     received: 0,
@@ -84,9 +100,16 @@ export function transformApiReport(r: ApiReport) {
 
   const stats: InventoryStats = {
     totalTracked: items.length,
-    soldToday: items.reduce((sum, i) => sum + i.sold, 0),
+    producedToday: items.reduce((sum, i) => sum + i.produced, 0),
     receivedToday: items.reduce((sum, i) => sum + i.received, 0),
+    soldToday: items.reduce((sum, i) => sum + i.sold, 0),
+    sentToday: 0, // Will be calculated from sent array if available
   };
+
+  // Add sentToday from sent array if available
+  if (r.sent) {
+    stats.sentToday = r.sent.reduce((sum, s) => sum + s.quantity, 0);
+  }
 
   return {
     items,
@@ -94,6 +117,9 @@ export function transformApiReport(r: ApiReport) {
     reportDate: r.date,
     vendorName: r.vendor.fullName,
     vendorId: r.vendor._id,
+    receivedFrom: r.receivedFrom,
+    sent: r.sent,
+    sentTo: r.sentTo,
   };
 }
 
@@ -103,6 +129,9 @@ export interface InventoryReport {
   reportDate: string;
   vendorName: string;
   vendorId: string;
+  receivedFrom?: Array<{ item: { _id: string; name: string }; quantity: number; from: { _id: string; name: string } | null }>;
+  sent?: Array<{ item: { _id: string; name: string }; quantity: number }>;
+  sentTo?: Array<{ item: { _id: string; name: string }; quantity: number; to: { _id: string; name: string } | null }>;
 }
 export type OrderType = "delivery" | "takeaway" | "dinein" | "cash";
 

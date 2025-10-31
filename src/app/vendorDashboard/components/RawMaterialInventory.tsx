@@ -21,6 +21,11 @@ export const RawMaterialInventory: React.FC<RawMaterialInventoryProps> = ({
   vendorId,
   onLoaded,
 }) => {
+  const UNITS = [
+    'grams', 'kg', 'ml', 'liters', 'cups', 'tablespoons', 'teaspoons',
+    'pieces', 'slices', 'cloves', 'pinch', 'dash', 'handful', 'bunch',
+    'packet', 'can', 'bottle', 'tbsp', 'tsp', 'oz', 'lb', 'pound'
+  ];
   const [items, setItems] = useState<RawMaterialApiItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +38,7 @@ export const RawMaterialInventory: React.FC<RawMaterialInventoryProps> = ({
     name: "",
     openingAmount: 0,
     closingAmount: 0,
-    unit: "kg" as "kg" | "l",
+    unit: "kg" as string,
   });
 
   // State for delete confirmation modal
@@ -209,7 +214,7 @@ export const RawMaterialInventory: React.FC<RawMaterialInventoryProps> = ({
       name: item.name,
       openingAmount: item.openingAmount,
       closingAmount: item.closingAmount,
-      unit: item.unit as "kg" | "l",
+      unit: (item.unit || "kg") as string,
     });
     setShowForm(true);
   };
@@ -341,11 +346,12 @@ export const RawMaterialInventory: React.FC<RawMaterialInventoryProps> = ({
                 <label>Unit:</label>
                 <select
                   value={formData.unit}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value as "kg" | "l" })}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                   required
                 >
-                  <option value="kg">Kilograms (kg)</option>
-                  <option value="l">Liters (l)</option>
+                  {UNITS.map(u => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
                 </select>
               </div>
               <div className={styles.formActions}>

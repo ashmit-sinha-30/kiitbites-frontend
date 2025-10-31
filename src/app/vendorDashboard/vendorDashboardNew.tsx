@@ -18,6 +18,7 @@ import { DeliverySettings } from "./components/DeliverySettings";
 import VendorInvoices from "./components/VendorInvoices";
 import VendorGrievances from "./components/VendorGrievances";
 import VendorRecipes from "./components/VendorRecipes";
+import RecipeWorks from "./components/RecipeWorks";
 import StatCard from "./components/StatCard";
 import InventoryTable from "./components/InventoryTable";
 import DateFilter from "./components/DateFilter";
@@ -189,12 +190,20 @@ export default function VendorDashboardPage() {
     setAppliedDate(selectedDate);
   };
 
-  // Fetch report when activeSegment is inventory-reports or when appliedDate changes
+  // Determine if Inventory Reports is the active view (either fixed key or service by name)
+  const isInventoryReportsActive = useMemo(() => {
+    if (activeSegment === "inventory-reports") return true;
+    const currentService = services.find((s) => s._id === activeSegment);
+    const name = currentService?.name?.toLowerCase() || "";
+    return name === "inventory report" || name.includes("inventory report");
+  }, [activeSegment, services]);
+
+  // Fetch report when Inventory Reports view is active or when appliedDate changes
   useEffect(() => {
-    if (activeSegment === "inventory-reports" && vendorId) {
+    if (isInventoryReportsActive && vendorId) {
       fetchReport(appliedDate);
     }
-  }, [appliedDate, activeSegment, vendorId, fetchReport]);
+  }, [appliedDate, isInventoryReportsActive, vendorId, fetchReport]);
 
   return (
     <div className={styles.container}>
@@ -237,13 +246,21 @@ export default function VendorDashboardPage() {
                           value={report.stats.totalTracked}
                         />
                         <StatCard
-                          label="Items Sold Today"
+                          label="Produced Today"
+                          value={report.stats.producedToday}
+                        />
+                        <StatCard
+                          label="Received Today"
+                          value={report.stats.receivedToday}
+                        />
+                        <StatCard
+                          label="Sold Today"
                           value={report.stats.soldToday}
                           positive
                         />
                         <StatCard
-                          label="Items Received"
-                          value={report.stats.receivedToday}
+                          label="Sent Today"
+                          value={report.stats.sentToday}
                         />
                       </>
                     ) : (
@@ -262,6 +279,9 @@ export default function VendorDashboardPage() {
                         reportDate={report.reportDate}
                         stats={report.stats}
                         items={report.items}
+                        receivedFrom={report.receivedFrom}
+                        sent={report.sent}
+                        sentTo={report.sentTo}
                       />
                     )}
                   </div>
@@ -274,6 +294,8 @@ export default function VendorDashboardPage() {
                   <InventoryTable
                     items={report.items ?? []}
                     date={report.reportDate}
+                    sent={report.sent}
+                    sentTo={report.sentTo}
                   />
                 ) : (
                   <p>No report data available.</p>
@@ -303,13 +325,21 @@ export default function VendorDashboardPage() {
                           value={report.stats.totalTracked}
                         />
                         <StatCard
-                          label="Items Sold Today"
+                          label="Produced Today"
+                          value={report.stats.producedToday}
+                        />
+                        <StatCard
+                          label="Received Today"
+                          value={report.stats.receivedToday}
+                        />
+                        <StatCard
+                          label="Sold Today"
                           value={report.stats.soldToday}
                           positive
                         />
                         <StatCard
-                          label="Items Received"
-                          value={report.stats.receivedToday}
+                          label="Sent Today"
+                          value={report.stats.sentToday}
                         />
                       </>
                     ) : (
@@ -328,6 +358,9 @@ export default function VendorDashboardPage() {
                         reportDate={report.reportDate}
                         stats={report.stats}
                         items={report.items}
+                        receivedFrom={report.receivedFrom}
+                        sent={report.sent}
+                        sentTo={report.sentTo}
                       />
                     )}
                   </div>
@@ -340,6 +373,8 @@ export default function VendorDashboardPage() {
                   <InventoryTable
                     items={report.items ?? []}
                     date={report.reportDate}
+                    sent={report.sent}
+                    sentTo={report.sentTo}
                   />
                 ) : (
                   <p>No report data available.</p>
@@ -486,6 +521,13 @@ export default function VendorDashboardPage() {
                   <p>Create and manage your recipes</p>
                 </div>
                 <VendorRecipes vendorId={vendorId || ""} />
+              </>
+            );
+          }
+          if (name === "recipe works" || name.includes("recipe works")) {
+            return (
+              <>
+                <RecipeWorks />
               </>
             );
           }
