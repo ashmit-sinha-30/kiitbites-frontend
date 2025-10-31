@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import CartItemCard from "../components/CartItemCard";
 import ExtrasCard from "../components/ExtrasCard";
-import BillBox from "../components/BillBox";
+// CHANGED: Import new BillBoxApproval instead of BillBox for approval workflow (new file)
+import BillBoxApproval from "../components/BillBoxApproval";
+// NEW: Import OrderWaitingScreen component for showing wait time during vendor approval (new file)
+import OrderWaitingScreen from "../components/OrderWaitingScreen";
 import styles from "./styles/Cart.module.scss";
 import { FoodItem, CartItem } from "../cart/types";
 import { useRouter } from "next/navigation";
@@ -70,6 +73,9 @@ export default function Cart() {
     _id: string;
     foodcourtId: string;
   } | null>(null);
+  // NEW: State for order approval workflow
+  const [showWaitingScreen, setShowWaitingScreen] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -222,6 +228,7 @@ export default function Cart() {
     } else {
       setExtras([]);
     }
+     
   }, [cart, userData?._id]);
 
   const reFetchCart = async () => {
@@ -537,19 +544,43 @@ export default function Cart() {
 
           {cart.length > 0 && userData && (
             <aside className={styles.cartRight}>
-              <BillBox
+              {/* CHANGED: Using new BillBoxApproval component instead of BillBox for approval workflow */}
+              <BillBoxApproval
                 userId={userData._id}
                 items={cart}
-                onOrder={(orderId) => {
-                  // Clear cart and redirect to payment confirmation page
-                  setCart([]);
-                  window.location.href = `/payment?orderId=${orderId}`;
+                onOrderSubmitted={(orderId) => {
+                  // Order submitted - will show waiting screen
+                  setCurrentOrderId(orderId);
+                  setShowWaitingScreen(true);
                 }}
               />
             </aside>
           )}
         </div>
       </div>
+      
+      {/* NEW: Order waiting screen overlay */}
+      {showWaitingScreen && currentOrderId && (
+        <OrderWaitingScreen
+          orderId={currentOrderId}
+          onOrderAccepted={() => {
+            // Order accepted - clear cart and redirect to active orders
+            setCart([]);
+            setShowWaitingScreen(false);
+            setCurrentOrderId(null);
+            toast.success("Order accepted by vendor! Redirecting to your orders...");
+            setTimeout(() => {
+              router.push("/activeorders");
+            }, 1500);
+          }}
+          onOrderDenied={(reason) => {
+            // Order denied - show message and hide waiting screen
+            setShowWaitingScreen(false);
+            setCurrentOrderId(null);
+            toast.error(`Order denied: ${reason || "Item not available"}`);
+          }}
+        />
+      )}
     </>
   );
 }
