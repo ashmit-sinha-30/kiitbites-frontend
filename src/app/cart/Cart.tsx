@@ -269,6 +269,26 @@ export default function Cart() {
     }
   };
 
+  // Cancel all pending orders when cart changes
+  const cancelPendingOrders = async () => {
+    if (!userLoggedIn || !userData) return;
+    
+    try {
+      // Silently cancel pending orders - don't show toast if none exist
+      await axios.post(
+        `${BACKEND_URL}/order-approval/cancel-all/${userData._id}`,
+        {},
+        getAuthHeaders()
+      );
+      // Also hide waiting screen if it's showing
+      setShowWaitingScreen(false);
+      setCurrentOrderId(null);
+    } catch (error) {
+      // Silently fail - this is not critical for cart operations
+      console.error("Error cancelling pending orders:", error);
+    }
+  };
+
   const increaseQty = (id: string) => {
     const thisItem = cart.find((i) => i._id === id);
     if (!thisItem) {
@@ -276,6 +296,9 @@ export default function Cart() {
     }
 
     if (userLoggedIn && userData) {
+      // Cancel any pending orders when cart changes
+      cancelPendingOrders();
+      
       axios
         .post(
           `${BACKEND_URL}/cart/add-one/${userData._id}`,
@@ -321,6 +344,9 @@ export default function Cart() {
     }
 
     if (userLoggedIn && userData) {
+      // Cancel any pending orders when cart changes
+      cancelPendingOrders();
+      
       axios
         .post(
           `${BACKEND_URL}/cart/remove-one/${userData._id}`,
@@ -353,6 +379,9 @@ export default function Cart() {
     }
 
     if (userLoggedIn && userData) {
+      // Cancel any pending orders when cart changes
+      cancelPendingOrders();
+      
       axios
         .post(
           `${BACKEND_URL}/cart/remove-item/${userData._id}`,
@@ -382,6 +411,9 @@ export default function Cart() {
         toast.error("Cannot add items without a vendor selected");
         return;
       }
+
+      // Cancel any pending orders when cart changes
+      cancelPendingOrders();
 
       axios
         .post(
@@ -560,9 +592,10 @@ export default function Cart() {
       </div>
       
       {/* NEW: Order waiting screen overlay */}
-      {showWaitingScreen && currentOrderId && (
+      {showWaitingScreen && currentOrderId && userData && (
         <OrderWaitingScreen
           orderId={currentOrderId}
+          userId={userData._id}
           onOrderAccepted={() => {
             // Order accepted - clear cart and redirect to active orders
             setCart([]);
@@ -574,10 +607,20 @@ export default function Cart() {
             }, 1500);
           }}
           onOrderDenied={(reason) => {
-            // Order denied - show message and hide waiting screen
+            // Order denied - show message and hide waiting screen, refresh cart
             setShowWaitingScreen(false);
             setCurrentOrderId(null);
             toast.error(`Order denied: ${reason || "Item not available"}`);
+            // Refresh cart to get updated state
+            reFetchCart();
+          }}
+          onOrderCancelled={() => {
+            // Order cancelled - hide waiting screen and refresh cart
+            setShowWaitingScreen(false);
+            setCurrentOrderId(null);
+            toast.info("Order cancelled. Your cart has been restored.");
+            // Refresh cart to get updated state
+            reFetchCart();
           }}
         />
       )}

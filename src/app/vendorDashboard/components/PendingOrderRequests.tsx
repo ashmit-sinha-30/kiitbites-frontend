@@ -35,6 +35,17 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
+  const [showDenialModal, setShowDenialModal] = useState<string | null>(null);
+  const [selectedDenialReason, setSelectedDenialReason] = useState<string>("");
+
+  // Predefined denial reasons
+  const denialReasons = [
+    "Item not available",
+    "Out of stock",
+    "Cannot fulfill this order",
+    "Temporarily unavailable",
+    "Other",
+  ];
 
   const fetchPendingOrders = useCallback(async () => {
     try {
@@ -98,10 +109,10 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
   const handleDenyOrder = async (orderId: string, reason?: string) => {
     if (processingOrderId) return;
     
-    const denialReason = reason || prompt("Please provide a reason for denial (e.g., Item not available):") || "Item not available";
+    const denialReason = reason || selectedDenialReason || "Item not available";
     
     if (!denialReason.trim()) {
-      toast.error("Please provide a reason for denial");
+      toast.error("Please select a reason for denial");
       return;
     }
 
@@ -120,6 +131,9 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
         if (onOrderProcessed) {
           onOrderProcessed();
         }
+        // Close modal and reset state
+        setShowDenialModal(null);
+        setSelectedDenialReason("");
         // Refresh to get updated list
         fetchPendingOrders();
       } else {
@@ -134,6 +148,16 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
     } finally {
       setProcessingOrderId(null);
     }
+  };
+
+  const openDenialModal = (orderId: string) => {
+    setShowDenialModal(orderId);
+    setSelectedDenialReason(denialReasons[0]); // Set default reason
+  };
+
+  const closeDenialModal = () => {
+    setShowDenialModal(null);
+    setSelectedDenialReason("");
   };
 
   if (loading) {
@@ -214,7 +238,7 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
               </button>
               <button
                 className={`${styles.button} ${styles.denyButton}`}
-                onClick={() => handleDenyOrder(order.orderId)}
+                onClick={() => openDenialModal(order.orderId)}
                 disabled={processingOrderId === order.orderId}
               >
                 Deny Order
@@ -223,6 +247,45 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Denial Reason Modal */}
+      {showDenialModal && (
+        <div className={styles.modalOverlay} onClick={closeDenialModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h3>Select Reason for Denial</h3>
+            <div className={styles.reasonsList}>
+              {denialReasons.map((reason) => (
+                <label key={reason} className={styles.reasonOption}>
+                  <input
+                    type="radio"
+                    name="denialReason"
+                    value={reason}
+                    checked={selectedDenialReason === reason}
+                    onChange={(e) => setSelectedDenialReason(e.target.value)}
+                  />
+                  <span>{reason}</span>
+                </label>
+              ))}
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                className={`${styles.button} ${styles.cancelButton}`}
+                onClick={closeDenialModal}
+                disabled={processingOrderId === showDenialModal}
+              >
+                Cancel
+              </button>
+              <button
+                className={`${styles.button} ${styles.confirmDenyButton}`}
+                onClick={() => handleDenyOrder(showDenialModal)}
+                disabled={processingOrderId === showDenialModal || !selectedDenialReason}
+              >
+                {processingOrderId === showDenialModal ? "Processing..." : "Confirm Denial"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

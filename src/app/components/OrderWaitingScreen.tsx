@@ -2,20 +2,26 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 import styles from "./styles/OrderWaitingScreen.module.scss";
 
 interface OrderWaitingScreenProps {
   orderId: string;
+  userId: string;
   onOrderAccepted: () => void;
   onOrderDenied: (reason: string) => void;
+  onOrderCancelled: () => void;
 }
 
 const OrderWaitingScreen: React.FC<OrderWaitingScreenProps> = ({
   orderId,
+  userId,
   onOrderAccepted,
   onOrderDenied,
+  onOrderCancelled,
 }) => {
   const [waitTime, setWaitTime] = useState(0); // Wait time in seconds
+  const [isCancelling, setIsCancelling] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -70,6 +76,77 @@ const OrderWaitingScreen: React.FC<OrderWaitingScreenProps> = ({
     };
   }, [orderId, onOrderAccepted, onOrderDenied]);
 
+  const handleCancelOrder = async () => {
+    if (isCancelling) return;
+    
+    const confirmCancel = window.confirm(
+      "Are you sure you want to cancel this order? You can add more items and place a new order."
+    );
+    
+    if (!confirmCancel) return;
+
+    setIsCancelling(true);
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/order-approval/${orderId}/cancel`,
+        { userId },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        // Stop polling
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+        onOrderCancelled();
+      } else {
+        toast.error(response.data.message || "Failed to cancel order");
+        setIsCancelling(false);
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Failed to cancel order");
+      } else {
+        toast.error("Failed to cancel order");
+      }
+      setIsCancelling(false);
+    }
+  };
+
+  const handleAddMoreItems = async () => {
+    if (isCancelling) return;
+    
+    setIsCancelling(true);
+    try {
+      // Cancel the pending order so it doesn't appear in vendor's pending list
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/order-approval/${orderId}/cancel`,
+        { userId },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        // Stop polling
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+        onOrderCancelled();
+      } else {
+        toast.error(response.data.message || "Failed to cancel order");
+        setIsCancelling(false);
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Failed to cancel order");
+      } else {
+        toast.error("Failed to cancel order");
+      }
+      setIsCancelling(false);
+    }
+  };
+
   const formatWaitTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -93,6 +170,23 @@ const OrderWaitingScreen: React.FC<OrderWaitingScreenProps> = ({
         <div className={styles.statusIndicator}>
           <div className={styles.statusDot}></div>
           <span className={styles.statusText}>Order pending approval</span>
+        </div>
+        
+        <div className={styles.actionButtons}>
+          <button
+            className={styles.addMoreButton}
+            onClick={handleAddMoreItems}
+            disabled={isCancelling}
+          >
+            Add More Items
+          </button>
+          <button
+            className={styles.cancelButton}
+            onClick={handleCancelOrder}
+            disabled={isCancelling}
+          >
+            {isCancelling ? "Cancelling..." : "Cancel Order"}
+          </button>
         </div>
       </div>
     </div>
