@@ -64,10 +64,7 @@ interface CartResponseItem {
   vendorName: string;
 }
 
-const categories = {
-  produce: ["combos-veg", "combos-nonveg", "veg", "shakes", "juices", "soups", "non-veg"],
-  retail: ["biscuits", "chips", "icecream", "drinks", "snacks", "sweets", "nescafe"],
-};
+// Categories are now dynamic - types are determined from the item's kind field
 
 const FavouriteFoodPageContent: React.FC = () => {
   const router = useRouter();
@@ -352,11 +349,11 @@ const FavouriteFoodPageContent: React.FC = () => {
   };
 
   // Add function to check vendor availability
-  const checkVendorAvailability = async (vendorId: string, itemId: string, itemType: string) => {
+  const checkVendorAvailability = async (vendorId: string, itemId: string, kind: string) => {
     try {
-      // Determine if item is retail or produce based on category
-      const isRetail = Object.values(categories.retail).includes(itemType);
-      const isProduce = Object.values(categories.produce).includes(itemType);
+      // Determine if item is retail or produce based on kind field
+      const isRetail = kind === "Retail";
+      const isProduce = kind === "Produce";
       
       const response = await fetch(`${BACKEND_URL}/api/item/vendors/${itemId}`, {
         credentials: "include",
@@ -407,7 +404,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       }
 
       // Check vendor availability before proceeding
-      const isVendorAvailable = await checkVendorAvailability(foodItem.vendorId, foodItem._id, foodItem.type);
+      const isVendorAvailable = await checkVendorAvailability(foodItem.vendorId, foodItem._id, foodItem.kind);
       
       if (!isVendorAvailable) {
         toast.error("This item is currently unavailable from the vendor. Please try again later.");
@@ -490,7 +487,7 @@ const FavouriteFoodPageContent: React.FC = () => {
 
     try {
       // Check vendor availability before proceeding
-      const isVendorAvailable = await checkVendorAvailability(foodItem.vendorId, foodItem._id, foodItem.type);
+      const isVendorAvailable = await checkVendorAvailability(foodItem.vendorId, foodItem._id, foodItem.kind);
       if (!isVendorAvailable) {
         toast.error("This item is currently unavailable from the vendor. Please try again later.");
         return;

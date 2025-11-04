@@ -23,28 +23,7 @@ import {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
-const categories = {
-  produce: [
-    "combos-veg",
-    "combos-nonveg",
-    "veg",
-    "shakes",
-    "juices",
-    "soups",
-    "non-veg",
-    "others",
-  ],
-  retail: [
-    "biscuits",
-    "chips",
-    "icecream",
-    "drinks",
-    "snacks",
-    "sweets",
-    "nescafe",
-    "others",
-  ],
-};
+// Categories will be dynamically generated from fetched items
 
 const CustomPrevArrow = (props: { onClick?: () => void }) => (
   <button
@@ -101,6 +80,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
   const [error, setError] = useState<string | null>(null);
   const [userFavorites, setUserFavorites] = useState<FavoriteItem[]>([]);
   const [vendorSpecialItems, setVendorSpecialItems] = useState<FoodItem[]>([]);
+  const [categories, setCategories] = useState<{ retail: string[]; produce: string[] }>({ retail: [], produce: [] });
 
   const currentRequest = useRef<number>(0);
 
@@ -300,8 +280,25 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           if (!allItems[key]) allItems[key] = [];
           allItems[key].push(item);
         });
+        
+        // Dynamically generate categories from fetched items
+        const retailTypes = new Set<string>();
+        const produceTypes = new Set<string>();
+        retailItems.forEach(item => {
+          if (item.category) retailTypes.add(item.category);
+        });
+        produceItems.forEach(item => {
+          if (item.category) produceTypes.add(item.category);
+        });
+        
+        setCategories({
+          retail: Array.from(retailTypes).sort(),
+          produce: Array.from(produceTypes).sort(),
+        });
+        
         if (requestId === currentRequest.current) {
           console.log('DEBUG allItems:', allItems);
+          console.log('DEBUG categories:', { retail: Array.from(retailTypes), produce: Array.from(produceTypes) });
           setItems(allItems);
           setLoading(false);
         }
@@ -433,7 +430,9 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
   };
 
   const convertFavoriteToFoodItem = (item: FavoriteItem): FoodItem => {
-    const isRetail = categories.retail.includes(item.kind);
+    // Determine if it's retail or produce based on the kind field or categories
+    // Since we don't have a direct way to know, we'll check if the kind matches any retail type first
+    const isRetail = categories.retail.length > 0 && categories.retail.includes(item.kind);
     return {
       id: item._id,
       title: item.name,
@@ -542,6 +541,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                     categoryTitle={type}
                     sliderSettings={sliderSettings}
                     userId={userId}
+                    categories={categories}
                   />
                 </section>
               );
@@ -554,6 +554,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
               convertFavoriteToFoodItem={convertFavoriteToFoodItem}
               sliderSettings={sliderSettings}
               userId={userId}
+              categories={categories}
             />
           )}
 
@@ -561,6 +562,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             allItems={vendorSpecialItems}
             sliderSettings={sliderSettings}
             userId={userId}
+            categories={categories}
           />
         </div>
       </div>

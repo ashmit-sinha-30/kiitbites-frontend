@@ -7,7 +7,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 export const checkItemAvailability = async (
   item: FoodItem,
   currentVendorId: string | null,
-  categories: { retail: string[]; produce: string[] }
+  categories?: { retail: string[]; produce: string[] }
 ): Promise<{ isAvailable: boolean; vendors: Vendor[] | undefined }> => {
   try {
     const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id}`, {
@@ -33,8 +33,8 @@ export const checkItemAvailability = async (
         return false;
       }
 
-      // Check if the item is retail based on its category
-      const isRetail = categories.retail.includes(item.category);
+      // Check if the item is retail based on item.type (preferred) or fallback to categories
+      const isRetail = item.type === "retail" || (categories?.retail.includes(item.category) ?? false);
 
       if (isRetail) {
         // For retail items, check quantity from inventoryValue

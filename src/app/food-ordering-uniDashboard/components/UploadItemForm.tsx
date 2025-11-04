@@ -254,10 +254,17 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
         </label>
         <label className={styles.label}>
           Types
-          <select value={type} onChange={e => handleTypeChange(e.target.value)} required className={styles.input}>
-            <option value="" disabled>Select type…</option>
-            {types.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+          <input
+            list="upload-type-suggestions"
+            value={type}
+            onChange={e => handleTypeChange(e.target.value)}
+            required
+            className={styles.input}
+            placeholder="Type to create or pick…"
+          />
+          <datalist id="upload-type-suggestions">
+            {types.map(t => <option key={t} value={t} />)}
+          </datalist>
         </label>
         <label className={styles.label}>
           Price Including Taxes

@@ -9,7 +9,7 @@ import { checkItemAvailability } from '../utils/cartUtils';
 
 interface ProductCardProps {
   item: FoodItem;
-  categories: { retail: string[]; produce: string[] };
+  categories?: { retail: string[]; produce: string[] };
   userId?: string | null;
 }
 

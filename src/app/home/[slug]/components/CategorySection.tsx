@@ -8,18 +8,15 @@ interface CategorySectionProps {
   categoryTitle: string;
   sliderSettings: Settings;
   userId?: string | null;
+  categories?: { retail: string[]; produce: string[] };
 }
-
-const categories = {
-  retail: ["biscuits", "chips", "icecream", "drinks", "snacks", "sweets", "nescafe"],
-  produce: ["combos-veg", "combos-nonveg", "veg", "shakes", "juices", "soups", "non-veg"]
-};
 
 const CategorySection = ({
   categoryItems,
   categoryTitle,
   sliderSettings,
   userId,
+  categories,
 }: CategorySectionProps) => {
   if (!categoryItems || categoryItems.length === 0) return null;
 

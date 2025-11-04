@@ -8,14 +8,10 @@ interface SpecialOffersSectionProps {
   allItems: FoodItem[];
   sliderSettings: Settings;
   userId?: string | null;
+  categories?: { retail: string[]; produce: string[] };
 }
 
-const categories = {
-  retail: ["biscuits", "chips", "icecream", "drinks", "snacks", "sweets", "nescafe"],
-  produce: ["combos-veg", "combos-nonveg", "veg", "shakes", "juices", "soups", "non-veg"]
-};
-
-const SpecialOffersSection = ({ allItems, sliderSettings, userId }: SpecialOffersSectionProps) => {
+const SpecialOffersSection = ({ allItems, sliderSettings, userId, categories }: SpecialOffersSectionProps) => {
   const [specials, setSpecials] = useState<FoodItem[]>([]);
 
   useEffect(() => {

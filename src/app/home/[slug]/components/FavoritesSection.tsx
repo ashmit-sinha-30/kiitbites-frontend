@@ -3,16 +3,12 @@ import styles from "../styles/CollegePage.module.scss";
 import { FavoriteItem, FoodItem } from "../types";
 import ProductCard from "./ProductCard";
 
-const categories = {
-  retail: ["biscuits", "chips", "icecream", "drinks", "snacks", "sweets", "nescafe"],
-  produce: ["combos-veg", "combos-nonveg", "veg", "shakes", "juices", "soups", "non-veg"]
-};
-
 interface FavoritesSectionProps {
   favoriteItems: FavoriteItem[];
   convertFavoriteToFoodItem: (item: FavoriteItem) => FoodItem;
   sliderSettings: Settings;
   userId?: string | null;
+  categories?: { retail: string[]; produce: string[] };
 }
 
 const FavoritesSection = ({
@@ -20,6 +16,7 @@ const FavoritesSection = ({
   convertFavoriteToFoodItem,
   sliderSettings,
   userId,
+  categories,
 }: FavoritesSectionProps) => {
   if (favoriteItems.length === 0) return null;
 

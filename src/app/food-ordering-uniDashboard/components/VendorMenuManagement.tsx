@@ -711,16 +711,18 @@ export function VendorMenuManagement({ vendorId }: Props) {
           </label>
           <label>
             Type
-            <select
+            <input
+              list="type-suggestions"
               value={formData.type}
               onChange={(e) => handleTypeChange(e.target.value)}
+              placeholder="Type to create or pick..."
               required
-            >
-              <option value="">Select type...</option>
+            />
+            <datalist id="type-suggestions">
               {types.map((type) => (
-                <option key={type} value={type}>{type}</option>
+                <option key={type} value={type} />
               ))}
-            </select>
+            </datalist>
           </label>
 
           {/* HSN Suggestions */}
@@ -903,16 +905,18 @@ export function VendorMenuManagement({ vendorId }: Props) {
           </label>
           <label>
             Type
-            <select
+            <input
+              list="type-suggestions"
               value={formData.type}
               onChange={(e) => handleTypeChange(e.target.value)}
+              placeholder="Type to create or pick..."
               required
-            >
-              <option value="">Select type...</option>
+            />
+            <datalist id="type-suggestions">
               {types.map((type) => (
-                <option key={type} value={type}>{type}</option>
+                <option key={type} value={type} />
               ))}
-            </select>
+            </datalist>
           </label>
 
           {/* HSN Suggestions */}
