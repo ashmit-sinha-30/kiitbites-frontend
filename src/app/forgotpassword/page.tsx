@@ -20,7 +20,7 @@ export const metadata: Metadata = {
         alt: 'KAMPYN Forgot Password',
       },
     ],
-    url: "https://bitesbay.com/forgotpassword",
+    url: "https://kampyn.com/forgotpassword",
     type: "website",
   },
   twitter: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     images: ['/forgot-password-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/forgotpassword",
+    canonical: "https://kampyn.com/forgotpassword",
   },
 }; 
 

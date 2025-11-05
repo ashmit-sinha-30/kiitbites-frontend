@@ -16,7 +16,7 @@ export const metadata: Metadata = {
         alt: 'KAMPYN Refund & Cancellation Policy',
       },
     ],
-    url: "https://bitesbay.com/refund-policy",
+    url: "https://kampyn.com/refund-policy",
     type: "website",
   },
   twitter: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     images: ['/refund-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/refund-policy",
+    canonical: "https://kampyn.com/refund-policy",
   },
 };
 

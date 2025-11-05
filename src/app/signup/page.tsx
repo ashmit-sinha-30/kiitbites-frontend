@@ -186,7 +186,7 @@ export const metadata: Metadata = {
         alt: 'KAMPYN Sign Up',
       },
     ],
-    url: "https://bitesbay.com/signup",
+    url: "https://kampyn.com/signup",
     type: "website",
   },
   twitter: {
@@ -196,7 +196,7 @@ export const metadata: Metadata = {
     images: ['/signup-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/signup",
+    canonical: "https://kampyn.com/signup",
   },
 }; 
 

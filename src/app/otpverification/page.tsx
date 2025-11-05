@@ -20,7 +20,7 @@ export const metadata: Metadata = {
         alt: 'KAMPYN OTP Verification',
       },
     ],
-    url: "https://bitesbay.com/otpverification",
+    url: "https://kampyn.com/otpverification",
     type: "website",
   },
   twitter: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     images: ['/otp-verification-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/otpverification",
+    canonical: "https://kampyn.com/otpverification",
   },
 }; 
 

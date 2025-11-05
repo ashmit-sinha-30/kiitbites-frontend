@@ -194,10 +194,10 @@ const Footer: React.FC = () => {
               </p>
               <p className="mb-2">
                 <a
-                  href="mailto:contact@bitesbay.com"
+                  href="mailto:contact@kampyn.com"
                   className="text-gray-300 hover:text-white transition-colors"
                 >
-                  contact@bitesbay.com
+                  contact@kampyn.com
                 </a>
               </p>
               <p>

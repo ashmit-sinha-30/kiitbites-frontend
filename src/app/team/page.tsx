@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: "Meet Our Team",
     description: "Learn about KAMPYN Team.",
     images: ["https://bitebay.in/og-image.jpg"],
-    url: "https://bitesbay.com/team",
+    url: "https://kampyn.com/team",
     type: "website",
   },
   twitter: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     images: ["https://bitebay.in/twitter-card.jpg"],
   },
   alternates: {
-    canonical: "https://bitesbay.com/team",
+    canonical: "https://kampyn.com/team",
   },
 };
 

@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
           alt: `KAMPYN - Food Ordering`,
         },
       ],
-      url: `https://bitesbay.com/home`,
+      url: `https://kampyn.com/home`,
       type: "website",
     },
     twitter: {
@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
       images: ["/college-twitter.jpg"],
     },
     alternates: {
-      canonical: `https://bitesbay.com/home`,
+      canonical: `https://kampyn.com/home`,
     },
   };
 }

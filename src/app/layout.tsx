@@ -22,11 +22,11 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://bitesbay.com'),
+  metadataBase: new URL('https://kampyn.com'),
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://bitesbay.com',
+    url: 'https://kampyn.com',
     siteName: 'KAMPYN',
     title: 'KAMPYN - Campus Food Ordering Platform',
     description: 'Order food from your favorite campus restaurants at KIIT University',

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
         alt: 'KAMPYN Favorites',
       },
     ],
-    url: "https://bitesbay.com/fav",
+    url: "https://kampyn.com/fav",
     type: "website",
   },
   twitter: {
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     images: ['/favorites-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/fav",
+    canonical: "https://kampyn.com/fav",
   },
 }; 
 

@@ -11,7 +11,6 @@ const ConditionalHeader = () => {
     '/vendorDashboard',
     '/vendor-login',
     '/vendor-otp-verification',
-    '/vendor/',
     '/uniDashboard',
     '/uni-login',
     '/admin-dashboard',

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
         alt: 'KAMPYN Help & Support',
       },
     ],
-    url: "https://bitesbay.com/help",
+    url: "https://kampyn.com/help",
     type: "website",
   },
   twitter: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     images: ['/help-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/help",
+    canonical: "https://kampyn.com/help",
   },
 };
 

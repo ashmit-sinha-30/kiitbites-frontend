@@ -16,7 +16,7 @@ export const metadata: Metadata = {
         alt: 'About KAMPYN - Campus Dining Reimagined',
       },
     ],
-    url: "https://bitesbay.com/about",
+    url: "https://kampyn.com/about",
     type: "website",
   },
   twitter: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     images: ['/about-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/about",
+    canonical: "https://kampyn.com/about",
   },
 };
 

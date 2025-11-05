@@ -15,7 +15,7 @@ export const metadata: Metadata = {
         alt: 'KAMPYN Home',
       },
     ],
-    url: "https://bitesbay.com/home",
+    url: "https://kampyn.com/home",
     type: "website",
   },
   twitter: {
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     images: ['/home-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/home",
+    canonical: "https://kampyn.com/home",
   },
 };
 

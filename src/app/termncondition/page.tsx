@@ -16,7 +16,7 @@ export const metadata: Metadata = {
         alt: 'KAMPYN Terms and Conditions',
       },
     ],
-    url: "https://bitesbay.com/terms-and-conditions",
+    url: "https://kampyn.com/terms-and-conditions",
     type: "website",
   },
   twitter: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     images: ['/terms-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/terms-and-conditions",
+    canonical: "https://kampyn.com/terms-and-conditions",
   },
 };
 

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
         alt: 'KAMPYN Privacy Policy',
       },
     ],
-    url: "https://bitesbay.com/privacy-policy",
+    url: "https://kampyn.com/privacy-policy",
     type: "website",
   },
   twitter: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     images: ['/privacy-twitter.jpg'],
   },
   alternates: {
-    canonical: "https://bitesbay.com/privacy-policy",
+    canonical: "https://kampyn.com/privacy-policy",
   },
 };
 
