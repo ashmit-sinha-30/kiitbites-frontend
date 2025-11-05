@@ -15,7 +15,9 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 interface VendorItem {
   itemId: string;
   name: string;
+  description?: string;
   type?: string;
+  subtype?: string;
   price: number;
   image?: string;
   quantity?: number;
@@ -357,6 +359,16 @@ const VendorPage = () => {
                     image={item.image || '/images/coffee.jpeg'}
                     variant="search-result"
                   />
+              {(item.type || item.subtype) && (
+                <p className={styles.quantity}>
+                  {item?.type}{item?.subtype ? ` • ${item.subtype}` : ''}
+                </p>
+              )}
+              {item.description && (
+                <p>
+                  {item.description}
+                </p>
+              )}
                   <div className={styles.belowdish}>
                     <div>
                       {item.quantity !== undefined && (

@@ -107,7 +107,7 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
 
   const downloadInvoice = async (orderId: string) => {
     try {
-      // Prefer backend invoice list → open Cloudinary pdfUrl if available
+      // Fetch backend invoice list and use PDF download endpoint
       const response = await fetch(`${API_BASE}/api/invoices/order/${orderId}`);
       const data = await response.json();
 
@@ -115,37 +115,19 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
         const vendorInvoice = data.data.find((invoice: InvoiceData) => invoice.recipientType === 'vendor');
         const selectedInvoice = vendorInvoice || data.data[0];
 
-        if (selectedInvoice?.pdfUrl) {
-          window.open(selectedInvoice.pdfUrl, '_blank');
-          return;
-        }
+        // Always use backend PDF download endpoint first
         if (selectedInvoice?._id) {
           window.open(`${API_BASE}/api/invoices/${selectedInvoice._id}/download`, '_blank');
           return;
         }
-      }
-
-      // Last resort: try to use Razorpay if available on the order
-      const orderResponse = await fetch(`${API_BASE}/order/${orderId}`);
-      const orderData = await orderResponse.json();
-      const order = orderData?.data || orderData?.order || {};
-
-      if (order?.razorpayInvoiceId) {
-        const invoiceResponse = await fetch(`${API_BASE}/razorpay/invoices/${order.razorpayInvoiceId}`);
-        const invoiceData = await invoiceResponse.json();
-        if (invoiceData?.success && invoiceData?.data?.short_url) {
-          window.open(invoiceData.data.short_url, '_blank');
-          return;
-        }
-        const pdfResponse = await fetch(`${API_BASE}/razorpay/invoices/${order.razorpayInvoiceId}/pdf`);
-        const pdfData = await pdfResponse.json();
-        if (pdfData?.success && pdfData?.pdfUrl) {
-          window.open(pdfData.pdfUrl, '_blank');
+        // Fallback to direct PDF URL if available
+        if (selectedInvoice?.pdfUrl) {
+          window.open(selectedInvoice.pdfUrl, '_blank');
           return;
         }
       }
 
-      alert('Invoice is not available yet. Please try again later.');
+      alert('PDF invoice is not available yet. Please try again later.');
     } catch (error) {
       console.error('Error downloading invoice:', error);
       alert('Failed to download invoice. Please try again.');

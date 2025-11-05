@@ -81,12 +81,14 @@ export default function VendorInvoices({ vendorId }: VendorInvoicesProps) {
   };
 
   const downloadInvoice = (invoice: Invoice) => {
-    if (invoice.pdfUrl) {
-      window.open(invoice.pdfUrl, '_blank');
-      return;
-    }
+    // Always use backend PDF download endpoint first
     if (invoice._id) {
       window.open(`${API_BASE}/api/invoices/${invoice._id}/download`, '_blank');
+    } else if (invoice.pdfUrl) {
+      // Fallback to direct PDF URL if available
+      window.open(invoice.pdfUrl, '_blank');
+    } else {
+      alert('PDF invoice is not available yet.');
     }
   };
 
@@ -227,7 +229,7 @@ export default function VendorInvoices({ vendorId }: VendorInvoicesProps) {
                             size="sm"
                             variant="outline"
                             onClick={() => downloadInvoice(invoice)}
-                            disabled={!invoice.pdfUrl}
+                            disabled={!invoice.pdfUrl && !invoice._id}
                             className="text-xs"
                           >
                             Download

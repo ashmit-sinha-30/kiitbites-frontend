@@ -179,6 +179,15 @@ const ProductCard = ({ item, categories, userId }: ProductCardProps) => {
             ) : null}
           </div>
           <h4 className={styles.foodTitle}>{item.title}</h4>
+          {(item.category || item.subtype) && (
+            <p className={styles.foodSubtitle}>
+              {item.category}
+              {item.subtype ? ` • ${item.subtype}` : ''}
+            </p>
+          )}
+          {item.description && (
+            <p className={styles.foodSubtitle}>{item.description}</p>
+          )}
           <p className={styles.foodPrice}>₹{item.price}</p>
           {userId && (
             <>

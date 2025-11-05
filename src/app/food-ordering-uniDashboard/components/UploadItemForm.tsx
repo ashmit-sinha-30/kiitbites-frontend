@@ -10,6 +10,9 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
   const [itemType, setItemType] = useState("Retail");
   const [name, setName] = useState("");
   const [type, setType] = useState("");
+  const [subtype, setSubtype] = useState("");
+  const [description, setDescription] = useState("");
+  const [unit, setUnit] = useState("");
   const [types, setTypes] = useState<string[]>([]);
   const [priceIncludingTax, setPriceIncludingTax] = useState("");
   const [hsnCode, setHsnCode] = useState("");
@@ -181,6 +184,10 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
       setError("Please select a type.");
       return;
     }
+    if (!hsnCode || hsnCode.trim() === "") {
+      setError("HSN Code is required for both Retail and Produce items.");
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -205,9 +212,12 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
         body: JSON.stringify({
           name,
           type,
+          ...(itemType === "Produce" && subtype ? { subtype } : {}),
+          description,
+          unit: itemType === "Retail" ? (unit || "pcs") : unit,
           price: parseFloat(priceIncludingTax), // This will be the price including tax
           priceExcludingTax: taxDetails?.priceExcludingTax,
-          hsnCode,
+          hsnCode: hsnCode.trim(),
           gstPercentage: parseFloat(gstPercentage),
           sgstPercentage: taxDetails?.sgstPercentage,
           cgstPercentage: taxDetails?.cgstPercentage,
@@ -221,6 +231,9 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
       setSuccess("Item uploaded successfully!");
       setName("");
       setType("");
+      setSubtype("");
+      setDescription("");
+      setUnit("");
       setPriceIncludingTax("");
       setHsnCode("");
       setGstPercentage("");
@@ -249,6 +262,16 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
           </select>
         </label>
         <label className={styles.label}>
+          Description
+          <textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            className={styles.input}
+            placeholder="Short description of the item"
+            rows={3}
+          />
+        </label>
+        <label className={styles.label}>
           Name
           <input value={name} onChange={e => setName(e.target.value)} required className={styles.input} />
         </label>
@@ -266,13 +289,40 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
             {types.map(t => <option key={t} value={t} />)}
           </datalist>
         </label>
+        {itemType === "Produce" && (
+          <label className={styles.label}>
+            Subtype (optional)
+            <input
+              value={subtype}
+              onChange={e => setSubtype(e.target.value)}
+              className={styles.input}
+              placeholder="e.g., Pizza, Mexican Street Cuisine"
+            />
+          </label>
+        )}
+        <label className={styles.label}>
+          Unit {itemType === "Produce" ? "(required)" : "(default: pcs)"}
+          <input
+            value={unit}
+            onChange={e => setUnit(e.target.value)}
+            className={styles.input}
+            placeholder={itemType === "Produce" ? "e.g., kg, g, pcs" : "pcs"}
+            required={itemType === "Produce"}
+          />
+        </label>
         <label className={styles.label}>
           Price Including Taxes
           <input type="number" value={priceIncludingTax} onChange={e => setPriceIncludingTax(e.target.value)} required min="0" step="0.01" className={styles.input} />
         </label>
         <label className={styles.label}>
-          HSN Code
-          <input type="text" value={hsnCode} onChange={e => setHsnCode(e.target.value)} className={styles.input} />
+          HSN Code (required)
+          <input 
+            type="text" 
+            value={hsnCode} 
+            onChange={e => setHsnCode(e.target.value)} 
+            className={styles.input}
+            required
+          />
         </label>
 
         {/* HSN Suggestions Loading */}

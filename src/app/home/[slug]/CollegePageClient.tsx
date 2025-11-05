@@ -81,6 +81,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
   const [userFavorites, setUserFavorites] = useState<FavoriteItem[]>([]);
   const [vendorSpecialItems, setVendorSpecialItems] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<{ retail: string[]; produce: string[] }>({ retail: [], produce: [] });
+  const [categorySubtypes, setCategorySubtypes] = useState<{ [key: string]: string[] }>({});
 
   const currentRequest = useRef<number>(0);
 
@@ -253,9 +254,11 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
         const retailItems: FoodItem[] = (retailData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
           title: item.name as string,
+          description: item.description as string | undefined,
           image: item.image as string,
           category: item.type as string,
           type: 'retail',
+          subtype: item.subtype as string | undefined,
           isSpecial: item.isSpecial as string,
           collegeId: uniId,
           price: item.price as number,
@@ -265,21 +268,48 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
         const produceItems: FoodItem[] = (produceData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
           title: item.name as string,
+          description: item.description as string | undefined,
           image: item.image as string,
           category: item.type as string,
           type: 'produce',
+          subtype: item.subtype as string | undefined,
           isSpecial: item.isSpecial as string,
           collegeId: uniId,
           price: item.price as number,
           vendorId: (item.vendorId as string) || null,
           isAvailable: item.isAvailable as string,
         }));
-        // Group by category-type
+        // Track subtypes for each category
+        const subtypesMap: { [key: string]: Set<string> } = {};
+        
+        // Group by category-type and subtype when subtype exists
         [...retailItems, ...produceItems].forEach(item => {
-          const key = `${item.type}-${item.category}`;
-          if (!allItems[key]) allItems[key] = [];
-          allItems[key].push(item);
+          if (item.subtype) {
+            // If item has subtype, group by type-category-subtype
+            const key = `${item.type}-${item.category}-${item.subtype}`;
+            if (!allItems[key]) allItems[key] = [];
+            allItems[key].push(item);
+            
+            // Track subtypes for this category
+            const categoryKey = `${item.type}-${item.category}`;
+            if (!subtypesMap[categoryKey]) {
+              subtypesMap[categoryKey] = new Set<string>();
+            }
+            subtypesMap[categoryKey].add(item.subtype);
+          } else {
+            // If no subtype, group by type-category as before
+            const key = `${item.type}-${item.category}`;
+            if (!allItems[key]) allItems[key] = [];
+            allItems[key].push(item);
+          }
         });
+        
+        // Convert subtypes map to array format
+        const subtypesMapArrays: { [key: string]: string[] } = {};
+        Object.keys(subtypesMap).forEach(key => {
+          subtypesMapArrays[key] = Array.from(subtypesMap[key]).sort();
+        });
+        setCategorySubtypes(subtypesMapArrays);
         
         // Dynamically generate categories from fetched items
         const retailTypes = new Set<string>();
@@ -337,13 +367,46 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           fetch(`${BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
         ]);
         
+        // Check response status before parsing JSON
+        if (!vendorsRes.ok) {
+          let errorMessage = `Failed to fetch vendors: ${vendorsRes.status} ${vendorsRes.statusText}`;
+          try {
+            const errorData = await vendorsRes.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // If JSON parsing fails, use status text
+          }
+          console.error(`Failed to fetch vendors (${vendorsRes.status}):`, errorMessage);
+          throw new Error(errorMessage);
+        }
+        
+        if (!retailRes.ok) {
+          let errorMessage = `Failed to fetch retail items: ${retailRes.status} ${retailRes.statusText}`;
+          try {
+            const errorData = await retailRes.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // If JSON parsing fails, use status text
+          }
+          console.error(`Failed to fetch retail items (${retailRes.status}):`, errorMessage);
+          throw new Error(errorMessage);
+        }
+        
+        if (!produceRes.ok) {
+          let errorMessage = `Failed to fetch produce items: ${produceRes.status} ${produceRes.statusText}`;
+          try {
+            const errorData = await produceRes.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // If JSON parsing fails, use status text
+          }
+          console.error(`Failed to fetch produce items (${produceRes.status}):`, errorMessage);
+          throw new Error(errorMessage);
+        }
+        
         const vendors: Vendor[] = await vendorsRes.json();
         const retailData = await retailRes.json();
         const produceData = await produceRes.json();
-        
-        if (!vendorsRes.ok || !retailRes.ok || !produceRes.ok) {
-          throw new Error("Failed to fetch vendor or item data");
-        }
 
         // Create lookup maps for items
         const retailItemsMap = new Map<string, Record<string, unknown>>();
@@ -368,6 +431,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                 specials.push({
                   id: entry.itemId,
                   title: (itemData.name as string) || '',
+                  description: itemData.description as string | undefined,
                   image: (itemData.image as string) || '',
                   category: (itemData.type as string) || 'retail',
                   type: 'retail',
@@ -388,6 +452,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                 specials.push({
                   id: entry.itemId,
                   title: (itemData.name as string) || '',
+                  description: itemData.description as string | undefined,
                   image: (itemData.image as string) || '',
                   category: (itemData.type as string) || 'produce',
                   type: 'produce',
@@ -415,7 +480,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 4,
+    slidesToShow: 3,
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 3000,
@@ -526,25 +591,60 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
 
           {Object.entries(categories).map(([category, types]) =>
             types.map((type) => {
-              const key = `${category}-${type}`;
-              const categoryItems = items[key] || [];
-              console.log('DEBUG category:', key, 'items:', categoryItems.length);
+              const categoryKey = `${category}-${type}`;
+              const subtypes = categorySubtypes[categoryKey] || [];
+              
+              // If this category has subtypes, show separate sections for each subtype
+              if (subtypes.length > 0) {
+                return (
+                  <section key={categoryKey} style={{ marginBottom: 32 }}>
+                    {subtypes.map((subtype) => {
+                      const subtypeKey = `${categoryKey}-${subtype}`;
+                      const subtypeItems = items[subtypeKey] || [];
+                      
+                      return (
+                        <div key={subtypeKey} style={{ marginBottom: 24 }}>
+                          <CategorySection
+                            categoryItems={subtypeItems}
+                            categoryTitle={`${type} - ${subtype}`}
+                            sliderSettings={sliderSettings}
+                            userId={userId}
+                            categories={categories}
+                          />
+                        </div>
+                      );
+                    })}
+                    {/* Also show items without subtype if they exist */}
+                    {items[categoryKey] && items[categoryKey].length > 0 && (
+                      <div style={{ marginBottom: 24 }}>
+                        <CategorySection
+                          categoryItems={items[categoryKey]}
+                          categoryTitle={type}
+                          sliderSettings={sliderSettings}
+                          userId={userId}
+                          categories={categories}
+                        />
+                      </div>
+                    )}
+                  </section>
+                );
+              } else {
+                // No subtypes, show as before
+                const categoryItems = items[categoryKey] || [];
+                console.log('DEBUG category:', categoryKey, 'items:', categoryItems.length);
 
-              return (
-                <section key={key} style={{ marginBottom: 32 }}>
-                  {/* <h3 style={{ fontWeight: 600, fontSize: 22, marginBottom: 12 }}>
-                    {type.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </h3> */}
-
-                  <CategorySection
-                    categoryItems={categoryItems}
-                    categoryTitle={type}
-                    sliderSettings={sliderSettings}
-                    userId={userId}
-                    categories={categories}
-                  />
-                </section>
-              );
+                return (
+                  <section key={categoryKey} style={{ marginBottom: 32 }}>
+                    <CategorySection
+                      categoryItems={categoryItems}
+                      categoryTitle={type}
+                      sliderSettings={sliderSettings}
+                      userId={userId}
+                      categories={categories}
+                    />
+                  </section>
+                );
+              }
             })
           )}
 

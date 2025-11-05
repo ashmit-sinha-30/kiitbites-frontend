@@ -89,7 +89,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
   const downloadInvoice = async (orderId: string) => {
     try {
-      // Prefer backend invoice list → open Cloudinary pdfUrl if available
+      // Fetch backend invoice list and use PDF only
       const invoicesRes = await fetch(`${BASE}/api/invoices/order/${orderId}`);
       const invoicesData = await invoicesRes.json();
 
@@ -102,33 +102,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           return;
         }
         if (anyInvoice?._id) {
-          // Try backend redirector which prioritizes Cloudinary/Razorpay
+          // Use backend PDF download endpoint
           window.open(`${BASE}/api/invoices/${anyInvoice._id}/download`, '_blank');
           return;
         }
       }
 
-      // As a last resort, fetch order to try Razorpay invoice
-      const orderResponse = await fetch(`${BASE}/order/${orderId}`);
-      const orderData = await orderResponse.json();
-      const order = orderData?.data || orderData?.order || {};
-
-      if (order?.razorpayInvoiceId) {
-        const invoiceResponse = await fetch(`${BASE}/razorpay/invoices/${order.razorpayInvoiceId}`);
-        const invoiceData = await invoiceResponse.json();
-        if (invoiceData?.success && invoiceData?.data?.short_url) {
-          window.open(invoiceData.data.short_url, '_blank');
-          return;
-        }
-        const pdfResponse = await fetch(`${BASE}/razorpay/invoices/${order.razorpayInvoiceId}/pdf`);
-        const pdfData = await pdfResponse.json();
-        if (pdfData?.success && pdfData?.pdfUrl) {
-          window.open(pdfData.pdfUrl, '_blank');
-          return;
-        }
-      }
-
-      alert('Invoice is not available yet. Please try again later.');
+      alert('PDF invoice is not available yet. Please try again later.');
     } catch (error) {
       console.error('Error downloading invoice:', error);
       alert('Failed to download invoice. Please try again.');

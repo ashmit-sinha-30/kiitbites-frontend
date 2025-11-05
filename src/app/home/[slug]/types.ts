@@ -1,9 +1,11 @@
 export interface FoodItem {
   id: string;
   title: string;
+  description?: string;
   image: string;
   category: string;
   type: string;
+  subtype?: string;
   isSpecial: string;
   collegeId?: string;
   price: number;
@@ -16,6 +18,7 @@ export interface FavoriteItem {
   _id: string;
   name: string;
   type: string;
+  subtype?: string;
   uniId: string;
   price: number;
   image: string;
@@ -59,8 +62,10 @@ export interface ApiFavoritesResponse {
 export interface ApiItem {
   _id: string;
   name: string;
+  description?: string;
   image: string;
   type: string;
+  subtype?: string;
   isSpecial: string;
   collegeId?: string;
   category?: string;

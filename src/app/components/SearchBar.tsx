@@ -21,6 +21,7 @@ interface FoodItem {
   _id: string;
   name: string;
   type: string;
+  subtype?: string;
   price: number;
   image: string;
   isSpecial: string;
@@ -35,6 +36,7 @@ interface VendorItem {
   price: number;
   image?: string;
   type?: string;
+  subtype?: string;
   quantity?: number;
   isAvailable?: string;
   _id?: string;
@@ -60,6 +62,7 @@ export interface SearchResult {
   price: number;
   image: string;
   type: string;
+  subtype?: string;
   category: string;
   isSpecial: boolean;
   vendorId?: string;
@@ -277,6 +280,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
               price: item.price || 0,
               image: item.image || '/images/coffee.jpeg',
               type: item.type || 'retail',
+              subtype: item.subtype,
               category: item.type || 'retail',
               isSpecial: false,
               isVendor: false,
@@ -326,6 +330,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             price: item.price || 0,
             image: item.image || '/images/coffee.jpeg',
             type: item.type || 'retail',
+            subtype: item.subtype,
             category: item.type || 'retail',
             isSpecial: false,
             isVendor: false,
@@ -343,6 +348,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             price: item.price || 0,
             image: item.image || '/images/coffee.jpeg',
             type: item.type || 'retail',
+            subtype: item.subtype,
             category: item.type || 'retail',
             isSpecial: false,
             isVendor: false,
@@ -725,6 +731,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
                               image={item.image || '/images/coffee.jpeg'}
                               variant="search-result"
                             />
+                          {(item.type || item.subtype) && (
+                            <p className={styles.itemType}>
+                              {item.type}{item.subtype ? ` • ${item.subtype}` : ''}
+                            </p>
+                          )}
                             {isAuthenticated && (
                               <SearchQuantityControls
                                 item={{
