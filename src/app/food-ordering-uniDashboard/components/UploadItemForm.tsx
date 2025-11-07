@@ -18,6 +18,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
   const [hsnCode, setHsnCode] = useState("");
   const [gstPercentage, setGstPercentage] = useState("");
   const [isSpecial, setIsSpecial] = useState("N");
+  const [isVeg, setIsVeg] = useState(true);
   const [image, setImage] = useState<File | null>(null);
   const [cloudName, setCloudName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -225,6 +226,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
           image: imageUrl,
           uniId: universityId,
           packable,
+          isVeg: isVeg !== undefined ? isVeg : true,
         }),
       });
       if (!res.ok) throw new Error("Failed to create item");
@@ -238,6 +240,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
       setHsnCode("");
       setGstPercentage("");
       setIsSpecial("N");
+      setIsVeg(true);
       setImage(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       setHsnSuggestions([]);
@@ -428,6 +431,31 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
           >
             <Switch.Thumb className="block w-[21px] h-[21px] bg-white rounded-full shadow-[0_2px_2px] shadow-gray-400 transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px]" />
           </Switch.Root>
+        </label>
+        <label 
+          className={styles.label} 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px', 
+            padding: '15px', 
+            backgroundColor: isVeg ? '#f0fdf4' : '#fef2f2', 
+            borderRadius: '8px', 
+            border: `2px solid ${isVeg ? '#22c55e' : '#ef4444'}`,
+            cursor: 'pointer'
+          }}
+          onClick={() => setIsVeg(!isVeg)}
+        >
+          <input
+            type="checkbox"
+            checked={isVeg}
+            onChange={(e) => setIsVeg(e.target.checked)}
+            style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <span style={{ fontWeight: '600', fontSize: '16px', color: isVeg ? '#22c55e' : '#ef4444', userSelect: 'none' }}>
+            {isVeg ? '🟢 Vegetarian' : '🔴 Non-Vegetarian'}
+          </span>
         </label>
         <label className={styles.label}>
           Image

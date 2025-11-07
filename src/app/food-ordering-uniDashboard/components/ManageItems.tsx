@@ -10,11 +10,13 @@ interface Item {
   _id: string;
   name: string;
   type: string;
+  subtype?: string;
   price: number;
   isSpecial: string;
   image: string;
   category: "retail" | "produce";
   packable?: boolean;
+  isVeg?: boolean;
 }
 
 const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
@@ -29,6 +31,11 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
   const [search, setSearch] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
+
+  // Filters
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "retail" | "produce">("all");
+  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [subtypeFilter, setSubtypeFilter] = useState<string>("");
 
   // Fetch both Retail and Produce items
   useEffect(() => {
@@ -109,8 +116,10 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
           name: editData.name,
           price: parseFloat(String(editData.price ?? "")),
           type: editData.type,
+          subtype: editData.subtype,
           image: imageUrl,
           packable: editData.packable,
+          isVeg: editData.isVeg !== undefined ? editData.isVeg : true,
         }),
       });
       if (!res.ok) throw new Error("Failed to update item");
@@ -153,93 +162,208 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
     setItemToDelete(null);
   };
 
-  // Filtered items based on search
-  const filteredItems = items.filter(item =>
-    item.name.toLowerCase().includes(search.toLowerCase()) ||
-    item.type.toLowerCase().includes(search.toLowerCase())
-  );
+  // Derive filters
+  const visibleItemsBase = items.filter((item) => {
+    if (categoryFilter !== "all" && item.category !== categoryFilter) return false;
+    return true;
+  });
+
+  const availableTypes = Array.from(new Set(visibleItemsBase.map((i) => i.type))).sort();
+  const availableSubtypes = Array.from(new Set(
+    visibleItemsBase
+      .filter((i) => (typeFilter ? i.type === typeFilter : true))
+      .map((i) => i.subtype || "")
+  ))
+    .filter(Boolean)
+    .sort();
+
+  // Filtered items based on search + filters
+  const filteredItems = visibleItemsBase
+    .filter((item) => (typeFilter ? item.type === typeFilter : true))
+    .filter((item) => (subtypeFilter ? (item.subtype || "") === subtypeFilter : true))
+    .filter((item) =>
+      search.trim()
+        ? item.name.toLowerCase().includes(search.toLowerCase()) ||
+          item.type.toLowerCase().includes(search.toLowerCase()) ||
+          (item.subtype || "").toLowerCase().includes(search.toLowerCase())
+        : true
+    );
+
+  // Group items by category -> type -> subtype
+  const grouped = filteredItems.reduce<Record<string, Record<string, Record<string, Item[]>>>>((acc, item) => {
+    const cat = item.category;
+    const typ = item.type || "Uncategorized";
+    const sub = item.subtype || "—";
+    acc[cat] = acc[cat] || {};
+    acc[cat][typ] = acc[cat][typ] || {};
+    acc[cat][typ][sub] = acc[cat][typ][sub] || [];
+    acc[cat][typ][sub].push(item);
+    return acc;
+  }, {});
 
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Manage Items</h2>
-      <div className={styles.searchBar}>
-        <input
-          type="text"
-          placeholder="Search by name or type..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className={styles.searchInput}
-        />
+      <div className={styles.filtersBar}>
+        <div className={styles.filtersRow}>
+          <select
+            className={styles.select}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as "all" | "retail" | "produce")}
+          >
+            <option value="all">All Categories</option>
+            <option value="retail">Retail</option>
+            <option value="produce">Produce</option>
+          </select>
+          <select
+            className={styles.select}
+            value={typeFilter}
+            onChange={(e) => { setTypeFilter(e.target.value); setSubtypeFilter(""); }}
+          >
+            <option value="">All Types</option>
+            {availableTypes.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <select
+            className={styles.select}
+            value={subtypeFilter}
+            onChange={(e) => setSubtypeFilter(e.target.value)}
+            disabled={availableSubtypes.length === 0}
+          >
+            <option value="">All Subtypes</option>
+            {availableSubtypes.map((st) => (
+              <option key={st} value={st}>{st}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            placeholder="Search by name, type, subtype..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className={styles.searchInput}
+          />
+        </div>
       </div>
       {loading ? <p>Loading items...</p> : error ? <p style={{ color: 'red' }}>{error}</p> : (
         <div>
           {filteredItems.length === 0 ? <p>No items found.</p> : (
-            <table className={styles.table}>
-              <thead className={styles.thead}>
-                <tr>
-                  <th className={styles.th}>Image</th>
-                  <th className={styles.th}>Name</th>
-                  <th className={styles.th}>Type</th>
-                  <th className={styles.th}>Price</th>
-                  <th className={styles.th}>Packable</th>
-                  <th className={styles.th}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map(item => (
-                  <tr key={item._id} style={{ borderBottom: '1px solid #e0e7ff', background: editItem && editItem._id === item._id ? '#f0f7ff' : '#fff' }}>
-                    <td style={{ padding: 10, textAlign: 'center' }}>
-                      <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, boxShadow: '0 1px 4px rgba(99,102,241,0.08)' }} />
-                    </td>
-                    <td style={{ padding: 10 }}>
-                      {editItem && editItem._id === item._id ? (
-                        <input name="name" value={editData.name ?? ""} onChange={handleEditChange} style={{ padding: '0.4rem 0.7rem', borderRadius: 6, border: '1px solid #a5b4fc', fontSize: '1rem' }} />
-                      ) : item.name}
-                    </td>
-                    <td style={{ padding: 10 }}>
-                      {editItem && editItem._id === item._id ? (
-                        <input name="type" value={editData.type ?? ""} onChange={handleEditChange} style={{ padding: '0.4rem 0.7rem', borderRadius: 6, border: '1px solid #a5b4fc', fontSize: '1rem' }} />
-                      ) : item.type}
-                    </td>
-                    <td style={{ padding: 10 }}>
-                      {editItem && editItem._id === item._id ? (
-                        <input name="price" type="number" value={String(editData.price ?? "")} onChange={handleEditChange} style={{ padding: '0.4rem 0.7rem', borderRadius: 6, border: '1px solid #a5b4fc', fontSize: '1rem', width: 80 }} />
-                      ) : item.price}
-                    </td>
-                    <td style={{ padding: 10 }}>
-                      {editItem && editItem._id === item._id ? (
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                          <span>Packable</span>
-                          <Switch.Root
-                            className="w-[42px] h-[25px] bg-gray-200 rounded-full relative shadow-[0_2px_10px] shadow-gray-400 focus:shadow-[0_0_0_2px] focus:shadow-black data-[state=checked]:bg-blue-600 outline-none cursor-default"
-                            checked={!!editData.packable}
-                            onCheckedChange={(checked) => setEditData(prev => ({ ...prev, packable: checked }))}
-                          >
-                            <Switch.Thumb className="block w-[21px] h-[21px] bg-white rounded-full shadow-[0_2px_2px] shadow-gray-400 transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px]" />
-                          </Switch.Root>
-                        </label>
-                      ) : item.packable ? 'Yes' : 'No'}
-                    </td>
-                    <td style={{ padding: 10, minWidth: 160 }}>
-                      {editItem && editItem._id === item._id ? (
-                        <form onSubmit={handleEditSubmit} style={{ display: 'inline' }}>
-                          <input type="file" accept="image/*" onChange={handleEditImage} style={{ marginBottom: 6 }} />
-                          <button type="submit" disabled={editLoading} style={{ marginRight: 8, padding: '0.4rem 1rem', borderRadius: 6, background: 'linear-gradient(90deg, #4ea199, #6fc3bd)', color: '#fff', border: 'none', fontWeight: 500 }}>{editLoading ? 'Saving...' : 'Save'}</button>
-                          <button type="button" onClick={() => setEditItem(null)} disabled={editLoading} style={{ padding: '0.4rem 1rem', borderRadius: 6, background: '#e0e7ff', color: '#333', border: 'none', fontWeight: 500 }}>Cancel</button>
-                        </form>
-                      ) : (
-                        <>
-                          <button className={styles.editButton} onClick={() => handleEdit(item)} style={{ marginRight: 8, padding: '0.4rem 1rem', borderRadius: 6, background: 'linear-gradient(90deg, #4ea199, #6fc3bd)', color: '#fff', border: 'none', fontWeight: 500 }}>Edit</button>
-                          <button className={styles.deleteButton} onClick={() => handleDelete(item)} disabled={deleteLoading === item._id} style={{ padding: '0.4rem 1rem', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 500 }}>
-                            {deleteLoading === item._id ? 'Deleting...' : 'Delete'}
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
+            Object.entries(grouped).map(([cat, types]) => (
+              <div key={cat} className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <span className={styles.sectionBadge}>{cat.toUpperCase()}</span>
+                </div>
+                {Object.entries(types).map(([typ, subtypes]) => (
+                  <div key={typ} className={styles.typeBlock}>
+                    <h3 className={styles.typeTitle}>{typ}</h3>
+                    {Object.entries(subtypes).map(([sub, list]) => (
+                      <div key={cat + typ + sub} className={styles.subtypeBlock}>
+                        <div className={styles.subtypeHeader}>
+                          <span className={styles.subtypeBadge}>{sub === '—' ? 'No Subtype' : sub}</span>
+                          <span className={styles.count}>{list.length} item{list.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <table className={styles.table}>
+                          <thead className={styles.thead}>
+                            <tr>
+                              <th className={styles.th}>Image</th>
+                              <th className={styles.th}>Name</th>
+                              <th className={styles.th}>Type</th>
+                              <th className={styles.th}>Subtype</th>
+                              <th className={styles.th}>Price</th>
+                              <th className={styles.th}>Packable</th>
+                              <th className={styles.th}>Veg/Non-Veg</th>
+                              <th className={styles.th}>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {list.map((item) => (
+                              <tr key={item._id} style={{ borderBottom: '1px solid #e0e7ff', background: editItem && editItem._id === item._id ? '#f0f7ff' : '#fff' }}>
+                                <td style={{ padding: 10, textAlign: 'center' }}>
+                                  <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, boxShadow: '0 1px 4px rgba(99,102,241,0.08)' }} />
+                                </td>
+                                <td style={{ padding: 10 }}>
+                                  {editItem && editItem._id === item._id ? (
+                                    <input name="name" value={editData.name ?? ""} onChange={handleEditChange} className={styles.input} />
+                                  ) : item.name}
+                                </td>
+                                <td style={{ padding: 10 }}>
+                                  {editItem && editItem._id === item._id ? (
+                                    <input name="type" value={editData.type ?? ""} onChange={handleEditChange} className={styles.input} />
+                                  ) : item.type}
+                                </td>
+                                <td style={{ padding: 10 }}>
+                                  {editItem && editItem._id === item._id ? (
+                                    <input name="subtype" value={editData.subtype ?? ""} onChange={handleEditChange} className={styles.input} placeholder="Subtype (optional)" />
+                                  ) : (item.subtype || '—')}
+                                </td>
+                                <td style={{ padding: 10 }}>
+                                  {editItem && editItem._id === item._id ? (
+                                    <input name="price" type="number" value={String(editData.price ?? "")} onChange={handleEditChange} className={styles.input} />
+                                  ) : item.price}
+                                </td>
+                                <td style={{ padding: 10 }}>
+                                  {editItem && editItem._id === item._id ? (
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                      <span>Packable</span>
+                                      <Switch.Root
+                                        className="w-[42px] h-[25px] bg-gray-200 rounded-full relative shadow-[0_2px_10px] shadow-gray-400 focus:shadow-[0_0_0_2px] focus:shadow-black data-[state=checked]:bg-blue-600 outline-none cursor-default"
+                                        checked={!!editData.packable}
+                                        onCheckedChange={(checked) => setEditData(prev => ({ ...prev, packable: checked }))}
+                                      >
+                                        <Switch.Thumb className="block w-[21px] h-[21px] bg-white rounded-full shadow-[0_2px_2px] shadow-gray-400 transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px]" />
+                                      </Switch.Root>
+                                    </label>
+                                  ) : item.packable ? 'Yes' : 'No'}
+                                </td>
+                                <td style={{ padding: 10 }}>
+                                  {editItem && editItem._id === item._id ? (
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                      <span>Veg</span>
+                                      <Switch.Root
+                                        className="w-[42px] h-[25px] bg-gray-200 rounded-full relative shadow-[0_2px_10px] shadow-gray-400 focus:shadow-[0_0_0_2px] focus:shadow-black data-[state=checked]:bg-green-600 outline-none cursor-default"
+                                        checked={editData.isVeg !== undefined ? editData.isVeg : (item.isVeg !== undefined ? item.isVeg : true)}
+                                        onCheckedChange={(checked) => setEditData(prev => ({ ...prev, isVeg: checked }))}
+                                      >
+                                        <Switch.Thumb className="block w-[21px] h-[21px] bg-white rounded-full shadow-[0_2px_2px] shadow-gray-400 transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px]" />
+                                      </Switch.Root>
+                                    </label>
+                                  ) : (
+                                    <span style={{ 
+                                      color: (item.isVeg !== false) ? '#22c55e' : '#ef4444',
+                                      fontWeight: 'bold'
+                                    }}>
+                                      {(item.isVeg !== false) ? '🟢 Veg' : '🔴 Non-Veg'}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className={styles.actionCell}>
+                                  {editItem && editItem._id === item._id ? (
+                                    <form onSubmit={handleEditSubmit} className={styles.actionForm}>
+                                      <input type="file" accept="image/*" onChange={handleEditImage} className={styles.fileInput} />
+                                      <div className={styles.actionButtons}>
+                                        <button type="submit" disabled={editLoading} className={styles.button + ' ' + styles.buttonEdit}>{editLoading ? 'Saving...' : 'Save'}</button>
+                                        <button type="button" onClick={() => setEditItem(null)} disabled={editLoading} className={styles.button + ' ' + styles.buttonCancel}>Cancel</button>
+                                      </div>
+                                    </form>
+                                  ) : (
+                                    <div className={styles.actionButtons}>
+                                      <button className={styles.button + ' ' + styles.buttonEdit} onClick={() => handleEdit(item)}>Edit</button>
+                                      <button className={styles.button + ' ' + styles.buttonDelete} onClick={() => handleDelete(item)} disabled={deleteLoading === item._id}>
+                                        {deleteLoading === item._id ? 'Deleting...' : 'Delete'}
+                                      </button>
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            ))
           )}
         </div>
       )}

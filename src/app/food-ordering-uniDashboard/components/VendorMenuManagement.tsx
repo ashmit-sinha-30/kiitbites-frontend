@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import styles from "../styles/VendorMenuManagement.module.scss";
 import Modal from "react-modal";
 import { toast } from "react-toastify";
@@ -27,6 +27,7 @@ interface MenuItem {
   packable: boolean;
   isSpecial?: "Y" | "N";
   isAvailable?: "Y" | "N";
+  isVeg?: boolean;
   inventory?: {
     isSpecial: "Y" | "N";
     isAvailable: "Y" | "N";
@@ -61,6 +62,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
     quantity: "",
     isSpecial: "N" as "Y" | "N",
     packable: false,
+    isVeg: true,
     image: null as File | null,
     imageUrl: ""
   });
@@ -185,7 +187,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
     setShowHsnSuggestions(false);
   };
 
-  const fetchVendorData = async () => {
+  const fetchVendorData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -238,9 +240,9 @@ export function VendorMenuManagement({ vendorId }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [universityId, vendorId]);
 
-  const fetchTypes = async () => {
+  const fetchTypes = useCallback(async () => {
     try {
       const endpoint = activeTab === "retail" ? "/api/item/types/retail" : "/api/item/types/produce";
       const res = await fetch(`${BACKEND_URL}${endpoint}`);
@@ -250,7 +252,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
       console.error("Error fetching types:", err);
       setTypes([]);
     }
-  };
+  }, [activeTab]);
 
   const fetchCloudName = async () => {
     try {
@@ -308,6 +310,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
           image: imageUrl,
           uniId: universityId,
           packable: formData.packable,
+          isVeg: formData.isVeg !== undefined ? formData.isVeg : true,
           vendorId: vendorId, // Add vendor-specific flag
           hsnCode: formData.hsnCode,
           gstPercentage: parseFloat(formData.gstPercentage),
@@ -375,6 +378,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
           isSpecial: formData.isSpecial,
           image: imageUrl,
           packable: formData.packable,
+          isVeg: formData.isVeg !== undefined ? formData.isVeg : true,
           hsnCode: formData.hsnCode,
           gstPercentage: parseFloat(formData.gstPercentage),
           sgstPercentage: taxDetails?.sgstPercentage,
@@ -449,6 +453,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
       quantity: "",
       isSpecial: "N",
       packable: false,
+      isVeg: true,
       image: null,
       imageUrl: ""
     });
@@ -468,6 +473,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
       quantity: (item.quantity?.toString() || item.inventory?.quantity?.toString() || ""),
       isSpecial: item.inventory?.isSpecial || item.isSpecial || "N",
       packable: item.packable,
+      isVeg: item.isVeg !== undefined ? item.isVeg : true,
       image: null,
       imageUrl: item.image || ""
     });
@@ -494,11 +500,11 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
   useEffect(() => {
     if (universityId) fetchVendorData();
-  }, [universityId]);
+  }, [universityId, fetchVendorData]);
 
   useEffect(() => {
     fetchTypes();
-  }, [activeTab]);
+  }, [activeTab, fetchTypes]);
 
   if (loading) {
     return (
@@ -658,6 +664,12 @@ export function VendorMenuManagement({ vendorId }: Props) {
                 )}
                 {/* For image: if item.image is missing, show a placeholder. To show the real image, the backend must populate it or fetch by itemId. */}
                 {item.packable && <p><strong>Packable:</strong> Yes</p>}
+                <p style={{ 
+                  color: (item.isVeg !== false) ? '#22c55e' : '#ef4444',
+                  fontWeight: 'bold'
+                }}>
+                  <strong>Type:</strong> {(item.isVeg !== false) ? '🟢 Veg' : '🔴 Non-Veg'}
+                </p>
               </div>
               <div className={styles.itemActions}>
                 <button
@@ -850,6 +862,17 @@ export function VendorMenuManagement({ vendorId }: Props) {
               onChange={(e) => setFormData({ ...formData, packable: e.target.checked })}
             />
             Packable
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', marginBottom: '10px', padding: '10px', backgroundColor: formData.isVeg ? '#f0fdf4' : '#fef2f2', borderRadius: '6px', border: `2px solid ${formData.isVeg ? '#22c55e' : '#ef4444'}` }}>
+            <input
+              type="checkbox"
+              checked={formData.isVeg}
+              onChange={(e) => setFormData({ ...formData, isVeg: e.target.checked })}
+              style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+            />
+            <span style={{ fontWeight: '600', fontSize: '15px', color: formData.isVeg ? '#22c55e' : '#ef4444' }}>
+              {formData.isVeg ? '🟢 Vegetarian' : '🔴 Non-Vegetarian'}
+            </span>
           </label>
           <label>
             Image
@@ -1044,6 +1067,17 @@ export function VendorMenuManagement({ vendorId }: Props) {
               onChange={(e) => setFormData({ ...formData, packable: e.target.checked })}
             />
             Packable
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', marginBottom: '10px', padding: '10px', backgroundColor: formData.isVeg ? '#f0fdf4' : '#fef2f2', borderRadius: '6px', border: `2px solid ${formData.isVeg ? '#22c55e' : '#ef4444'}` }}>
+            <input
+              type="checkbox"
+              checked={formData.isVeg}
+              onChange={(e) => setFormData({ ...formData, isVeg: e.target.checked })}
+              style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+            />
+            <span style={{ fontWeight: '600', fontSize: '15px', color: formData.isVeg ? '#22c55e' : '#ef4444' }}>
+              {formData.isVeg ? '🟢 Vegetarian' : '🔴 Non-Vegetarian'}
+            </span>
           </label>
           <label>
             Image

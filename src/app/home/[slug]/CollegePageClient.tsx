@@ -6,7 +6,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./styles/global.css";
 import styles from "./styles/CollegePage.module.scss";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import FavoritesSection from "./components/FavoritesSection";
@@ -24,6 +24,14 @@ import {
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 // Categories will be dynamically generated from fetched items
+
+// Normalize college name for matching
+const normalizeName = (name: string) =>
+  name
+    ?.toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-") || "";
 
 const CustomPrevArrow = (props: { onClick?: () => void }) => (
   <button
@@ -85,23 +93,15 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
 
   const currentRequest = useRef<number>(0);
 
-  // Normalize college name for matching
-  const normalizeName = (name: string) =>
-    name
-      ?.toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "")
-      .replace(/-+/g, "-") || "";
-
   // Update URL with college ID
-  const updateUrlWithCollegeId = (collegeId: string) => {
+  const updateUrlWithCollegeId = useCallback((collegeId: string) => {
     const currentPath = window.location.pathname;
     const newUrl = `${currentPath}?cid=${collegeId}`;
     window.history.replaceState({}, "", newUrl);
-  };
+  }, []);
 
   // Get college list and match collegeName to get actual college id
-  const fetchCollegesAndSetUniId = async (collegeSlug: string) => {
+  const fetchCollegesAndSetUniId = useCallback(async (collegeSlug: string) => {
     try {
       setLoading(true);
       const response = await fetch(`${BACKEND_URL}/api/user/auth/list`, {
@@ -139,7 +139,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       setLoading(false);
       return false;
     }
-  };
+  }, [updateUrlWithCollegeId]);
 
   // On load, determine uniId from multiple sources:
   useEffect(() => {
@@ -191,7 +191,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     return () => {
       isMounted = false;
     };
-  }, [slug, searchParams]);
+  }, [slug, searchParams, fetchCollegesAndSetUniId]);
 
   // Fetch user & favorites
   useEffect(() => {
@@ -594,27 +594,22 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
               const categoryKey = `${category}-${type}`;
               const subtypes = categorySubtypes[categoryKey] || [];
               
-              // If this category has subtypes, show separate sections for each subtype
+              // If this category has subtypes, show type heading first, then subtypes below
               if (subtypes.length > 0) {
                 return (
                   <section key={categoryKey} style={{ marginBottom: 32 }}>
-                    {subtypes.map((subtype) => {
-                      const subtypeKey = `${categoryKey}-${subtype}`;
-                      const subtypeItems = items[subtypeKey] || [];
-                      
-                      return (
-                        <div key={subtypeKey} style={{ marginBottom: 24 }}>
-                          <CategorySection
-                            categoryItems={subtypeItems}
-                            categoryTitle={`${type} - ${subtype}`}
-                            sliderSettings={sliderSettings}
-                            userId={userId}
-                            categories={categories}
-                          />
-                        </div>
-                      );
-                    })}
-                    {/* Also show items without subtype if they exist */}
+                    {/* Show Type as a visible heading */}
+                    <div style={{ marginBottom: 16 }}>
+                      <h3 className={styles.categoryTitle} style={{ 
+                        fontWeight: 600, 
+                        fontSize: 22, 
+                        marginBottom: 12,
+                        textTransform: 'capitalize'
+                      }}>
+                        {type.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </h3>
+                    </div>
+                    {/* First show items without subtype if they exist */}
                     {items[categoryKey] && items[categoryKey].length > 0 && (
                       <div style={{ marginBottom: 24 }}>
                         <CategorySection
@@ -626,6 +621,23 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                         />
                       </div>
                     )}
+                    {/* Then show subtypes below */}
+                    {subtypes.map((subtype) => {
+                      const subtypeKey = `${categoryKey}-${subtype}`;
+                      const subtypeItems = items[subtypeKey] || [];
+                      
+                      return (
+                        <div key={subtypeKey} style={{ marginBottom: 24 }}>
+                          <CategorySection
+                            categoryItems={subtypeItems}
+                            categoryTitle={subtype}
+                            sliderSettings={sliderSettings}
+                            userId={userId}
+                            categories={categories}
+                          />
+                        </div>
+                      );
+                    })}
                   </section>
                 );
               } else {
