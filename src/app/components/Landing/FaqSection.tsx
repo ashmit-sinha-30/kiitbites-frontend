@@ -68,38 +68,61 @@ const FaqSection: React.FC = () => {
   ];
 
   return (
-    <section id="faqs" className="section bg-gray-50">
+    <section id="faqs" className="section bg-gradient-to-b from-gray-50 to-white section-divider">
       <div className="container mx-auto px-4">
         <SectionTitle
           title="Frequently Asked Questions"
           subtitle="Everything you need to know about KAMPYN"
         />
 
-        <div className="max-w-3xl mx-auto reveal">
-          <Accordion type="single" collapsible className="w-full">
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left font-medium text-bitesbay-text hover:text-bitesbay-accent">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-gray-600">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+        <div className="max-w-4xl mx-auto reveal">
+          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-gray-100">
+            <Accordion type="single" collapsible className="w-full">
+              {faqs.map((faq, index) => (
+                <AccordionItem 
+                  key={index} 
+                  value={`item-${index}`}
+                  className="border-b border-gray-100 last:border-b-0 px-4 py-2 hover:bg-gray-50/50 transition-colors rounded-lg"
+                >
+                  <AccordionTrigger className="text-left font-semibold text-bitesbay-text hover:text-bitesbay-accent transition-colors py-4 text-base md:text-lg">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-gray-600 leading-relaxed pt-2 pb-4 text-base">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
         </div>
 
         <div className="mt-12 text-center reveal">
-          <p className="text-gray-600 mb-4">
-            Have more questions? We&apos;re here to help!
-          </p>
-          <a
-            href="#contact"
-            className="text-bitesbay-accent hover:text-bitesbay-dark font-medium underline"
-          >
-            Contact our support team
-          </a>
+          <div className="bg-gradient-to-r from-bitesbay-light/30 to-bitesbay-accent/10 rounded-xl p-8 max-w-2xl mx-auto border border-bitesbay-light/50">
+            <p className="text-gray-700 mb-4 text-lg font-medium">
+              Have more questions? We&apos;re here to help!
+            </p>
+            <a
+              href="#contact"
+              className="inline-flex items-center gap-2 text-bitesbay-accent hover:text-bitesbay-dark font-semibold text-lg underline decoration-2 underline-offset-4 transition-colors hover:gap-3"
+            >
+              Contact our support team
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="18" 
+                height="18" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                className="transition-transform"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </section>

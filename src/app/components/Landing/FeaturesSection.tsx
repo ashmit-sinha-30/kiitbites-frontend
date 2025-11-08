@@ -174,7 +174,7 @@ const FeaturesSection: React.FC = () => {
   ];
 
   return (
-    <section id="features" className="section bg-white">
+    <section id="features" className="section bg-gradient-to-b from-white to-gray-50 section-divider">
       <div className="container mx-auto px-4">
         <SectionTitle
           title="Key Features"
@@ -182,33 +182,41 @@ const FeaturesSection: React.FC = () => {
         />
 
         <div className="mb-16 reveal">
-          <h3 className="text-xl md:text-2xl font-semibold text-bitesbay-accent mb-8 text-center">
-            For Students
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="text-center mb-12">
+            <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-bitesbay-accent to-bitesbay-text bg-clip-text text-transparent mb-2">
+              For Students
+            </h3>
+            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-bitesbay-accent to-transparent mx-auto rounded-full"></div>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {studentFeatures.map((feature, index) => (
-              <FeatureCard
-                key={`student-${index}`}
-                icon={feature.icon}
-                title={feature.title}
-                description={feature.description}
-              />
+              <div key={`student-${index}`} className="reveal" style={{ animationDelay: `${index * 0.1}s` }}>
+                <FeatureCard
+                  icon={feature.icon}
+                  title={feature.title}
+                  description={feature.description}
+                />
+              </div>
             ))}
           </div>
         </div>
 
         <div className="reveal">
-          <h3 className="text-xl md:text-2xl font-semibold text-bitesbay-accent mb-8 text-center">
-            For Vendors
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="text-center mb-12">
+            <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-bitesbay-accent to-bitesbay-text bg-clip-text text-transparent mb-2">
+              For Vendors
+            </h3>
+            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-bitesbay-accent to-transparent mx-auto rounded-full"></div>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {vendorFeatures.map((feature, index) => (
-              <FeatureCard
-                key={`vendor-${index}`}
-                icon={feature.icon}
-                title={feature.title}
-                description={feature.description}
-              />
+              <div key={`vendor-${index}`} className="reveal" style={{ animationDelay: `${index * 0.1}s` }}>
+                <FeatureCard
+                  icon={feature.icon}
+                  title={feature.title}
+                  description={feature.description}
+                />
+              </div>
             ))}
           </div>
         </div>

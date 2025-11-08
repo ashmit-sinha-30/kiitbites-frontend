@@ -12,6 +12,7 @@ export interface FoodItem {
   vendorId?: string | null;
   quantity?: number;
   isAvailable?: string;
+  isVeg?: boolean;
 }
 
 export interface FavoriteItem {

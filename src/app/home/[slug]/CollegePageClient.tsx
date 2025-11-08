@@ -12,7 +12,6 @@ import "react-toastify/dist/ReactToastify.css";
 import FavoritesSection from "./components/FavoritesSection";
 import SpecialOffersSection from "./components/SpecialOffersSection";
 import CategorySection from "./components/CategorySection";
-import ProductCard from "./components/ProductCard";
 import { CartProvider } from "./context/CartContext";
 import {
   FoodItem,
@@ -141,12 +140,14 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     }
   }, [updateUrlWithCollegeId]);
 
+  // Extract cid from searchParams for stable dependency
+  const cid = searchParams.get("cid");
+
   // On load, determine uniId from multiple sources:
   useEffect(() => {
     let isMounted = true;
 
     const resolveCollegeId = async () => {
-      const cid = searchParams.get("cid");
       const localCollegeId = localStorage.getItem("currentCollegeId");
 
       if (cid) {
@@ -191,7 +192,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     return () => {
       isMounted = false;
     };
-  }, [slug, searchParams, fetchCollegesAndSetUniId]);
+  }, [slug, cid, fetchCollegesAndSetUniId, updateUrlWithCollegeId]);
 
   // Fetch user & favorites
   useEffect(() => {
@@ -264,6 +265,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           price: item.price as number,
           vendorId: (item.vendorId as string) || null,
           quantity: item.quantity as number,
+          isVeg: item.isVeg !== undefined ? (item.isVeg as boolean) : true,
         }));
         const produceItems: FoodItem[] = (produceData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
@@ -278,6 +280,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           price: item.price as number,
           vendorId: (item.vendorId as string) || null,
           isAvailable: item.isAvailable as string,
+          isVeg: item.isVeg !== undefined ? (item.isVeg as boolean) : true,
         }));
         // Track subtypes for each category
         const subtypesMap: { [key: string]: Set<string> } = {};
@@ -439,6 +442,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                   price: (itemData.price as number) || 0,
                   vendorId: vendor._id,
                   quantity: entry.quantity || 0,
+                  isVeg: itemData.isVeg !== undefined ? (itemData.isVeg as boolean) : true,
                 });
               }
             }
@@ -460,6 +464,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                   price: (itemData.price as number) || 0,
                   vendorId: vendor._id,
                   isAvailable: entry.isAvailable || 'N',
+                  isVeg: itemData.isVeg !== undefined ? (itemData.isVeg as boolean) : true,
                 });
               }
             }
@@ -507,11 +512,9 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       isSpecial: item.isSpecial,
       price: item.price,
       vendorId: item.vendorId,
+      isVeg: true, // Default to veg for favorites
     };
   };
-
-  // Aggregate all items for fallback display
-  const allItemsFlat = Object.values(items).flat();
 
   if (loading) {
     return (
@@ -569,96 +572,76 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             )}
           </h1>
 
-          {/* Fallback: Show all items if no category has items */}
-          {allItemsFlat.length > 0 && Object.values(items).every(arr => arr.length === 0) && (
-            <section style={{ marginBottom: 32 }}>
-              <h3 style={{ fontWeight: 600, fontSize: 22, marginBottom: 12 }}>
-                All Items (Fallback)
-              </h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                {allItemsFlat.map(item => (
-                  <div key={item.id} style={{ minWidth: 220, maxWidth: 260 }}>
-                    <ProductCard
-                      item={item}
-                      categories={categories}
-                      userId={userId}
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          {/* Render menu by type (retail/produce) first, then categories, then subtypes */}
+          {Object.entries(categories).map(([itemType, types]) => {
+            // Only render if there are types for this item type
+            if (types.length === 0) return null;
 
-          {Object.entries(categories).map(([category, types]) =>
-            types.map((type) => {
-              const categoryKey = `${category}-${type}`;
-              const subtypes = categorySubtypes[categoryKey] || [];
-              
-              // If this category has subtypes, show type heading first, then subtypes below
-              if (subtypes.length > 0) {
-                return (
-                  <section key={categoryKey} style={{ marginBottom: 32 }}>
-                    {/* Show Type as a visible heading */}
-                    <div style={{ marginBottom: 16 }}>
-                      <h3 className={styles.categoryTitle} style={{ 
-                        fontWeight: 600, 
-                        fontSize: 22, 
-                        marginBottom: 12,
-                        textTransform: 'capitalize'
-                      }}>
+            return (
+              <div key={itemType} className={styles.itemTypeSection}>
+                {types.map((type) => {
+                  const categoryKey = `${itemType}-${type}`;
+                  const subtypes = categorySubtypes[categoryKey] || [];
+                  const itemsWithoutSubtype = items[categoryKey] || [];
+                  
+                  // Skip if no items at all for this category
+                  if (itemsWithoutSubtype.length === 0 && subtypes.length === 0) return null;
+                  
+                  return (
+                    <div key={categoryKey} className={styles.typeContainer}>
+                      {/* Main Type Heading */}
+                      <h3 className={styles.typeHeading}>
                         {type.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                       </h3>
-                    </div>
-                    {/* First show items without subtype if they exist */}
-                    {items[categoryKey] && items[categoryKey].length > 0 && (
-                      <div style={{ marginBottom: 24 }}>
-                        <CategorySection
-                          categoryItems={items[categoryKey]}
-                          categoryTitle={type}
-                          sliderSettings={sliderSettings}
-                          userId={userId}
-                          categories={categories}
-                        />
-                      </div>
-                    )}
-                    {/* Then show subtypes below */}
-                    {subtypes.map((subtype) => {
-                      const subtypeKey = `${categoryKey}-${subtype}`;
-                      const subtypeItems = items[subtypeKey] || [];
                       
-                      return (
-                        <div key={subtypeKey} style={{ marginBottom: 24 }}>
+                      {/* Items without subtype (if any) */}
+                      {itemsWithoutSubtype.length > 0 && (
+                        <div className={styles.itemsWithoutSubtype}>
                           <CategorySection
-                            categoryItems={subtypeItems}
-                            categoryTitle={subtype}
+                            categoryItems={itemsWithoutSubtype}
+                            categoryTitle={type}
                             sliderSettings={sliderSettings}
                             userId={userId}
                             categories={categories}
+                            hideTitle={true}
                           />
                         </div>
-                      );
-                    })}
-                  </section>
-                );
-              } else {
-                // No subtypes, show as before
-                const categoryItems = items[categoryKey] || [];
-                console.log('DEBUG category:', categoryKey, 'items:', categoryItems.length);
-
-                return (
-                  <section key={categoryKey} style={{ marginBottom: 32 }}>
-                    <CategorySection
-                      categoryItems={categoryItems}
-                      categoryTitle={type}
-                      sliderSettings={sliderSettings}
-                      userId={userId}
-                      categories={categories}
-                    />
-                  </section>
-                );
-              }
-            })
-          )}
+                      )}
+                      
+                      {/* Subtypes */}
+                      {subtypes.length > 0 && (
+                        <div className={styles.subtypesContainer}>
+                          {itemsWithoutSubtype.length > 0 && (
+                            <div className={styles.subtypeDivider}>
+                              <span>Subtypes</span>
+                            </div>
+                          )}
+                          {subtypes.map((subtype) => {
+                            const subtypeKey = `${categoryKey}-${subtype}`;
+                            const subtypeItems = items[subtypeKey] || [];
+                            
+                            if (subtypeItems.length === 0) return null;
+                            
+                            return (
+                              <div key={subtypeKey} className={styles.subtypeSection}>
+                                <CategorySection
+                                  categoryItems={subtypeItems}
+                                  categoryTitle={subtype}
+                                  sliderSettings={sliderSettings}
+                                  userId={userId}
+                                  categories={categories}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
 
           {userId && (
             <FavoritesSection

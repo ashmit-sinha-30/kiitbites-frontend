@@ -65,7 +65,7 @@ const CollegesSection: React.FC = () => {
 //   ];
 
   return (
-    <section id="colleges" className="section bg-white">
+    <section id="colleges" className="section bg-gradient-to-b from-white to-gray-50 section-divider">
       <div className="container mx-auto px-4">
         <SectionTitle
           title="Our Partner Colleges"
@@ -73,66 +73,53 @@ const CollegesSection: React.FC = () => {
         />
 
         <div className="reveal">
-          {/* <div className="relative overflow-hidden w-full py-8">
-            <div className="flex animate-scroll-x whitespace-nowrap">
-              {colleges.map((college, index) => (
-                <div
-                  key={`college-1-${index}`}
-                  className="flex-shrink-0 w-[200px] mx-6 opacity-90 hover:opacity-100 transition-opacity"
+          <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12 border border-gray-100 max-w-4xl mx-auto">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-bitesbay-light to-bitesbay-accent/20 mb-6">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="40" 
+                  height="40" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                  className="text-bitesbay-accent"
                 >
-                  <img
-                    src={college.logo}
-                    alt={college.name}
-                    className="h-20 object-contain"
-                  />
-                </div>
-              ))}
-              
-              {/* Duplicated set for seamless scrolling */}
-              {/* {colleges.map((college, index) => (
-                <div
-                  key={`college-2-${index}`}
-                  className="flex-shrink-0 w-[200px] mx-6 opacity-90 hover:opacity-100 transition-opacity"
-                >
-                  <img
-                    src={college.logo}
-                    alt={college.name}
-                    className="h-20 object-contain"
-                  />
-                </div>
-              ))}
-            </div> */}
-            
-            {/* Gradient masks for smooth fade in/out */}
-            {/* <div className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-white to-transparent z-10"></div>
-            <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-white to-transparent z-10"></div>
-          </div> 
-           */}
-          <div className="text-center mt-12">
-            <p className="text-lg text-bitesbay-text font-medium">
-              Want to bring KAMPYN to your campus?
-            </p>
-            <a 
-              href="/help" 
-              className="text-bitesbay-accent hover:text-bitesbay-dark inline-flex items-center mt-2 font-medium transition-colors"
-            >
-              Contact us to learn more
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="16" 
-                height="16" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-                className="ml-1"
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                  <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg>
+              </div>
+              <p className="text-xl md:text-2xl text-bitesbay-text font-semibold mb-4">
+                Want to bring KAMPYN to your campus?
+              </p>
+              <p className="text-gray-600 mb-8 text-lg">
+                Join our growing network of partner colleges and help your students enjoy convenient food delivery on campus.
+              </p>
+              <a 
+                href="/help" 
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-bitesbay-accent to-bitesbay-text text-white font-semibold rounded-lg hover:from-bitesbay-dark hover:to-bitesbay-accent transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
-              </svg>
-            </a>
+                Contact us to learn more
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                  className="transition-transform group-hover:translate-x-1"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </div>

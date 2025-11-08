@@ -4,7 +4,15 @@ import Link from "next/link";
 
 const HeroSection: React.FC = () => {
   return (
-    <div className="relative overflow-hidden bg-[#e0f5f0] min-h-[80vh] sm:min-h-screen lg:min-h-[70vh] flex flex-col justify-center sm:pt-16 lg:pt-8">
+    <div className="relative overflow-hidden bg-gradient-to-br from-[#e0f5f0] via-[#f0f9f8] to-[#d3eeea] min-h-[80vh] sm:min-h-screen lg:min-h-[75vh] flex flex-col justify-center sm:pt-16 lg:pt-8">
+      {/* Animated Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 2px 2px, #01796f 1px, transparent 0)`,
+          backgroundSize: '40px 40px'
+        }}></div>
+      </div>
+
       {/* Background Buildings - CSS Only */}
       <div className="absolute right-0 top-0 h-full w-full overflow-hidden">
         <div className="buildings-container">
@@ -14,68 +22,86 @@ const HeroSection: React.FC = () => {
         </div>
       </div>
 
+      {/* Enhanced Gradient Overlay */}
       <div
-        className="absolute inset-0 bg-gradient-to-br from-green-300 via-white to-green-500 opacity-70 z-0"
+        className="absolute inset-0 bg-gradient-to-br from-[#a5d6d3]/30 via-transparent to-[#54a6a1]/20 z-0"
         aria-hidden="true"
       ></div>
 
+      {/* Decorative shapes */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-[#4ea199]/10 rounded-full blur-3xl animate-float"></div>
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-[#01796f]/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
+
       <div className="container mx-auto px-4 py-12 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
           {/* Left column with text */}
-          <div className="max-w-xl lg:ml-12">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#0e6e6e] leading-tight mb-4">
-              <span className="block text-bitesbay-text mb-4">
+          <div className="max-w-xl lg:ml-12 reveal">
+            <div className="mb-4">
+              <span className="inline-block px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full text-sm font-semibold text-bitesbay-accent border border-bitesbay-light/50 shadow-sm">
+                🎓 Campus Food Delivery
+              </span>
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-6">
+              <span className="block mb-2 bg-gradient-to-r from-[#0e6e6e] via-[#4ea199] to-[#01796f] bg-clip-text text-transparent">
                 Your Campus.
               </span>
-              <span className="block text-bitesbay-text mb-4">
+              <span className="block mb-2 bg-gradient-to-r from-[#0e6e6e] via-[#4ea199] to-[#01796f] bg-clip-text text-transparent">
                 Your Cravings.
               </span>
-              <span className="text-bitesbay-accent">Our Command.</span>
+              <span className="block text-bitesbay-accent drop-shadow-sm">
+                Our Command.
+              </span>
             </h1>
-            <p className="text-lg md:text-xl text-gray-700 mb-8">
+            <p className="text-lg md:text-xl text-gray-700 mb-8 leading-relaxed max-w-lg">
               Order from campus-exclusive vendors in minutes. Skip the lines and
               enjoy your favorite campus food delivered right to your doorstep.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button
                 asChild
-                className="bg-[#0e6e6e] hover:bg-[#0a5858] text-white px-8 py-6 rounded-md text-lg"
+                className="bg-gradient-to-r from-[#0e6e6e] to-[#01796f] hover:from-[#0a5858] hover:to-[#025e57] text-white px-8 py-6 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               >
                 <Link href="/home">Order Now</Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
-                className="border-[#0e6e6e] text-[#0e6e6e] hover:bg-[#d3eeea] px-8 py-6 rounded-md text-lg"
+                className="border-2 border-[#0e6e6e] text-[#0e6e6e] hover:bg-[#d3eeea] px-8 py-6 rounded-lg text-lg font-semibold transition-all duration-300 transform hover:scale-105 bg-white/80 backdrop-blur-sm"
               >
                 <Link href="/about">Learn More</Link>
               </Button>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-gray-700">Also Available on</span>
-              <span className="flex items-center gap-1">
-                <span className="w-5 h-5 text-gray-700 flex items-center justify-center">
-                  <AppleIcon />
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="text-gray-600 font-medium">Also Available on</span>
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-2 px-3 py-2 bg-white/60 backdrop-blur-sm rounded-lg border border-gray-200/50 hover:bg-white/80 transition-colors cursor-pointer">
+                  <span className="w-5 h-5 text-gray-700 flex items-center justify-center">
+                    <AppleIcon />
+                  </span>
+                  <span className="text-gray-700 font-medium">iOS</span>
                 </span>
-                <span className="text-gray-700">iOS</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-5 h-5 text-gray-700 flex items-center justify-center">
-                  <AndroidIcon />
+                <span className="flex items-center gap-2 px-3 py-2 bg-white/60 backdrop-blur-sm rounded-lg border border-gray-200/50 hover:bg-white/80 transition-colors cursor-pointer">
+                  <span className="w-5 h-5 text-gray-700 flex items-center justify-center">
+                    <AndroidIcon />
+                  </span>
+                  <span className="text-gray-700 font-medium">Android</span>
                 </span>
-                <span className="text-gray-700">Android</span>
-              </span>
+              </div>
             </div>
           </div>
 
           {/* Right column with image */}
-          <div className="relative w-full max-w-md lg:mr-12">
+          <div className="relative w-full max-w-md lg:max-w-lg lg:mr-12 reveal">
             <div className="relative z-10">
-              <img
-                src="https://res.cloudinary.com/dt45pu5mx/image/upload/v1747823127/f465837f-20c2-43c1-bd47-228aa24cb2c8_z5tdnw.png"
-                alt="Student with food delivery"
-                className="w-full h-auto"
-              />
+              {/* Glow effect behind image */}
+              <div className="absolute inset-0 bg-gradient-to-r from-bitesbay-accent/20 to-bitesbay-light/20 rounded-full blur-3xl transform scale-110"></div>
+              <div className="relative transform hover:scale-105 transition-transform duration-500">
+                <img
+                  src="https://res.cloudinary.com/dt45pu5mx/image/upload/v1747823127/f465837f-20c2-43c1-bd47-228aa24cb2c8_z5tdnw.png"
+                  alt="Student with food delivery"
+                  className="w-full h-auto drop-shadow-2xl"
+                />
+              </div>
             </div>
           </div>
         </div>

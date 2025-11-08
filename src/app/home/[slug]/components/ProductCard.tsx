@@ -1,23 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Minus, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import styles from '../styles/CollegePage.module.scss';
 import { FoodItem, Vendor } from '../types';
 import { useCart } from '../context/CartContext';
 import VendorModal from './VendorModal';
+import ItemDetailModal from './ItemDetailModal';
 import { checkItemAvailability } from '../utils/cartUtils';
 
 interface ProductCardProps {
   item: FoodItem;
   categories?: { retail: string[]; produce: string[] };
   userId?: string | null;
+  onModalOpen?: () => void;
+  onModalClose?: () => void;
 }
 
-const ProductCard = ({ item, categories, userId }: ProductCardProps) => {
+const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: ProductCardProps) => {
   const [showVendorModal, setShowVendorModal] = useState(false);
+  const [showItemDetailModal, setShowItemDetailModal] = useState(false);
   const [availableVendors, setAvailableVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(false);
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
+  const [isDescriptionTruncated, setIsDescriptionTruncated] = useState(false);
   const { cartItems, addItemToCart, increaseItemQuantity, decreaseItemQuantity } = useCart();
 
   // Find the cart item for this product
@@ -35,6 +41,47 @@ const ProductCard = ({ item, categories, userId }: ProductCardProps) => {
       quantity
     });
   }, [cartItems, item.id, cartItem, quantity]);
+
+  // Check if description is truncated
+  useEffect(() => {
+    if (item.description && descriptionRef.current) {
+      const element = descriptionRef.current;
+      // Create a temporary element to measure full text height
+      const tempElement = document.createElement('div');
+      tempElement.style.cssText = window.getComputedStyle(element).cssText;
+      tempElement.style.webkitLineClamp = 'unset';
+      tempElement.style.display = 'block';
+      tempElement.style.visibility = 'hidden';
+      tempElement.style.position = 'absolute';
+      tempElement.style.width = element.offsetWidth + 'px';
+      tempElement.textContent = item.description;
+      document.body.appendChild(tempElement);
+      
+      const fullHeight = tempElement.offsetHeight;
+      const currentHeight = element.offsetHeight;
+      
+      document.body.removeChild(tempElement);
+      
+      // Check if text is truncated (full height > current height with some tolerance)
+      setIsDescriptionTruncated(fullHeight > currentHeight + 5);
+    } else {
+      setIsDescriptionTruncated(false);
+    }
+  }, [item.description]);
+
+  const handleReadMore = () => {
+    setShowItemDetailModal(true);
+    if (onModalOpen) {
+      onModalOpen();
+    }
+  };
+
+  const handleCloseItemDetailModal = () => {
+    setShowItemDetailModal(false);
+    if (onModalClose) {
+      onModalClose();
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!userId) {
@@ -177,20 +224,40 @@ const ProductCard = ({ item, categories, userId }: ProductCardProps) => {
             {item.image ? (
               <img src={item.image} alt={item.title} className={styles.foodImage} />
             ) : null}
+            {/* Veg/Non-Veg Indicator */}
+            {item.isVeg !== undefined && (
+              <div className={styles.vegIndicator}>
+                <span className={item.isVeg ? styles.veg : styles.nonVeg}>
+                  {item.isVeg ? '🟢' : '🔴'} {item.isVeg ? 'Veg' : 'Non-Veg'}
+                </span>
+              </div>
+            )}
           </div>
-          <h4 className={styles.foodTitle}>{item.title}</h4>
-          {(item.category || item.subtype) && (
-            <p className={styles.foodSubtitle}>
-              {item.category}
-              {item.subtype ? ` • ${item.subtype}` : ''}
-            </p>
-          )}
-          {item.description && (
-            <p className={styles.foodSubtitle}>{item.description}</p>
-          )}
-          <p className={styles.foodPrice}>₹{item.price}</p>
+          <div className={styles.foodCardContent}>
+            <h4 className={styles.foodTitle}>{item.title}</h4>
+            {(item.category || item.subtype) && (
+              <p className={styles.foodSubtitle}>
+                {item.category}
+                {item.subtype ? ` • ${item.subtype}` : ''}
+              </p>
+            )}
+            {item.description && (
+              <div className={styles.foodDescriptionContainer}>
+                <p ref={descriptionRef} className={styles.foodDescription}>{item.description}</p>
+                {isDescriptionTruncated && (
+                  <button 
+                    className={styles.readMoreButton}
+                    onClick={handleReadMore}
+                  >
+                    Read More
+                  </button>
+                )}
+              </div>
+            )}
+            <p className={styles.foodPrice}>₹{item.price}</p>
+          </div>
           {userId && (
-            <>
+            <div className={styles.foodCardActions}>
               <div className={styles.quantityControls}>
                 <button
                   className={`${styles.quantityButton} ${quantity === 0 ? styles.disabled : ''}`}
@@ -224,7 +291,7 @@ const ProductCard = ({ item, categories, userId }: ProductCardProps) => {
                   )}
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -236,6 +303,14 @@ const ProductCard = ({ item, categories, userId }: ProductCardProps) => {
         onVendorSelect={handleVendorSelect}
         onConfirm={handleVendorConfirm}
         onCancel={handleCancel}
+      />
+
+      <ItemDetailModal
+        show={showItemDetailModal}
+        item={item}
+        categories={categories}
+        userId={userId}
+        onClose={handleCloseItemDetailModal}
       />
     </>
   );
