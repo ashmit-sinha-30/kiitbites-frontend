@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import CartItemCard from "../components/CartItemCard";
 import ExtrasCard from "../components/ExtrasCard";
@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Script from "next/script";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
 
 interface ExtraItem {
@@ -76,6 +77,10 @@ export default function Cart() {
   // NEW: State for order approval workflow
   const [showWaitingScreen, setShowWaitingScreen] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  // State for scroll arrows
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const extrasListRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -482,6 +487,60 @@ export default function Cart() {
     (extra) => !cart.some((cartItem) => cartItem._id === extra._id)
   );
 
+  // Function to check scroll position and update arrow visibility
+  const checkScrollPosition = () => {
+    const container = extrasListRef.current;
+    if (!container) {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10); // 10px threshold for rounding
+  };
+
+  // Scroll functions - scroll by approximately one card width (160px) + gap (24px)
+  const scrollLeft = () => {
+    const container = extrasListRef.current;
+    if (container) {
+      const scrollAmount = 184; // 160px card + 24px gap
+      container.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    const container = extrasListRef.current;
+    if (container) {
+      const scrollAmount = 184; // 160px card + 24px gap
+      container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
+
+  // Check scroll position on mount, when extras change, and on scroll
+  useEffect(() => {
+    // Use setTimeout to ensure DOM is fully rendered
+    const timeoutId = setTimeout(() => {
+      checkScrollPosition();
+    }, 100);
+
+    const container = extrasListRef.current;
+    if (container) {
+      container.addEventListener("scroll", checkScrollPosition);
+      // Also check on resize
+      window.addEventListener("resize", checkScrollPosition);
+      return () => {
+        clearTimeout(timeoutId);
+        container.removeEventListener("scroll", checkScrollPosition);
+        window.removeEventListener("resize", checkScrollPosition);
+      };
+    }
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [filteredExtras]);
+
   return (
     <>
       {/* 1. Load Razorpay after the page is interactive */}
@@ -540,31 +599,52 @@ export default function Cart() {
           {cart.length > 0 && (
             <section className={styles.extrasSection}>
               <h3>More from {getVendorName(cart[0]?.vendorName)}</h3>
-              <div
-                className={`${styles.extrasList} ${
-                  filteredExtras.length === 1 ? styles.singleCard : ""
-                }`}
-              >
-                {filteredExtras.length > 0 ? (
-                  filteredExtras.map((item) => {
-                    const cartItem = cart.find(
-                      (cartItem) => cartItem._id === item._id
-                    );
-                    const quantity = cartItem?.quantity || 0;
+              <div className={styles.extrasContainer}>
+                {filteredExtras.length > 1 && canScrollLeft && (
+                  <button
+                    className={styles.scrollArrow}
+                    onClick={scrollLeft}
+                    aria-label="Scroll left"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                )}
+                <div
+                  ref={extrasListRef}
+                  className={`${styles.extrasList} ${
+                    filteredExtras.length === 1 ? styles.singleCard : ""
+                  }`}
+                >
+                  {filteredExtras.length > 0 ? (
+                    filteredExtras.map((item) => {
+                      const cartItem = cart.find(
+                        (cartItem) => cartItem._id === item._id
+                      );
+                      const quantity = cartItem?.quantity || 0;
 
-                    return (
-                      <ExtrasCard
-                        key={item._id}
-                        item={item}
-                        onAdd={addToCart}
-                        onIncrease={increaseQty}
-                        onDecrease={decreaseQty}
-                        quantity={quantity}
-                      />
-                    );
-                  })
-                ) : (
-                  <p className={styles.emptyExtras}>No extras available.</p>
+                      return (
+                        <ExtrasCard
+                          key={item._id}
+                          item={item}
+                          onAdd={addToCart}
+                          onIncrease={increaseQty}
+                          onDecrease={decreaseQty}
+                          quantity={quantity}
+                        />
+                      );
+                    })
+                  ) : (
+                    <p className={styles.emptyExtras}>No extras available.</p>
+                  )}
+                </div>
+                {filteredExtras.length > 1 && canScrollRight && (
+                  <button
+                    className={styles.scrollArrow}
+                    onClick={scrollRight}
+                    aria-label="Scroll right"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
                 )}
               </div>
             </section>

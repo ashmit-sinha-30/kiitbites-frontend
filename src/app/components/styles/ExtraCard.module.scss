@@ -11,6 +11,7 @@
   align-items: center;
   min-width: 0;
   overflow: hidden;
+  min-height: 280px;
 
   &:hover {
     transform: translateY(-3px);
@@ -23,6 +24,7 @@
     object-fit: cover;
     border-radius: 0.5rem;
     margin-bottom: 0.5rem;
+    flex-shrink: 0;
   }
 
   h4 {
@@ -32,6 +34,7 @@
     text-align: center;
     color: #01796f;
     word-break: break-word;
+    flex-shrink: 0;
   }
 
   .price {
@@ -39,6 +42,15 @@
     color: #444;
     margin-bottom: 0.4rem;
     word-break: break-word;
+    flex-shrink: 0;
+  }
+
+  p {
+    font-size: 0.85rem;
+    color: #444;
+    margin-bottom: 0.4rem;
+    word-break: break-word;
+    flex-shrink: 0;
   }
 
   button {
@@ -59,6 +71,7 @@
   @media (max-width: 768px) {
     width: 140px;
     padding: 0.6rem;
+    min-height: 260px;
 
     img {
       height: 90px;
@@ -69,6 +82,10 @@
     }
 
     .price {
+      font-size: 0.8rem;
+    }
+
+    p {
       font-size: 0.8rem;
     }
 
@@ -88,6 +105,9 @@
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
+  margin-top: auto;
+  width: 100%;
+  flex-shrink: 0;
 
   &:hover {
     transform: translateY(-1px);
@@ -107,6 +127,9 @@
   background: #f7fafc;
   padding: 0.5rem;
   border-radius: 4px;
+  margin-top: auto;
+  width: 100%;
+  flex-shrink: 0;
 }
 
 .quantityButton {
