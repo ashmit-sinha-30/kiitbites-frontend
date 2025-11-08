@@ -336,6 +336,15 @@
       opacity: 0.9;
     }
   }
+  
+  &.menuSortButton {
+    background: #f59e0b;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background: #d97706;
+    }
+  }
 }
 
 .loading {

@@ -335,6 +335,32 @@
   }
 }
 
+.vegIndicatorBelowName {
+  margin-bottom: 0.5rem;
+  
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    
+    &.veg {
+      background: rgba(34, 197, 94, 0.15);
+      color: #16a34a;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    &.nonVeg {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+  }
+}
+
 .foodImage {
   width: 100%;
   height: 100%;

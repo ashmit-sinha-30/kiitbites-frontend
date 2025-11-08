@@ -224,17 +224,17 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
             {item.image ? (
               <img src={item.image} alt={item.title} className={styles.foodImage} />
             ) : null}
-            {/* Veg/Non-Veg Indicator */}
+          </div>
+          <div className={styles.foodCardContent}>
+            <h4 className={styles.foodTitle}>{item.title}</h4>
+            {/* Veg/Non-Veg Indicator - below the name */}
             {item.isVeg !== undefined && (
-              <div className={styles.vegIndicator}>
+              <div className={styles.vegIndicatorBelowName}>
                 <span className={item.isVeg ? styles.veg : styles.nonVeg}>
                   {item.isVeg ? '🟢' : '🔴'} {item.isVeg ? 'Veg' : 'Non-Veg'}
                 </span>
               </div>
             )}
-          </div>
-          <div className={styles.foodCardContent}>
-            <h4 className={styles.foodTitle}>{item.title}</h4>
             {(item.category || item.subtype) && (
               <p className={styles.foodSubtitle}>
                 {item.category}

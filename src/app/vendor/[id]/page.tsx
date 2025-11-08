@@ -68,6 +68,10 @@ const VendorPage = () => {
   const [searchResults, setSearchResults] = useState<VendorItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
+  // Sort order state
+  const [typeOrder, setTypeOrder] = useState<Array<{ category: string; type: string; sortIndex: number }>>([]);
+  const [subtypeOrder, setSubtypeOrder] = useState<Array<{ category: string; type: string; subtype: string; sortIndex: number }>>([]);
+  
   // Filter states
   const [vegFilter, setVegFilter] = useState<"all" | "veg" | "non-veg">("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "retail" | "produce">("all");
@@ -101,14 +105,96 @@ const VendorPage = () => {
         const vendorData = await vendorResponse.json();
         if (vendorData.success) {
           // Add category information to items (preserve original type field)
-          const retailItems = vendorData.data.retailItems.map((item: VendorItem) => ({
+          let retailItems = vendorData.data.retailItems.map((item: VendorItem) => ({
             ...item,
             category: "retail" as const
           }));
-          const produceItems = vendorData.data.produceItems.map((item: VendorItem) => ({
+          let produceItems = vendorData.data.produceItems.map((item: VendorItem) => ({
             ...item,
             category: "produce" as const
           }));
+          
+          // Fetch sort order (vendor-specific first, then university-wide)
+          if (vendorData.uniID) {
+            setUniversityId(vendorData.uniID);
+            
+            try {
+              // Try vendor-specific sort order first
+              let sortRes = await fetch(
+                `${BACKEND_URL}/api/menu-sort/order?uniId=${vendorData.uniID}&vendorId=${id}`
+              );
+              let sortData = null;
+              
+              if (sortRes.ok) {
+                sortData = await sortRes.json();
+              }
+              
+              // If vendor-specific doesn't exist or failed, try university-wide
+              if (!sortData || !sortData.success) {
+                sortRes = await fetch(
+                  `${BACKEND_URL}/api/menu-sort/order?uniId=${vendorData.uniID}&vendorId=null`
+                );
+                if (sortRes.ok) {
+                  sortData = await sortRes.json();
+                }
+              }
+              
+              if (sortData && sortData.success && sortData.data) {
+                // Store type and subtype order for later use
+                if (sortData.data.typeOrder) {
+                  setTypeOrder(sortData.data.typeOrder);
+                }
+                if (sortData.data.subtypeOrder) {
+                  setSubtypeOrder(sortData.data.subtypeOrder);
+                }
+                
+                // Apply item sort order
+                if (sortData.data.itemOrder) {
+                  const sortMap = new Map<string, number>();
+                  sortData.data.itemOrder.forEach((item: { itemId: string; sortIndex: number }) => {
+                    sortMap.set(item.itemId, item.sortIndex);
+                  });
+                  
+                  // Apply sort order to retail items
+                  if (sortMap.size > 0) {
+                    retailItems = retailItems.sort((a: VendorItem, b: VendorItem) => {
+                      const aIndex = sortMap.get(a.itemId);
+                      const bIndex = sortMap.get(b.itemId);
+                      if (aIndex !== undefined && bIndex !== undefined) {
+                        return aIndex - bIndex;
+                      }
+                      if (aIndex !== undefined) return -1;
+                      if (bIndex !== undefined) return 1;
+                      return a.name.localeCompare(b.name);
+                    });
+                    
+                    // Apply sort order to produce items
+                    produceItems = produceItems.sort((a: VendorItem, b: VendorItem) => {
+                      const aIndex = sortMap.get(a.itemId);
+                      const bIndex = sortMap.get(b.itemId);
+                      if (aIndex !== undefined && bIndex !== undefined) {
+                        return aIndex - bIndex;
+                      }
+                      if (aIndex !== undefined) return -1;
+                      if (bIndex !== undefined) return 1;
+                      return a.name.localeCompare(b.name);
+                    });
+                  }
+                } else {
+                  // If no item order, sort alphabetically
+                  retailItems.sort((a: VendorItem, b: VendorItem) => a.name.localeCompare(b.name));
+                  produceItems.sort((a: VendorItem, b: VendorItem) => a.name.localeCompare(b.name));
+                }
+              } else {
+                // If no sort order at all, sort alphabetically
+                retailItems.sort((a: VendorItem, b: VendorItem) => a.name.localeCompare(b.name));
+                produceItems.sort((a: VendorItem, b: VendorItem) => a.name.localeCompare(b.name));
+              }
+            } catch (err) {
+              console.error("Error fetching sort order:", err);
+              // Continue without sort order if it fails
+            }
+          }
           
           setVendorData({
             ...vendorData,
@@ -117,10 +203,6 @@ const VendorPage = () => {
               produceItems
             }
           });
-          
-          if (vendorData.uniID) {
-            setUniversityId(vendorData.uniID);
-          }
         }
 
         // Fetch user data
@@ -187,16 +269,75 @@ const VendorPage = () => {
     ...(vendorData?.data.produceItems || [])
   ];
 
-  // Get unique types and subtypes for filters
+  // Create type order map (needed for sorting) - only include types that exist in vendor items
+  const typeOrderMap = new Map<string, number>();
+  const vendorTypeSet = new Set<string>();
+  
+  // First, collect all types that actually exist in the vendor's items
+  allItems.forEach(item => {
+    if (item.type) {
+      vendorTypeSet.add(`${item.category || "retail"}-${item.type}`);
+    }
+  });
+  
+  // Only add types to the map if they exist in the vendor's items
+  typeOrder.forEach((item) => {
+    const key = `${item.category}-${item.type}`;
+    if (vendorTypeSet.has(key)) {
+      typeOrderMap.set(key, item.sortIndex);
+    }
+  });
+
+  // Create subtype order map (needed for sorting) - only include subtypes that exist in vendor items
+  const subtypeOrderMap = new Map<string, number>();
+  const vendorSubtypeSet = new Set<string>();
+  
+  // First, collect all subtypes that actually exist in the vendor's items
+  allItems.forEach(item => {
+    if (item.type && item.subtype) {
+      vendorSubtypeSet.add(`${item.category || "retail"}-${item.type}-${item.subtype}`);
+    }
+  });
+  
+  // Only add subtypes to the map if they exist in the vendor's items
+  subtypeOrder.forEach((item) => {
+    const key = `${item.category}-${item.type}-${item.subtype}`;
+    if (vendorSubtypeSet.has(key)) {
+      subtypeOrderMap.set(key, item.sortIndex);
+    }
+  });
+
+  // Get unique types and subtypes for filters, sorted by type order
+  // Only show types that actually exist in the vendor's items
   const uniqueTypes = Array.from(
     new Set(
       allItems
         .map(item => item.type)
         .filter((type): type is string => Boolean(type))
     )
-  ).sort();
+  ).sort((a, b) => {
+    // Try to get category for each type
+    const typeAItems = allItems.filter(item => item.type === a);
+    const typeBItems = allItems.filter(item => item.type === b);
+    const categoryA = typeAItems[0]?.category || "retail";
+    const categoryB = typeBItems[0]?.category || "retail";
+    
+    // Get sort indices (only if type exists in vendor items)
+    const aKey = `${categoryA}-${a}`;
+    const bKey = `${categoryB}-${b}`;
+    const aIndex = typeOrderMap.get(aKey);
+    const bIndex = typeOrderMap.get(bKey);
+    
+    if (aIndex !== undefined && bIndex !== undefined) {
+      return aIndex - bIndex;
+    }
+    if (aIndex !== undefined) return -1;
+    if (bIndex !== undefined) return 1;
+    return a.localeCompare(b);
+  });
 
-  // Get unique subtypes for the selected type
+  // Get unique subtypes for the selected type, sorted by subtype order
+  // Only show subtypes that actually exist in the vendor's items for that type
   const uniqueSubtypes = selectedType
     ? Array.from(
         new Set(
@@ -205,7 +346,24 @@ const VendorPage = () => {
             .map(item => item.subtype)
             .filter((subtype): subtype is string => Boolean(subtype))
         )
-      ).sort()
+      ).sort((a, b) => {
+        // Try to get category for the selected type
+        const typeItems = allItems.filter(item => item.type === selectedType);
+        const category = typeItems[0]?.category || "retail";
+        
+        // Get sort indices (only if subtype exists in vendor items)
+        const aKey = `${category}-${selectedType}-${a}`;
+        const bKey = `${category}-${selectedType}-${b}`;
+        const aIndex = subtypeOrderMap.get(aKey);
+        const bIndex = subtypeOrderMap.get(bKey);
+        
+        if (aIndex !== undefined && bIndex !== undefined) {
+          return aIndex - bIndex;
+        }
+        if (aIndex !== undefined) return -1;
+        if (bIndex !== undefined) return 1;
+        return a.localeCompare(b);
+      })
     : [];
 
   // Comprehensive filtering logic
@@ -245,23 +403,81 @@ const VendorPage = () => {
   }, {} as Record<string, Record<string, VendorItem[]>>);
 
   // Sort types and subtypes (only when grouping)
-  const sortedTypes = isSearching ? [] : Object.keys(groupedItems).sort();
+  // Only include types that have items (groupedItems already filters to vendor's items)
+  const sortedTypes = isSearching ? [] : Object.keys(groupedItems)
+    .filter(type => {
+      // Only include types that have at least one item
+      const typeItems = Object.values(groupedItems[type]).flat();
+      return typeItems.length > 0;
+    })
+    .sort((a, b) => {
+      // Get category for type (check items to determine if retail or produce)
+      // In vendor context, a type should only have items from one category
+      const typeAItems = Object.values(groupedItems[a]).flat();
+      const typeBItems = Object.values(groupedItems[b]).flat();
+      const categoryA = typeAItems[0]?.category || "retail";
+      const categoryB = typeBItems[0]?.category || "retail";
+      
+      // Try to get sort index for both types (only if they exist in vendor items)
+      const aKey = `${categoryA}-${a}`;
+      const bKey = `${categoryB}-${b}`;
+      const aIndex = typeOrderMap.get(aKey);
+      const bIndex = typeOrderMap.get(bKey);
+      
+      if (aIndex !== undefined && bIndex !== undefined) {
+        return aIndex - bIndex;
+      }
+      if (aIndex !== undefined) return -1;
+      if (bIndex !== undefined) return 1;
+      return a.localeCompare(b);
+    });
+
+  // Sort subtypes within each type and ensure items maintain order
+  // Only show subtypes that have items
   if (!isSearching) {
     sortedTypes.forEach(type => {
       const subtypes = groupedItems[type];
-      // Sort subtypes, but put "Other" (items without subtype) at the end
-      const sortedSubtypes = Object.keys(subtypes).sort((a, b) => {
-        if (a === "Other") return 1;
-        if (b === "Other") return -1;
-        return a.localeCompare(b);
-      });
+      const typeItems = Object.values(subtypes).flat();
+      const category = typeItems[0]?.category || "retail";
+      
+      // Filter subtypes to only include those that have items, then sort
+      const sortedSubtypes = Object.keys(subtypes)
+        .filter(subtype => {
+          // Only include subtypes that have at least one item
+          return subtypes[subtype] && subtypes[subtype].length > 0;
+        })
+        .sort((a, b) => {
+          // Put "Other" at the end
+          if (a === "Other") return 1;
+          if (b === "Other") return -1;
+          
+          // Only use sort order if subtype exists in vendor items
+          const aKey = `${category}-${type}-${a}`;
+          const bKey = `${category}-${type}-${b}`;
+          const aIndex = subtypeOrderMap.get(aKey);
+          const bIndex = subtypeOrderMap.get(bKey);
+          
+          if (aIndex !== undefined && bIndex !== undefined) {
+            return aIndex - bIndex;
+          }
+          if (aIndex !== undefined) return -1;
+          if (bIndex !== undefined) return 1;
+          return a.localeCompare(b);
+        });
+      
+      // Rebuild subtypes object in sorted order and ensure items are sorted
       const sortedSubtypeObj: Record<string, VendorItem[]> = {};
       sortedSubtypes.forEach(subtype => {
+        // Items should already be sorted, but ensure they maintain order
         sortedSubtypeObj[subtype] = subtypes[subtype];
       });
       groupedItems[type] = sortedSubtypeObj;
     });
   }
+  
+  // Ensure items within filtered items maintain their sort order
+  // Items are already sorted when fetched, but after filtering they should maintain relative order
+  // Since we're using the already-sorted vendorData, the order should be preserved
 
   // Reset subtype when type is cleared or changed
   useEffect(() => {

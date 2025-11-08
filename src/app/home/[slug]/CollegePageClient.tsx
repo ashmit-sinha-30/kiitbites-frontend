@@ -244,6 +244,54 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       const allItems: { [key: string]: FoodItem[] } = {};
 
       try {
+        // Fetch sort order for university-wide menu
+        let sortOrder: { itemId: string; sortIndex: number }[] = [];
+        let typeOrder: { category: string; type: string; sortIndex: number }[] = [];
+        let subtypeOrder: { category: string; type: string; subtype: string; sortIndex: number }[] = [];
+        try {
+          const sortRes = await fetch(
+            `${BACKEND_URL}/api/menu-sort/order?uniId=${uniId}&vendorId=null`
+          );
+          if (sortRes.ok) {
+            const sortData = await sortRes.json();
+            if (sortData.success && sortData.data) {
+              if (sortData.data.itemOrder) {
+                sortOrder = sortData.data.itemOrder.map((item: { itemId: string; sortIndex: number }) => ({
+                  itemId: item.itemId,
+                  sortIndex: item.sortIndex,
+                }));
+              }
+              if (sortData.data.typeOrder) {
+                typeOrder = sortData.data.typeOrder;
+              }
+              if (sortData.data.subtypeOrder) {
+                subtypeOrder = sortData.data.subtypeOrder;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching sort order:", err);
+          // Continue without sort order if it fails
+        }
+
+        // Create sort maps for quick lookup
+        const sortMap = new Map<string, number>();
+        sortOrder.forEach((item) => {
+          sortMap.set(item.itemId, item.sortIndex);
+        });
+
+        const typeOrderMap = new Map<string, number>();
+        typeOrder.forEach((item) => {
+          // item.category is "retail" or "produce", item.type is the item type like "pizza"
+          typeOrderMap.set(`${item.category}-${item.type}`, item.sortIndex);
+        });
+
+        const subtypeOrderMap = new Map<string, number>();
+        subtypeOrder.forEach((item) => {
+          // item.category is "retail" or "produce", item.type is the item type, item.subtype is the subtype
+          subtypeOrderMap.set(`${item.category}-${item.type}-${item.subtype}`, item.sortIndex);
+        });
+
         // Fetch all retail and produce items for the university (like uniDashboard)
         const [retailRes, produceRes] = await Promise.all([
           fetch(`${BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
@@ -252,7 +300,8 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
         const retailData = await retailRes.json();
         const produceData = await produceRes.json();
         if (!retailRes.ok || !produceRes.ok) throw new Error("Failed to fetch items");
-        const retailItems: FoodItem[] = (retailData.items || []).map((item: Record<string, unknown>) => ({
+        
+        let retailItems: FoodItem[] = (retailData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
           title: item.name as string,
           description: item.description as string | undefined,
@@ -267,7 +316,8 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           quantity: item.quantity as number,
           isVeg: item.isVeg !== undefined ? (item.isVeg as boolean) : true,
         }));
-        const produceItems: FoodItem[] = (produceData.items || []).map((item: Record<string, unknown>) => ({
+        
+        let produceItems: FoodItem[] = (produceData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
           title: item.name as string,
           description: item.description as string | undefined,
@@ -282,10 +332,41 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           isAvailable: item.isAvailable as string,
           isVeg: item.isVeg !== undefined ? (item.isVeg as boolean) : true,
         }));
+
+        // Apply sort order if available
+        if (sortMap.size > 0) {
+          retailItems = retailItems.sort((a, b) => {
+            const aIndex = sortMap.get(a.id);
+            const bIndex = sortMap.get(b.id);
+            if (aIndex !== undefined && bIndex !== undefined) {
+              return aIndex - bIndex;
+            }
+            if (aIndex !== undefined) return -1;
+            if (bIndex !== undefined) return 1;
+            return a.title.localeCompare(b.title);
+          });
+          
+          produceItems = produceItems.sort((a, b) => {
+            const aIndex = sortMap.get(a.id);
+            const bIndex = sortMap.get(b.id);
+            if (aIndex !== undefined && bIndex !== undefined) {
+              return aIndex - bIndex;
+            }
+            if (aIndex !== undefined) return -1;
+            if (bIndex !== undefined) return 1;
+            return a.title.localeCompare(b.title);
+          });
+        } else {
+          // If no sort order, sort alphabetically by title
+          retailItems.sort((a, b) => a.title.localeCompare(b.title));
+          produceItems.sort((a, b) => a.title.localeCompare(b.title));
+        }
+        
         // Track subtypes for each category
         const subtypesMap: { [key: string]: Set<string> } = {};
         
         // Group by category-type and subtype when subtype exists
+        // Items are already sorted, so they will maintain order when grouped
         [...retailItems, ...produceItems].forEach(item => {
           if (item.subtype) {
             // If item has subtype, group by type-category-subtype
@@ -307,26 +388,109 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           }
         });
         
-        // Convert subtypes map to array format
+        // Convert subtypes map to array format and apply subtype order
+        // Key format: "type-category" where type is "retail"/"produce", category is item type like "pizza"
         const subtypesMapArrays: { [key: string]: string[] } = {};
         Object.keys(subtypesMap).forEach(key => {
-          subtypesMapArrays[key] = Array.from(subtypesMap[key]).sort();
+          const subtypes = Array.from(subtypesMap[key]);
+          
+          // Extract type and category from key (format: "type-category")
+          // type is "retail" or "produce", category is item type like "pizza"
+          const [itemType, category] = key.split('-');
+          
+          // Apply subtype order if available
+          // subtypeOrder key format: "category-type-subtype" where category is "retail"/"produce"
+          if (subtypeOrderMap.size > 0) {
+            subtypes.sort((a, b) => {
+              // itemType is "retail" or "produce", category is item type like "pizza"
+              const aKey = `${itemType}-${category}-${a}`;
+              const bKey = `${itemType}-${category}-${b}`;
+              const aIndex = subtypeOrderMap.get(aKey);
+              const bIndex = subtypeOrderMap.get(bKey);
+              if (aIndex !== undefined && bIndex !== undefined) {
+                return aIndex - bIndex;
+              }
+              if (aIndex !== undefined) return -1;
+              if (bIndex !== undefined) return 1;
+              return a.localeCompare(b);
+            });
+          } else {
+            // Sort alphabetically if no subtype order
+            subtypes.sort();
+          }
+          
+          subtypesMapArrays[key] = subtypes;
         });
         setCategorySubtypes(subtypesMapArrays);
         
+        // Ensure items within each group maintain sort order
+        // (Items are already sorted before grouping, but let's verify each group is sorted)
+        Object.keys(allItems).forEach(key => {
+          const groupItems = allItems[key];
+          if (sortMap.size > 0) {
+            // Re-sort items in each group to ensure correct order
+            groupItems.sort((a, b) => {
+              const aIndex = sortMap.get(a.id);
+              const bIndex = sortMap.get(b.id);
+              if (aIndex !== undefined && bIndex !== undefined) {
+                return aIndex - bIndex;
+              }
+              if (aIndex !== undefined) return -1;
+              if (bIndex !== undefined) return 1;
+              return a.title.localeCompare(b.title);
+            });
+          }
+        });
+        
         // Dynamically generate categories from fetched items
+        // Note: In FoodItem, item.category is the item type (like "pizza"), item.type is "retail" or "produce"
         const retailTypes = new Set<string>();
         const produceTypes = new Set<string>();
         retailItems.forEach(item => {
-          if (item.category) retailTypes.add(item.category);
+          if (item.category) retailTypes.add(item.category); // item.category is the type like "pizza"
         });
         produceItems.forEach(item => {
-          if (item.category) produceTypes.add(item.category);
+          if (item.category) produceTypes.add(item.category); // item.category is the type like "pizza"
         });
         
+        // Apply type order if available
+        const sortedRetailTypes = Array.from(retailTypes);
+        const sortedProduceTypes = Array.from(produceTypes);
+        
+        if (typeOrderMap.size > 0) {
+          sortedRetailTypes.sort((a, b) => {
+            const aKey = `retail-${a}`; // a is the item type like "pizza"
+            const bKey = `retail-${b}`;
+            const aIndex = typeOrderMap.get(aKey);
+            const bIndex = typeOrderMap.get(bKey);
+            if (aIndex !== undefined && bIndex !== undefined) {
+              return aIndex - bIndex;
+            }
+            if (aIndex !== undefined) return -1;
+            if (bIndex !== undefined) return 1;
+            return a.localeCompare(b);
+          });
+          
+          sortedProduceTypes.sort((a, b) => {
+            const aKey = `produce-${a}`; // a is the item type like "pizza"
+            const bKey = `produce-${b}`;
+            const aIndex = typeOrderMap.get(aKey);
+            const bIndex = typeOrderMap.get(bKey);
+            if (aIndex !== undefined && bIndex !== undefined) {
+              return aIndex - bIndex;
+            }
+            if (aIndex !== undefined) return -1;
+            if (bIndex !== undefined) return 1;
+            return a.localeCompare(b);
+          });
+        } else {
+          sortedRetailTypes.sort();
+          sortedProduceTypes.sort();
+        }
+        
         setCategories({
-          retail: Array.from(retailTypes).sort(),
-          produce: Array.from(produceTypes).sort(),
+          retail: sortedRetailTypes,
+          produce: sortedProduceTypes,
         });
         
         if (requestId === currentRequest.current) {

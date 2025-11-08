@@ -205,17 +205,19 @@ const ItemDetailModal = ({
             {item.image ? (
               <img src={item.image} alt={item.title} className={styles.itemDetailImage} />
             ) : null}
+          </div>
+
+          <div className={styles.itemDetailContent}>
+            <h2 className={styles.itemDetailTitle}>{item.title}</h2>
+            
+            {/* Veg/Non-Veg Indicator - below the name */}
             {item.isVeg !== undefined && (
-              <div className={styles.vegIndicator}>
+              <div className={styles.vegIndicatorBelowName}>
                 <span className={item.isVeg ? styles.veg : styles.nonVeg}>
                   {item.isVeg ? '🟢' : '🔴'} {item.isVeg ? 'Veg' : 'Non-Veg'}
                 </span>
               </div>
             )}
-          </div>
-
-          <div className={styles.itemDetailContent}>
-            <h2 className={styles.itemDetailTitle}>{item.title}</h2>
             
             {(item.category || item.subtype) && (
               <p className={styles.itemDetailSubtitle}>

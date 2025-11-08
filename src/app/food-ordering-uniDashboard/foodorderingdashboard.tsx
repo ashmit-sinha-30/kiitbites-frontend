@@ -14,6 +14,7 @@ import Review from "./components/Review";
 import TaxUpdating from "./components/TaxUpdating";
 import UniGrievances from "./components/UniGrievances";
 import UniversityRecipes from "./components/UniversityRecipes";
+import MenuSorting from "./components/MenuSorting";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
@@ -131,6 +132,10 @@ export default function UniDashboardPage() {
     ];
   }, [services]);
 
+  // Check for menu sorting params
+  const menuSortingParam = searchParams.get("menuSorting");
+  const vendorIdParam = searchParams.get("vendorId");
+
   return (
     <div className={styles.container}>
       <Sidebar
@@ -142,43 +147,51 @@ export default function UniDashboardPage() {
       />
 
       <main className={styles.main}>
-        {/* Service-specific content mapping */}
-        {(() => {
-          const currentService = services.find((s) => s._id === activeSegment);
-          const name = currentService?.name?.toLowerCase() || "";
-          if (!name) return null;
-          if (name === "uni dashboard" || name.includes("uni dashboard") || name === "dashboard") {
-            return <VendorManagement universityId={universityId || ""} />;
-          }
-          if (name === "add vendor" || name.includes("add vendor")) {
-            return <AddVendorForm universityId={universityId || ""} />;
-          }
-          if (name === "add food item" || name.includes("add food item")) {
-            return <UploadItemForm universityId={universityId || ""} />;
-          }
-          if (name === "manage items" || name.includes("manage items")) {
-            return <ManageItems universityId={universityId || ""} />;
-          }
-          if (name === "manage charges" || name.includes("manage charges")) {
-            return <ManageCharges universityId={universityId || ""} />;
-          }
-          if (name.includes("tax updating")) {
-            return <TaxUpdating universityId={universityId || ""} />;
-          }
-          if (name === "invoice" || name.includes("invoice")) {
-            return <Invoices universityId={universityId || ""} />;
-          }
-          if (name === "review" || name.includes("review")) {
-            return <Review universityId={universityId || ""} />;
-          }
-          if (name.includes("grievances") || name.includes("grievance")) {
-            return <UniGrievances universityId={universityId || ""} />;
-          }
-          if (name === "recipes" || name.includes("recipes")) {
-            return <UniversityRecipes universityId={universityId || ""} />;
-          }
-          return null;
-        })()}
+        {/* Check if menu sorting is requested via URL params */}
+        {menuSortingParam === "true" ? (
+          <MenuSorting universityId={universityId || ""} vendorId={vendorIdParam || undefined} />
+        ) : (
+          (() => {
+            // Service-specific content mapping
+            const currentService = services.find((s) => s._id === activeSegment);
+            const name = currentService?.name?.toLowerCase() || "";
+            if (!name) return null;
+            if (name === "uni dashboard" || name.includes("uni dashboard") || name === "dashboard") {
+              return <VendorManagement universityId={universityId || ""} />;
+            }
+            if (name === "add vendor" || name.includes("add vendor")) {
+              return <AddVendorForm universityId={universityId || ""} />;
+            }
+            if (name === "add food item" || name.includes("add food item")) {
+              return <UploadItemForm universityId={universityId || ""} />;
+            }
+            if (name === "manage items" || name.includes("manage items")) {
+              return <ManageItems universityId={universityId || ""} />;
+            }
+            if (name === "manage charges" || name.includes("manage charges")) {
+              return <ManageCharges universityId={universityId || ""} />;
+            }
+            if (name.includes("tax updating")) {
+              return <TaxUpdating universityId={universityId || ""} />;
+            }
+            if (name === "invoice" || name.includes("invoice")) {
+              return <Invoices universityId={universityId || ""} />;
+            }
+            if (name === "review" || name.includes("review")) {
+              return <Review universityId={universityId || ""} />;
+            }
+            if (name.includes("grievances") || name.includes("grievance")) {
+              return <UniGrievances universityId={universityId || ""} />;
+            }
+            if (name === "recipes" || name.includes("recipes")) {
+              return <UniversityRecipes universityId={universityId || ""} />;
+            }
+            if (name === "menu sorting" || name.includes("menu sorting") || name.includes("menu sort")) {
+              return <MenuSorting universityId={universityId || ""} />;
+            }
+            return null;
+          })()
+        )}
 
         {/* Add Vendor Segment */}
         {activeSegment === "add-vendor" && (
