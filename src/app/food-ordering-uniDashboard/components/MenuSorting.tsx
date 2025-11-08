@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import styles from "../styles/MenuSorting.module.scss";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -164,12 +164,24 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
 
         const allItems = [...retailItems, ...produceItems];
         setItems(allItems);
-
-        // Fetch and apply sort order after items are loaded
-        // This will filter sort orders to only include items/types/subtypes that exist
-        if (allItems.length > 0) {
-          // Use the fetchSortOrder function defined below
-          // We'll trigger it via useEffect after items are set
+        
+        // Fetch sort order after items are loaded (only once per vendor)
+        if (allItems.length > 0 && !isFetchingSortRef.current) {
+          const fetchKey = `${selectedVendorId || 'university'}-${universityId}`;
+          
+          // Only fetch if we haven't fetched for this key yet
+          if (fetchKey !== lastFetchKeyRef.current) {
+            lastFetchKeyRef.current = fetchKey;
+            isFetchingSortRef.current = true;
+            
+            // Fetch sort order - this will update items with sorted order
+            fetchSortOrder(allItems).finally(() => {
+              // Don't reset isFetchingSortRef immediately - let it reset after items are updated
+              setTimeout(() => {
+                isFetchingSortRef.current = false;
+              }, 200);
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching items:", error);
@@ -185,8 +197,8 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
   }, [universityId, selectedVendorId]);
 
   // Fetch current sort order
-  const fetchSortOrder = useCallback(async (itemsToFilter?: Item[]) => {
-    if (!universityId) return;
+  const fetchSortOrder = useCallback(async (itemsToFilter: Item[]) => {
+    if (!universityId || !itemsToFilter || itemsToFilter.length === 0) return;
     
     try {
       const params = new URLSearchParams({
@@ -198,83 +210,57 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
       const data = await response.json();
 
       if (data.success && data.data) {
-        // Use itemsToFilter if provided, otherwise use current items state
-        const currentItems = itemsToFilter && itemsToFilter.length > 0 ? itemsToFilter : items;
+        // Create sets of available itemIds, types, and subtypes for filtering
+        const availableItemIds = new Set(itemsToFilter.map(item => item.itemId));
+        const availableTypeKeys = new Set<string>();
+        const availableSubtypeKeys = new Set<string>();
         
-        // Only filter if we have items to filter against
-        if (currentItems.length > 0) {
-          // Create sets of available itemIds, types, and subtypes for filtering
-          const availableItemIds = new Set(currentItems.map(item => item.itemId));
-          const availableTypeKeys = new Set<string>();
-          const availableSubtypeKeys = new Set<string>();
-          
-          currentItems.forEach(item => {
-            if (item.type) {
-              availableTypeKeys.add(`${item.category}-${item.type}`);
-            }
-            if (item.type && item.subtype) {
-              availableSubtypeKeys.add(`${item.category}-${item.type}-${item.subtype}`);
-            }
-          });
-          
-          if (data.data.itemOrder && data.data.itemOrder.length > 0) {
-            // Filter itemOrder to only include items that exist in current items
-            const filteredItemOrder = data.data.itemOrder.filter((item: SortOrderItem) => 
-              availableItemIds.has(item.itemId)
-            );
-            setCurrentSortOrder(filteredItemOrder);
-            
-            // Apply sort order to items (only if itemsToFilter was provided, meaning we're updating)
-            if (itemsToFilter) {
-              const sortedItems = applySortOrder(itemsToFilter, filteredItemOrder);
-              setItems(sortedItems);
-            } else {
-              // Update items in place
-              setItems((prevItems) => {
-                if (prevItems.length === 0) return prevItems;
-                return applySortOrder(prevItems, filteredItemOrder);
-              });
-            }
-          } else {
-            setCurrentSortOrder([]);
+        itemsToFilter.forEach(item => {
+          if (item.type) {
+            availableTypeKeys.add(`${item.category}-${item.type}`);
           }
-          
-          if (data.data.typeOrder) {
-            // Filter typeOrder to only include types that exist in current items
-            const filteredTypeOrder = data.data.typeOrder.filter((item: TypeOrderItem) => 
-              availableTypeKeys.has(`${item.category}-${item.type}`)
-            );
-            setCurrentTypeOrder(filteredTypeOrder);
-          } else {
-            setCurrentTypeOrder([]);
+          if (item.type && item.subtype) {
+            availableSubtypeKeys.add(`${item.category}-${item.type}-${item.subtype}`);
           }
+        });
+        
+        // Filter and set item order
+        if (data.data.itemOrder && data.data.itemOrder.length > 0) {
+          // Filter itemOrder to only include items that exist in current items
+          const filteredItemOrder = data.data.itemOrder.filter((item: SortOrderItem) => 
+            availableItemIds.has(item.itemId)
+          );
+          setCurrentSortOrder(filteredItemOrder);
           
-          if (data.data.subtypeOrder) {
-            // Filter subtypeOrder to only include subtypes that exist in current items
-            const filteredSubtypeOrder = data.data.subtypeOrder.filter((item: SubtypeOrderItem) => 
-              availableSubtypeKeys.has(`${item.category}-${item.type}-${item.subtype}`)
-            );
-            setCurrentSubtypeOrder(filteredSubtypeOrder);
-          } else {
-            setCurrentSubtypeOrder([]);
-          }
+          // Apply sort order to items
+          // Create a copy to avoid mutating the original array
+          const sortedItems = applySortOrder([...itemsToFilter], filteredItemOrder);
+          
+          // Update items with sorted order
+          // The isFetchingSortRef flag prevents re-fetching when items are updated
+          setItems(sortedItems);
         } else {
-          // No items available yet, just set the sort orders (will be filtered later)
-          if (data.data.itemOrder) {
-            setCurrentSortOrder(data.data.itemOrder);
-          } else {
-            setCurrentSortOrder([]);
-          }
-          if (data.data.typeOrder) {
-            setCurrentTypeOrder(data.data.typeOrder);
-          } else {
-            setCurrentTypeOrder([]);
-          }
-          if (data.data.subtypeOrder) {
-            setCurrentSubtypeOrder(data.data.subtypeOrder);
-          } else {
-            setCurrentSubtypeOrder([]);
-          }
+          setCurrentSortOrder([]);
+        }
+        
+        // Filter and set type order
+        if (data.data.typeOrder) {
+          const filteredTypeOrder = data.data.typeOrder.filter((item: TypeOrderItem) => 
+            availableTypeKeys.has(`${item.category}-${item.type}`)
+          );
+          setCurrentTypeOrder(filteredTypeOrder);
+        } else {
+          setCurrentTypeOrder([]);
+        }
+        
+        // Filter and set subtype order
+        if (data.data.subtypeOrder) {
+          const filteredSubtypeOrder = data.data.subtypeOrder.filter((item: SubtypeOrderItem) => 
+            availableSubtypeKeys.has(`${item.category}-${item.type}-${item.subtype}`)
+          );
+          setCurrentSubtypeOrder(filteredSubtypeOrder);
+        } else {
+          setCurrentSubtypeOrder([]);
         }
       } else {
         // No sort order found, reset to empty
@@ -289,16 +275,11 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
       setCurrentTypeOrder([]);
       setCurrentSubtypeOrder([]);
     }
-  }, [universityId, selectedVendorId, items]);
+  }, [universityId, selectedVendorId]);
 
-  // Reload sort order when vendor changes or items are loaded
-  useEffect(() => {
-    if (universityId && items.length > 0) {
-      // Pass items to filter the sort order
-      fetchSortOrder(items);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVendorId, universityId, items.length, fetchSortOrder]);
+  // Track the last fetch to prevent repeated API calls
+  const lastFetchKeyRef = useRef<string>("");
+  const isFetchingSortRef = useRef<boolean>(false);
 
   // Apply sort order to items
   const applySortOrder = (itemsList: Item[], sortOrder: SortOrderItem[]): Item[] => {
