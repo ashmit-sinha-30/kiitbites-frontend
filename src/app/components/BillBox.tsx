@@ -395,7 +395,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
               onClick={() => setOrderType(t)}
             >
               {t === "takeaway"
-                ? "takeaway"
+                ? "Takeaway"
                 : t === "delivery"
                 ? "Delivery"
                 : "Dine In"}
@@ -429,9 +429,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         />
       )}
 
-      <div className={styles.bill} 
-        // ... existing code ...
-      >
+      <div className={styles.bill}>
         <div className={styles.items}>
         {items.map((i) => (
           <div key={i._id} className={styles.line}>

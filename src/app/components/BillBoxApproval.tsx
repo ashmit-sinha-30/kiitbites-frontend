@@ -205,7 +205,7 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
               onClick={() => setOrderType(t)}
             >
               {t === "takeaway"
-                ? "takeaway"
+                ? "Takeaway"
                 : t === "delivery"
                 ? "Delivery"
                 : "Dine In"}
