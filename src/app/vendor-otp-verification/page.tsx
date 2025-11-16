@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import styles from './styles/vendorOtpVerification.module.scss';
 
 const VendorOtpVerificationContent: React.FC = () => {
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -28,25 +30,45 @@ const VendorOtpVerificationContent: React.FC = () => {
     }
   }, [countdown]);
 
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-    setOtp(value);
-    setError('');
+  const handleChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    if (value && index < inputRefs.current.length - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    const pastedData = event.clipboardData.getData("text").slice(0, 6);
+    if (!/^\d{6}$/.test(pastedData)) return;
+
+    const newOtp = pastedData.split("");
+    setOtp(newOtp);
+
+    newOtp.forEach((num, idx) => {
+      if (inputRefs.current[idx]) {
+        inputRefs.current[idx]!.value = num;
+      }
+    });
+    inputRefs.current[5]?.focus();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.length !== 6) {
-      setError('Please enter a valid 6-digit OTP');
+    const otpString = otp.join('');
+
+    if (!otpString || otpString.length !== 6) {
+      toast.error('Please enter a 6-digit OTP.');
       return;
     }
 
     setLoading(true);
-    setError('');
 
     try {
-      console.log('Submitting OTP verification:', { email, otp });
-      
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const response = await fetch(`${backendUrl}/api/vendor/auth/otpverification`, {
         method: 'POST',
@@ -54,34 +76,32 @@ const VendorOtpVerificationContent: React.FC = () => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ email, otp: otpString }),
       });
 
-      console.log('Response status:', response.status);
-      
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Non-JSON response:', text);
-        setError('Server returned invalid response. Please check if backend is running.');
+        toast.error('Server returned invalid response. Please check if backend is running.');
         return;
       }
 
       const data = await response.json();
-      console.log('OTP verification response:', data);
 
       if (response.ok) {
         // Store token and redirect to vendor dashboard
         localStorage.setItem('token', data.token);
         localStorage.setItem('vendorRole', 'seller'); // Default role
+        toast.success('OTP verified successfully!');
         router.push('/vendorDashboard');
       } else {
-        setError(data.message || 'OTP verification failed');
+        toast.error(data.message || 'OTP verification failed');
       }
     } catch (error) {
       console.error('OTP verification error:', error);
-      setError('Network error. Please try again.');
+      toast.error('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -91,7 +111,6 @@ const VendorOtpVerificationContent: React.FC = () => {
     if (countdown > 0) return;
 
     setResendLoading(true);
-    setError('');
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -109,7 +128,7 @@ const VendorOtpVerificationContent: React.FC = () => {
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Non-JSON response for resend OTP:', text);
-        setError('Server returned invalid response. Please check if backend is running.');
+        toast.error('Server returned invalid response. Please check if backend is running.');
         return;
       }
 
@@ -117,13 +136,13 @@ const VendorOtpVerificationContent: React.FC = () => {
 
       if (response.ok) {
         setCountdown(60); // 60 seconds cooldown
-        setError('');
+        toast.success('OTP resent successfully!');
       } else {
-        setError(data.message || 'Failed to resend OTP');
+        toast.error(data.message || 'Failed to resend OTP');
       }
     } catch (error) {
       console.error('Resend OTP error:', error);
-      setError('Network error. Please try again.');
+      toast.error('Network error. Please try again.');
     } finally {
       setResendLoading(false);
     }
@@ -135,39 +154,35 @@ const VendorOtpVerificationContent: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <h1>Verify Your Account</h1>
-          <p>We&apos;ve sent a 6-digit verification code to</p>
-          <p className={styles.email}>{email}</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <label htmlFor="otp">Enter Verification Code</label>
-            <input
-              type="text"
-              id="otp"
-              value={otp}
-              onChange={handleOtpChange}
-              placeholder="000000"
-              maxLength={6}
-              className={styles.otpInput}
-              required
-            />
+      <div className={styles.box}>
+        <h1>OTP Verification</h1>
+        <p>Enter the OTP sent to {email}</p>
+        <form onSubmit={handleSubmit}>
+          <div className={styles.otpContainer}>
+            {otp.map((digit, index) => (
+              <input
+                key={index}
+                ref={(el) => {
+                  inputRefs.current[index] = el;
+                }}
+                type="text"
+                maxLength={1}
+                value={digit}
+                style={{ color: "black" }}
+                onChange={(e) => handleChange(index, e.target.value)}
+                onPaste={handlePaste}
+                className={styles.otpInput}
+                required
+                aria-label={`OTP Digit ${index + 1}`}
+                title={`OTP Digit ${index + 1}`}
+                placeholder=" "
+              />
+            ))}
           </div>
-
-          {error && <div className={styles.error}>{error}</div>}
-
-          <button 
-            type="submit" 
-            className={styles.submitButton}
-            disabled={loading || otp.length !== 6}
-          >
-            {loading ? 'Verifying...' : 'Verify Account'}
+          <button type="submit" disabled={loading}>
+            {loading ? "Verifying..." : "Verify OTP"}
           </button>
         </form>
-
         <div className={styles.footer}>
           <p>Didn&apos;t receive the code?</p>
           <button
@@ -183,12 +198,12 @@ const VendorOtpVerificationContent: React.FC = () => {
                 : 'Resend OTP'
             }
           </button>
-          
           <p className={styles.backLink}>
             <a href="/vendor-login">Back to Login</a>
           </p>
         </div>
       </div>
+      <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
   );
 };

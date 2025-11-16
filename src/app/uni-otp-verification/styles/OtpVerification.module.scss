@@ -97,54 +97,6 @@
         }
       }
     }
-
-    .footer {
-      margin-top: 20px;
-
-      p {
-        color: #666;
-        font-size: 14px;
-        margin: 10px 0;
-      }
-
-      .resendButton {
-        background: none;
-        border: 2px solid #4ea199;
-        color: #4ea199;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        margin: 10px 0;
-
-        &:hover:not(:disabled) {
-          background: #4ea199;
-          color: white;
-        }
-
-        &:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-      }
-
-      .backLink {
-        margin-top: 15px;
-
-        a {
-          color: #4ea199;
-          text-decoration: none;
-          font-weight: 600;
-          transition: color 0.2s ease;
-
-          &:hover {
-            color: #6fc3bd;
-            text-decoration: underline;
-          }
-        }
-      }
-    }
   }
 }
+

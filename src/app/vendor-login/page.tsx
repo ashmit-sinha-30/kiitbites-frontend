@@ -113,7 +113,7 @@ const VendorLoginPage: React.FC = () => {
             </span>
           </div>
           <div className={styles.forgotPassword}>
-            <Link href="/forgotpassword">Forgot Password?</Link>
+            <Link href="/vendor-forgot-password">Forgot Password?</Link>
           </div>
           <button type="submit" disabled={isLoading}>
             {isLoading ? "Logging in..." : "Login"}

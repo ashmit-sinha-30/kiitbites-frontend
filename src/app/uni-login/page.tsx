@@ -85,7 +85,7 @@ export default function UniLoginPage() {
             </span>
           </div>
           <div className={styles.forgotPassword}>
-            <Link href="/forgotpassword">Forgot Password?</Link>
+            <Link href="/uni-forgot-password">Forgot Password?</Link>
           </div>
           <button type="submit" disabled={isLoading}>
             {isLoading ? "Logging in..." : "Login"}
