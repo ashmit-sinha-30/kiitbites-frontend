@@ -3,10 +3,19 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaEye, FaEyeSlash, FaChevronDown } from "react-icons/fa";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import dynamic from "next/dynamic";
 import styles from "./styles/Signup.module.scss";
 // import GoogleSignup from "./GoogleSignup";
+
+// Lazy load ToastContainer to reduce initial bundle size
+const ToastContainer = dynamic(
+  () => import("react-toastify").then((mod) => mod.ToastContainer),
+  { ssr: false }
+);
+
+// Import toast function separately (lightweight)
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface SignupFormState {
   fullName: string;
@@ -39,6 +48,8 @@ export default function SignupForm() {
   >([]);
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const hasInitialized = useRef(false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -120,32 +131,57 @@ export default function SignupForm() {
     }
   }, [BACKEND_URL, router]);
 
-  // Refresh session on component mount
+  // Refresh session on component mount - deferred to not block initial render
   useEffect(() => {
-    checkSession(); // Refresh on page load
+    // Prevent double execution in React Strict Mode
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    // Simulate slow internet by showing skeleton for 1-2 seconds
+    const minDelay = 800;
+    const maxDelay = 1500;
+    const delay = Math.random() * (maxDelay - minDelay) + minDelay;
+    
+    const loadingTimeout = setTimeout(() => {
+      setIsPageLoading(false);
+    }, delay);
+
+    // Defer session check to after initial render (keeps logic identical, just timing)
+    const timeoutId = setTimeout(() => {
+      checkSession(); // Refresh on page load
+    }, 0);
 
     const interval = setInterval(() => {
       checkSession();
     }, 60 * 60 * 1000); // Refresh every 1 hour
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => {
+      clearTimeout(loadingTimeout);
+      clearTimeout(timeoutId);
+      clearInterval(interval); // Cleanup on unmount
+    };
   }, [checkSession]);
 
-  // Fetch colleges on component mount
+  // Fetch colleges on component mount - deferred to not block initial render
   useEffect(() => {
-    const fetchColleges = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/user/auth/list`);
-        if (res.ok) {
-          const data = await res.json();
-          setColleges(data);
+    // Defer college fetch to after initial render (keeps logic identical, just timing)
+    const timeoutId = setTimeout(() => {
+      const fetchColleges = async () => {
+        try {
+          const res = await fetch(`${BACKEND_URL}/api/user/auth/list`);
+          if (res.ok) {
+            const data = await res.json();
+            setColleges(data);
+          }
+        } catch (error) {
+          console.error("Error fetching colleges:", error);
+          notify("Error loading colleges. Please try again.", "error");
         }
-      } catch (error) {
-        console.error("Error fetching colleges:", error);
-        notify("Error loading colleges. Please try again.", "error");
-      }
-    };
-    fetchColleges();
+      };
+      fetchColleges();
+    }, 100); // Small delay to allow UI to render first
+
+    return () => clearTimeout(timeoutId);
   }, [BACKEND_URL]);
 
   console.log("Making request to:", `${BACKEND_URL}/api/user/auth/signup`);
@@ -234,6 +270,23 @@ export default function SignupForm() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  if (isPageLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.box}>
+          <div className={styles.skeletonTitle}></div>
+          <form>
+            <div className={styles.skeletonInput}></div>
+            <div className={styles.skeletonInput}></div>
+            <div className={styles.skeletonInput}></div>
+            <div className={styles.skeletonButton}></div>
+            <div className={styles.skeletonText}></div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

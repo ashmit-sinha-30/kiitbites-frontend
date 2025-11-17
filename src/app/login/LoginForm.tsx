@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; // For App Router (Next.js 13+)
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { ToastContainer, toast } from "react-toastify";
+import dynamic from "next/dynamic";
 import styles from "./styles/Login.module.scss";
 // import GoogleLogin from "./GoogleLogin";
+
+// Lazy load ToastContainer to reduce initial bundle size
+const ToastContainer = dynamic(
+  () => import("react-toastify").then((mod) => mod.ToastContainer),
+  { ssr: false }
+);
+
+// Import toast function separately (lightweight)
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function LoginForm() {
   const [formData, setFormData] = useState({
@@ -15,7 +25,9 @@ export default function LoginForm() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const router = useRouter();
+  const hasInitialized = useRef(false);
 
   const BACKEND_URL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -176,16 +188,53 @@ export default function LoginForm() {
     }
   }, [BACKEND_URL, router]);
 
-  // Refresh session on component mount
+  // Refresh session on component mount - deferred to not block initial render
   useEffect(() => {
-    checkSession(); // Refresh on page load
+    // Prevent double execution in React Strict Mode
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    // Simulate slow internet by showing skeleton for 1-2 seconds
+    const minDelay = 800;
+    const maxDelay = 1500;
+    const delay = Math.random() * (maxDelay - minDelay) + minDelay;
+    
+    const loadingTimeout = setTimeout(() => {
+      setIsPageLoading(false);
+    }, delay);
+
+    // Defer session check to after initial render (keeps logic identical, just timing)
+    const timeoutId = setTimeout(() => {
+      checkSession(); // Refresh on page load
+    }, 0);
 
     const interval = setInterval(() => {
       checkSession();
     }, 60 * 60 * 1000); // Refresh every 1 hour
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => {
+      clearTimeout(loadingTimeout);
+      clearTimeout(timeoutId);
+      clearInterval(interval); // Cleanup on unmount
+    };
   }, [checkSession]);
+
+  if (isPageLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.box}>
+          <div className={styles.skeletonTitle}></div>
+          <form>
+            <div className={styles.skeletonInput}></div>
+            <div className={styles.skeletonInput}></div>
+            <div className={styles.skeletonLink}></div>
+            <div className={styles.skeletonButton}></div>
+            <div className={styles.skeletonText}></div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

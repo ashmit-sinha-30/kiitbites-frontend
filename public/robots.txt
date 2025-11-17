@@ -1,19 +1,31 @@
 # *
 User-agent: *
 Allow: /
-Disallow: /admin/
+Disallow: /admin-dashboard/
 Disallow: /vendorDashboard/
 Disallow: /vendorDashboard2/
 Disallow: /uniDashboard/
+Disallow: /food-ordering-uniDashboard/
+Disallow: /test
 Disallow: /test/
 Disallow: /api/
 Disallow: /_next/
+Disallow: /payment
+Disallow: /cart
+Disallow: /activeorders
+Disallow: /profile
+Disallow: /otpverification
+Disallow: /resetpassword
+Disallow: /uni-otp-verification/
+Disallow: /uni-reset-password/
+Disallow: /uni-forgot-password/
+Disallow: /vendor-otp-verification/
+Disallow: /vendor-forgot-password/
 Disallow: /404
 Disallow: /500
 
 # Host
-Host: https://kiitbites.com
+Host: https://kampyn.com
 
 # Sitemaps
-Sitemap: https://kiitbites.com/sitemap.xml
 Sitemap: https://kampyn.com/sitemap.xml
