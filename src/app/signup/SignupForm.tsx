@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FaEye, FaEyeSlash, FaChevronDown } from "react-icons/fa";
 import dynamic from "next/dynamic";
 import styles from "./styles/Signup.module.scss";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 // import GoogleSignup from "./GoogleSignup";
 
 // Lazy load ToastContainer to reduce initial bundle size
@@ -28,6 +29,9 @@ interface SignupFormState {
 }
 
 export default function SignupForm() {
+  // Redirect if user is already authenticated
+  useAuthRedirect();
+
   const [formData, setFormData] = useState<SignupFormState>({
     fullName: "",
     email: "",
@@ -84,17 +88,16 @@ export default function SignupForm() {
 
       const data = await res.json();
       if (res.ok) {
-        notify("Signup successful!", "success");
-
-        localStorage.setItem("token", data.token);
-
-        setTimeout(() => {
-          router.push(
-            `/otpverification?email=${encodeURIComponent(
-              formData.email
-            )}&from=signup`
-          );
-        }, 2000);
+        // Token will be provided after OTP verification, not during signup
+        // Navigate immediately to OTP verification page
+        router.push(
+          `/otpverification?email=${encodeURIComponent(
+            formData.email
+          )}&from=signup`
+        );
+        
+        // Show success notification (non-blocking)
+        notify(data.message || "OTP sent! Please verify your email.", "success");
       } else {
         notify(data.message || "Signup failed. Try again.", "error");
       }

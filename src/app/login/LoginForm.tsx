@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"; // For App Router (Next.js 13+)
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import dynamic from "next/dynamic";
 import styles from "./styles/Login.module.scss";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 // import GoogleLogin from "./GoogleLogin";
 
 // Lazy load ToastContainer to reduce initial bundle size
@@ -19,6 +20,9 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function LoginForm() {
+  // Redirect if user is already authenticated
+  useAuthRedirect();
+
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",

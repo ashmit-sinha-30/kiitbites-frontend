@@ -5,8 +5,12 @@ import { useRouter } from "next/navigation";
 import styles from "./styles/ForgotPassword.module.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 export default function ForgotPassword() {
+  // Redirect if user is already authenticated
+  useAuthRedirect();
+
   const [identifier, setIdentifier] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();

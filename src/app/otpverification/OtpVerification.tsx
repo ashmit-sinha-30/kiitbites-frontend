@@ -5,8 +5,11 @@ import { useSearchParams } from "next/navigation"; // ✅ Removed useRouter (not
 import { useRouter } from "next/navigation"; // ✅ Only used in OtpForm
 import { ToastContainer, toast } from "react-toastify";
 import styles from "./styles/OtpVerification.module.scss";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 export default function OtpVerificationClient() {
+  // Redirect if user is already authenticated
+  useAuthRedirect();
   const [email, setEmail] = useState<string | null>(null);
   const [fromPage, setFromPage] = useState<string | null>(null);
   const searchParams = useSearchParams();

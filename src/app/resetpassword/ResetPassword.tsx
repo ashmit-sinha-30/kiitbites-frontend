@@ -5,8 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./styles/ResetPassword.module.scss";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 export default function ResetPassword() {
+  // Redirect if user is already authenticated
+  useAuthRedirect();
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
