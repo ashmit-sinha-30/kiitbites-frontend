@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { FoodItem, CartItem, Vendor } from '../types';
 import { addToCart, increaseQuantity, decreaseQuantity } from '../utils/cartUtils';
 import { SearchResult } from '@/app/components/SearchBar';
+import { CART_COUNT_UPDATE_EVENT } from '@/app/hooks/useCartCount';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -48,13 +49,13 @@ interface CartProviderProps {
 
 export const CartProvider = ({ children, userId }: CartProviderProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const isRefreshingRef = useRef(false);
 
   const refreshCart = useCallback(async () => {
-    if (!userId || isRefreshing) return;
+    if (!userId || isRefreshingRef.current) return;
     
     try {
-      setIsRefreshing(true);
+      isRefreshingRef.current = true;
       const response = await fetch(`${BACKEND_URL}/cart/${userId}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -81,11 +82,13 @@ export const CartProvider = ({ children, userId }: CartProviderProps) => {
 
       console.log('Transformed cart items:', transformedItems);
       setCartItems(transformedItems);
+      // Dispatch event to update cart count in navbar
+      window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     } catch (error) {
       console.error('Error refreshing cart:', error);
       toast.error('Failed to refresh cart');
     } finally {
-      setIsRefreshing(false);
+      isRefreshingRef.current = false;
     }
   }, [userId]);
 

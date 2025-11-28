@@ -20,6 +20,7 @@ Disallow: /uni-otp-verification/
 Disallow: /uni-reset-password/
 Disallow: /uni-forgot-password/
 Disallow: /vendor-otp-verification/
+Disallow: /vendor-reset-password/
 Disallow: /vendor-forgot-password/
 Disallow: /404
 Disallow: /500

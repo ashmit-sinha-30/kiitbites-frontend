@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 
@@ -29,6 +29,14 @@ import { Order, InventoryReport, transformApiReport } from "./types";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
+type PendingOrderAlert = {
+  orderId: string;
+  orderNumber: string;
+  collectorName: string;
+  orderType: string;
+  total: number;
+  createdAt: string;
+};
 
 export default function VendorDashboardPage() {
   const router = useRouter();
@@ -51,6 +59,15 @@ export default function VendorDashboardPage() {
     newStatus: string;
     orderData?: Order;
   }[]>([]);
+  const [pendingOrderAlert, setPendingOrderAlert] = useState<PendingOrderAlert | null>(null);
+  const [notificationStreamAttempt, setNotificationStreamAttempt] = useState(0);
+  const notificationRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingOrderPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastAlertedOrderIdRef = useRef<string | null>(null);
+  const currencyFormatter = useMemo(
+    () => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }),
+    []
+  );
 
   // Function to handle order status changes
   const handleOrderStatusChange = (orderId: string, newStatus: string, orderData?: Order) => {
@@ -73,6 +90,17 @@ export default function VendorDashboardPage() {
   useEffect(() => {
     localStorage.setItem("activeSegment", activeSegment);
   }, [activeSegment]);
+
+  useEffect(() => {
+    return () => {
+      if (notificationRetryRef.current) {
+        clearTimeout(notificationRetryRef.current);
+      }
+      if (pendingOrderPollRef.current) {
+        clearInterval(pendingOrderPollRef.current);
+      }
+    };
+  }, []);
 
   // Load vendor identity and assignments
   useEffect(() => {
@@ -128,9 +156,111 @@ export default function VendorDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!vendorId) return;
+    if (typeof window === "undefined") return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const streamUrl = new URL(`${ENV_CONFIG.BACKEND.URL}/api/vendor/notifications/stream`);
+    streamUrl.searchParams.set("token", token);
+
+    const eventSource = new EventSource(streamUrl.toString(), { withCredentials: true });
+
+    eventSource.addEventListener("pending-order", (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.orderId && data.orderId === lastAlertedOrderIdRef.current) {
+          return;
+        }
+        lastAlertedOrderIdRef.current = data.orderId || null;
+        setPendingOrderAlert({
+          orderId: data.orderId,
+          orderNumber: data.orderNumber,
+          collectorName: data.collectorName,
+          orderType: data.orderType,
+          total: data.total,
+          createdAt: data.createdAt,
+        });
+      } catch (err) {
+        console.error("Failed to parse pending order notification", err);
+      }
+    });
+
+    eventSource.onerror = () => {
+      eventSource.close();
+      if (notificationRetryRef.current) {
+        clearTimeout(notificationRetryRef.current);
+      }
+      notificationRetryRef.current = setTimeout(() => {
+        setNotificationStreamAttempt((prev) => prev + 1);
+      }, 5000);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [vendorId, notificationStreamAttempt]);
+
+  useEffect(() => {
+    if (!vendorId) return;
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!token) return;
+
+    const fetchLatestPendingOrder = async () => {
+      try {
+        const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/order-approval/pending/${vendorId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        if (data?.success && Array.isArray(data.orders) && data.orders.length > 0) {
+          const latest = data.orders[0];
+          if (latest?.orderId && latest.orderId !== lastAlertedOrderIdRef.current) {
+            lastAlertedOrderIdRef.current = latest.orderId;
+            setPendingOrderAlert({
+              orderId: latest.orderId,
+              orderNumber: latest.orderNumber,
+              collectorName: latest.collectorName,
+              orderType: latest.orderType,
+              total: latest.total,
+              createdAt: latest.createdAt,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to poll pending orders", err);
+      }
+    };
+
+    fetchLatestPendingOrder();
+
+    if (pendingOrderPollRef.current) {
+      clearInterval(pendingOrderPollRef.current);
+    }
+    pendingOrderPollRef.current = setInterval(fetchLatestPendingOrder, 15000);
+
+    return () => {
+      if (pendingOrderPollRef.current) {
+        clearInterval(pendingOrderPollRef.current);
+        pendingOrderPollRef.current = null;
+      }
+    };
+  }, [vendorId]);
+
   const sidebarSegments = useMemo(() => {
     // Filter out any service named "Dashboard" to avoid duplicates
     const filteredServices = services.filter(s => s.name.toLowerCase() !== "dashboard");
+    const hasPendingOrdersService = filteredServices.some(
+      (s) => s.name?.toLowerCase().includes("pending order")
+    );
     
     const serviceSegments = filteredServices.map((s) => ({ 
       key: s._id, 
@@ -139,11 +269,29 @@ export default function VendorDashboardPage() {
       featureKey: `service.${s.feature.name.toLowerCase().replace(/\s+/g, '_')}.${s.name.toLowerCase().replace(/\s+/g, '_')}`
     }));
     
-    return [
+    const baseSegments = [
       { key: "dashboard", label: "Dashboard", icon: <></>, featureKey: "service.dashboard" },
+    ];
+
+    if (!hasPendingOrdersService) {
+      baseSegments.push({
+        key: "pending-orders",
+        label: "Pending Orders",
+        icon: <></>,
+        featureKey: "service.pending_orders",
+      });
+    }
+
+    return [
+      ...baseSegments,
       ...serviceSegments,
       { key: "logout", label: "Logout", icon: <></> },
     ];
+  }, [services]);
+
+  const pendingOrdersSegmentId = useMemo(() => {
+    const pendingService = services.find((s) => s.name?.toLowerCase().includes("pending order"));
+    return pendingService?._id ?? null;
   }, [services]);
 
   // Common onLoaded handler for components to update sidebar
@@ -151,6 +299,14 @@ export default function VendorDashboardPage() {
     setVendorName(vendorName);
     setVendorId(vendorId);
   };
+
+  const navigateToPendingOrders = () => {
+    const targetSegment = pendingOrdersSegmentId || "pending-orders";
+    setActiveSegment(targetSegment);
+    setPendingOrderAlert(null);
+  };
+
+  const dismissPendingOrderAlert = () => setPendingOrderAlert(null);
 
   // Fetch inventory report
   const fetchReport = useCallback(async (date: string) => {
@@ -192,6 +348,25 @@ export default function VendorDashboardPage() {
     setAppliedDate(selectedDate);
   };
 
+  const renderPendingOrderRequests = () => (
+    <>
+      <div className={styles.header}>
+        <h1>Pending Order Requests</h1>
+        <p>Review and respond to new order requests from customers</p>
+      </div>
+      {vendorId ? (
+        <PendingOrderRequests
+          vendorId={vendorId || ""}
+          onOrderProcessed={() => {
+            console.log("Pending order processed");
+          }}
+        />
+      ) : (
+        <div className="p-4 text-sm text-gray-500">Loading vendor information…</div>
+      )}
+    </>
+  );
+
   // Determine if Inventory Reports is the active view (either fixed key or service by name)
   const isInventoryReportsActive = useMemo(() => {
     if (activeSegment === "inventory-reports") return true;
@@ -218,6 +393,28 @@ export default function VendorDashboardPage() {
       />
 
       <main className={styles.main}>
+        {pendingOrderAlert && (
+          <div className={styles.notificationBanner}>
+            <div className={styles.notificationContent}>
+              <p className={styles.notificationTitle}>New pending order</p>
+              <p className={styles.notificationMessage}>
+                Order #{pendingOrderAlert.orderNumber} from {pendingOrderAlert.collectorName}
+              </p>
+              <p className={styles.notificationMeta}>
+                {new Date(pendingOrderAlert.createdAt).toLocaleTimeString()} ·{" "}
+                {currencyFormatter.format(pendingOrderAlert.total || 0)}
+              </p>
+            </div>
+            <div className={styles.notificationActions}>
+              <button className={styles.viewButton} onClick={navigateToPendingOrders}>
+                View pending orders
+              </button>
+              <button className={styles.dismissButton} onClick={dismissPendingOrderAlert}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
         {loading && (
           <div className="p-4 text-sm text-gray-500">Loading your services…</div>
         )}
@@ -304,6 +501,10 @@ export default function VendorDashboardPage() {
                 )}
               </>
             );
+          }
+
+          if (activeSegment === "pending-orders") {
+            return renderPendingOrderRequests();
           }
           
           if (!name) return null;
@@ -429,21 +630,7 @@ export default function VendorDashboardPage() {
             );
           }
           if (name === "pending orders" || name.includes("pending orders") || name === "pending order" || name.includes("pending order")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Pending Order Requests</h1>
-                  <p>Review and respond to new order requests from customers</p>
-                </div>
-                <PendingOrderRequests 
-                  vendorId={vendorId || ""}
-                  onOrderProcessed={() => {
-                    // Refresh when order is processed
-                    console.log("Pending order processed");
-                  }}
-                />
-              </>
-            );
+            return renderPendingOrderRequests();
           }
           if (name === "active orders" || name.includes("active orders") || name === "active order" || name.includes("active order")) {
             return (

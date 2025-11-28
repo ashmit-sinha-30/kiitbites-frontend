@@ -16,6 +16,7 @@ const VendorOtpVerificationContent: React.FC = () => {
   const searchParams = useSearchParams();
   
   const email = searchParams.get('email')?.toLowerCase(); // Ensure lowercase consistency
+  const fromPage = searchParams.get('from');
 
   useEffect(() => {
     if (!email) {
@@ -91,11 +92,16 @@ const VendorOtpVerificationContent: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Store token and redirect to vendor dashboard
+        // Store token first to maintain compatibility with existing flows
         localStorage.setItem('token', data.token);
         localStorage.setItem('vendorRole', 'seller'); // Default role
         toast.success('OTP verified successfully!');
-        router.push('/vendorDashboard');
+        
+        if (fromPage === 'forgotpassword' || fromPage === '/forgotpassword') {
+          router.push(`/vendor-reset-password?email=${encodeURIComponent(email || '')}`);
+        } else {
+          router.push('/vendorDashboard');
+        }
       } else {
         toast.error(data.message || 'OTP verification failed');
       }

@@ -198,6 +198,111 @@
   z-index: 1000;
 }
 
+.notificationBanner {
+  position: fixed;
+  top: 1.5rem;
+  right: 2rem;
+  width: min(360px, calc(100% - 2rem));
+  background: #ffffff;
+  border-radius: 16px;
+  border-left: 4px solid #f97316;
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.2);
+  padding: 1.25rem;
+  display: flex;
+  gap: 1rem;
+  z-index: 1200;
+  animation: slideInBanner 0.25s ease forwards;
+}
+
+@keyframes slideInBanner {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notificationContent {
+  flex: 1;
+}
+
+.notificationTitle {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #c2410c;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.notificationMessage {
+  margin: 0.35rem 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.notificationMeta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.notificationActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.viewButton {
+  background: linear-gradient(135deg, #f97316, #f59e0b);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 20px rgba(249, 115, 22, 0.35);
+}
+
+.viewButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 15px 25px rgba(249, 115, 22, 0.45);
+}
+
+.dismissButton {
+  background: transparent;
+  border: 1px solid #cbd5f5;
+  color: #1e293b;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dismissButton:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+@media (max-width: 768px) {
+  .notificationBanner {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    flex-direction: column;
+  }
+
+  .notificationActions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
 .form {
   background: white;
   padding: 2rem;

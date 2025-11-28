@@ -25,6 +25,7 @@ module.exports = {
     '/uni-reset-password',
     '/uni-forgot-password',
     '/vendor-otp-verification',
+    '/vendor-reset-password',
     '/vendor-forgot-password'
   ],
   robotsTxtOptions: {
@@ -52,6 +53,7 @@ module.exports = {
           '/uni-reset-password/',
           '/uni-forgot-password/',
           '/vendor-otp-verification/',
+          '/vendor-reset-password/',
           '/vendor-forgot-password/',
           '/404',
           '/500'

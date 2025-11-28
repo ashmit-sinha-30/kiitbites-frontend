@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { SearchResult } from '../SearchBar';
+import { CART_COUNT_UPDATE_EVENT } from '@/app/hooks/useCartCount';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -119,6 +120,8 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         quantity: item.quantity
       }));
       setSearchCartItems(transformedItems);
+      // Dispatch event to update cart count in navbar
+      window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     } catch (error) {
       console.error('Error refreshing search cart:', error);
       // Don't show toast for expected errors like no user ID
@@ -133,6 +136,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
   // Only refresh cart on mount
   useEffect(() => {
     refreshSearchCart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array means it only runs once on mount
 
   const addToSearchCart = async (userId: string, item: SearchResult, vendorId: string) => {

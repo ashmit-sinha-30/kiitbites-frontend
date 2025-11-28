@@ -22,6 +22,7 @@ const OrderWaitingScreen: React.FC<OrderWaitingScreenProps> = ({
 }) => {
   const [waitTime, setWaitTime] = useState(0); // Wait time in seconds
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -79,12 +80,6 @@ const OrderWaitingScreen: React.FC<OrderWaitingScreenProps> = ({
   const handleCancelOrder = async () => {
     if (isCancelling) return;
     
-    const confirmCancel = window.confirm(
-      "Are you sure you want to cancel this order? You can add more items and place a new order."
-    );
-    
-    if (!confirmCancel) return;
-
     setIsCancelling(true);
     try {
       const response = await axios.post(
@@ -112,6 +107,18 @@ const OrderWaitingScreen: React.FC<OrderWaitingScreenProps> = ({
       }
       setIsCancelling(false);
     }
+  };
+
+  const openCancelDialog = () => setShowCancelDialog(true);
+  const closeCancelDialog = () => {
+    if (!isCancelling) {
+      setShowCancelDialog(false);
+    }
+  };
+
+  const confirmCancelFromDialog = async () => {
+    await handleCancelOrder();
+    setShowCancelDialog(false);
   };
 
   const handleAddMoreItems = async () => {
@@ -182,13 +189,40 @@ const OrderWaitingScreen: React.FC<OrderWaitingScreenProps> = ({
           </button>
           <button
             className={styles.cancelButton}
-            onClick={handleCancelOrder}
+            onClick={openCancelDialog}
             disabled={isCancelling}
           >
             {isCancelling ? "Cancelling..." : "Cancel Order"}
           </button>
         </div>
       </div>
+
+      {showCancelDialog && (
+        <div className={styles.dialogOverlay}>
+          <div className={styles.dialog}>
+            <h3>Cancel this order?</h3>
+            <p>
+              Are you sure you want to cancel this order? You can always add more items and place a new one.
+            </p>
+            <div className={styles.dialogActions}>
+              <button
+                className={styles.dialogSecondary}
+                onClick={closeCancelDialog}
+                disabled={isCancelling}
+              >
+                Keep Waiting
+              </button>
+              <button
+                className={styles.dialogPrimary}
+                onClick={confirmCancelFromDialog}
+                disabled={isCancelling}
+              >
+                {isCancelling ? "Cancelling..." : "Yes, Cancel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

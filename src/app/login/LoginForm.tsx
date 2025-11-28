@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; // For App Router (Next.js 13+)
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -31,7 +31,6 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const router = useRouter();
-  const hasInitialized = useRef(false);
 
   const BACKEND_URL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -194,10 +193,6 @@ export default function LoginForm() {
 
   // Refresh session on component mount - deferred to not block initial render
   useEffect(() => {
-    // Prevent double execution in React Strict Mode
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-
     // Simulate slow internet by showing skeleton for 1-2 seconds
     const minDelay = 800;
     const maxDelay = 1500;

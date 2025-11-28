@@ -14,6 +14,7 @@ import { LuArrowUpRight } from "react-icons/lu";
 import { FaUserCircle } from "react-icons/fa";
 
 import styles from "./styles/Header.module.scss";
+import { useCartCount } from "../hooks/useCartCount";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -37,6 +38,7 @@ const Header: React.FC<HeaderProps> = ({
   const [isMobile, setIsMobile] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { count: cartCount } = useCartCount();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -224,12 +226,17 @@ const Header: React.FC<HeaderProps> = ({
                     <span>{userFullName || "Login"}</span>
                   </div>
                   <div
-                    className={`${styles.navItem} ${
+                    className={`${styles.navItem} ${styles.cartItem} ${
                       pathname === "/cart" ? styles.activeNavItem : ""
                     }`}
                     onClick={() => handleNavigation("/cart")}
                   >
-                    <PiShoppingCartSimpleBold size={24} />
+                    <div className={styles.cartIconWrapper}>
+                      <PiShoppingCartSimpleBold size={24} />
+                      {cartCount > 0 && (
+                        <span className={styles.cartBadge}>{cartCount}</span>
+                      )}
+                    </div>
                     <span>Cart</span>
                   </div>
                 </div>
@@ -271,12 +278,17 @@ const Header: React.FC<HeaderProps> = ({
                 <span>{userFullName || "Login"}</span>
               </div>
               <div
-                className={`${styles.navItem} ${
+                className={`${styles.navItem} ${styles.cartItem} ${
                   pathname === "/cart" ? styles.activeNavItem : ""
                 }`}
                 onClick={() => handleNavigation("/cart")}
               >
-                <PiShoppingCartSimpleBold size={24} />
+                <div className={styles.cartIconWrapper}>
+                  <PiShoppingCartSimpleBold size={24} />
+                  {cartCount > 0 && (
+                    <span className={styles.cartBadge}>{cartCount}</span>
+                  )}
+                </div>
                 <span>Cart</span>
               </div>
             </div>

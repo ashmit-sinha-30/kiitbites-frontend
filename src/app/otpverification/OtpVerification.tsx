@@ -55,10 +55,18 @@ function OtpForm({
 }) {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [resendLoading, setResendLoading] = useState<boolean>(false);
+  const [countdown, setCountdown] = useState<number>(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
   const router = useRouter(); // ✅ Correctly using router here
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -108,8 +116,29 @@ function OtpForm({
       const data = await res.json();
 
       if (res.ok) {
-        // Store token first
-        localStorage.setItem("token", data.token);
+        const token = data.token;
+
+        if (token) {
+          localStorage.setItem("token", token);
+        } else {
+          localStorage.removeItem("token");
+        }
+
+        // If the flow originated from forgot password, skip session lookups.
+        if (
+          fromPage === "forgotpassword" ||
+          fromPage === "/forgotpassword"
+        ) {
+          toast.success("OTP verified successfully!");
+          router.push(`/resetpassword?email=${encodeURIComponent(email)}`);
+          return;
+        }
+
+        if (!token) {
+          toast.error("Verification succeeded but login session is missing. Please log in manually.");
+          router.push("/login");
+          return;
+        }
 
         // After successful OTP verification, get user data
         const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
@@ -117,7 +146,7 @@ function OtpForm({
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${data.token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -194,6 +223,32 @@ function OtpForm({
     }
   };
 
+  const handleResendOtp = async () => {
+    if (!email || countdown > 0) return;
+    setResendLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/user/auth/resendotp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setCountdown(60);
+        toast.success("OTP resent successfully!");
+      } else {
+        toast.error(data.message || "Failed to resend OTP.");
+      }
+    } catch (error) {
+      console.error("Resend OTP error:", error);
+      toast.error("Network error. Please try again.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.box}>
@@ -225,6 +280,21 @@ function OtpForm({
             {isLoading ? "Verifying..." : "Verify OTP"}
           </button>
         </form>
+        <div className={styles.footer}>
+          <p>Didn&apos;t receive the code?</p>
+          <button
+            type="button"
+            onClick={handleResendOtp}
+            className={styles.resendButton}
+            disabled={resendLoading || countdown > 0}
+          >
+            {resendLoading
+              ? "Sending..."
+              : countdown > 0
+              ? `Resend in ${countdown}s`
+              : "Resend OTP"}
+          </button>
+        </div>
       </div>
       <ToastContainer position="bottom-right" autoClose={3000} />
     </div>

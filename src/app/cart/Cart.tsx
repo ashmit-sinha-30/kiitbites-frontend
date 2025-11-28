@@ -13,6 +13,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Script from "next/script";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CART_COUNT_UPDATE_EVENT } from "../hooks/useCartCount";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
 
 interface ExtraItem {
@@ -125,6 +126,8 @@ export default function Cart() {
             category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
           }));
           setCart(guestCartWithCategory);
+        // Dispatch event to update cart count in navbar
+        window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
         } catch {
           setCart([]);
         }
@@ -188,6 +191,8 @@ export default function Cart() {
         });
 
         setCart(detailedCart);
+        // Dispatch event to update cart count in navbar
+        window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
 
         // Fetch extras after cart is loaded
         await fetchExtras();
@@ -234,7 +239,7 @@ export default function Cart() {
       setExtras([]);
     }
      
-  }, [cart, userData?._id]);
+  }, [cart, userData?._id]);  
 
   const reFetchCart = async () => {
     try {
@@ -269,6 +274,8 @@ export default function Cart() {
         };
       });
       setCart(updated);
+      // Dispatch event to update cart count in navbar
+      window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     } catch {
       // Error refetching cart
     }
@@ -335,6 +342,8 @@ export default function Cart() {
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.success(`Increased quantity of ${thisItem.name}`);
+      // Dispatch event to update cart count in navbar
+      window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     }
   };
 
@@ -374,6 +383,8 @@ export default function Cart() {
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.info(`Decreased quantity of ${thisItem.name}`);
+      // Dispatch event to update cart count in navbar
+      window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     }
   };
 
@@ -405,6 +416,8 @@ export default function Cart() {
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.error(`${thisItem.name} removed from cart`);
+      // Dispatch event to update cart count in navbar
+      window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     }
   };
 
@@ -479,6 +492,8 @@ export default function Cart() {
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.success(`${item.name} added to cart!`);
+      // Dispatch event to update cart count in navbar
+      window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     }
   };
 

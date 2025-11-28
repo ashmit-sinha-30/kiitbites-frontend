@@ -140,6 +140,44 @@
     }
   }
 
+  .cartItem {
+    position: relative;
+  }
+
+  .cartIconWrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cartBadge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #01796f;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 20px;
+    padding: 2px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+    @media (max-width: 770px) {
+      width: 18px;
+      height: 18px;
+      font-size: 0.7rem;
+      min-width: 18px;
+    }
+  }
+
   .profileIcon {
     cursor: pointer;
     position: relative;
