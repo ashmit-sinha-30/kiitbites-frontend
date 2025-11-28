@@ -66,6 +66,9 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5"
   },
+  "overrides": {
+    "glob": "^10.5.0"
+  },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --fix",
