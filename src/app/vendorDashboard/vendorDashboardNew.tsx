@@ -397,9 +397,11 @@ export default function VendorDashboardPage() {
           <div className={styles.notificationBanner}>
             <div className={styles.notificationContent}>
               <p className={styles.notificationTitle}>New pending order</p>
-              <p className={styles.notificationMessage}>
-                Order #{pendingOrderAlert.orderNumber} from {pendingOrderAlert.collectorName}
-              </p>
+              <div className={styles.notificationMessage}>
+                <span className={styles.orderLabel}>Order</span>
+                <span className={styles.orderNumber}>#{pendingOrderAlert.orderNumber}</span>
+                <span className={styles.customerName}>from {pendingOrderAlert.collectorName}</span>
+              </div>
               <p className={styles.notificationMeta}>
                 {new Date(pendingOrderAlert.createdAt).toLocaleTimeString()} ·{" "}
                 {currencyFormatter.format(pendingOrderAlert.total || 0)}
