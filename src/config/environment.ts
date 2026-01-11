@@ -11,7 +11,7 @@ export const ENV_CONFIG = {
   
   // Backend Configuration
   BACKEND: {
-    URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001',
+    URL: process.env.NEXT_PUBLIC_BACKEND_URL,
   },
   
   // App Configuration
