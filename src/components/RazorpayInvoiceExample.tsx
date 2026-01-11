@@ -29,7 +29,7 @@ interface EnvironmentSummary {
     apiBase: string;
   };
   backend: {
-    url: string;
+    url: string | undefined;
   };
   app: {
     name: string;
