@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import CartItemCard from "../components/CartItemCard";
-import ExtrasCard from "../components/ExtrasCard";
+import CartItemCard from "../components/cart/CartItemCard/CartItemCard";
+import ExtrasCard from "../components/cart/ExtrasCard/ExtrasCard";
 // Import both BillBoxApproval (for vendors with pending order service) and BillBox (for others)
-import BillBoxApproval from "../components/BillBoxApproval";
-import BillBox from "../components/BillBox";
+import BillBoxApproval from "../components/cart/BillBoxApproval/BillBoxApproval";
+import BillBox from "../components/cart/BillBox/BillBox";
 // NEW: Import OrderWaitingScreen component for showing wait time during vendor approval (new file)
-import OrderWaitingScreen from "../components/OrderWaitingScreen";
+import OrderWaitingScreen from "../components/order/OrderWaitingScreen/OrderWaitingScreen";
 import styles from "./styles/Cart.module.scss";
 import { FoodItem, CartItem } from "../cart/types";
 import { useRouter } from "next/navigation";
@@ -228,6 +228,7 @@ export default function Cart() {
     };
 
     fetchUserAndCart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Add a new useEffect to refetch extras when cart changes

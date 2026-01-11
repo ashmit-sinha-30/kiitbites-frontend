@@ -66,6 +66,7 @@
     "*.{js,jsx,ts,tsx}": [
       "eslint --fix",
       "git add"
-    ]
+    ],
+    "next-env.d.ts": []
   }
 }

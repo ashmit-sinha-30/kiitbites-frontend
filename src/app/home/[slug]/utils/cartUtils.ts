@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import { FoodItem, CartItem, Vendor } from "../types";
-import { SearchResult } from '@/app/components/SearchBar';
+import { SearchResult } from '@/app/components/search/SearchBar/SearchBar';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import styles from "./styles/help.module.scss";
-import Form from "../components/HelpMessage"; 
+import Form from "../components/admin/HelpMessage/HelpMessage"; 
 
 
 const Help: React.FC = () => {

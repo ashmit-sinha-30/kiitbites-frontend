@@ -1,0 +1,143 @@
+// @import url("https://fonts.googleapis.com/css2?family=Shadows+Into+Light&display=swap");
+
+.container {
+  font-family: "Shadows Into Light", cursive;
+  background: #e0f5f3;
+  padding: 1rem;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.segmentedControl {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.segment,
+.active {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #aaa;
+  border-radius: 0.4rem;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+}
+
+.active {
+  background: #01796f;
+  color: #fff;
+  border-color: #01796f;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 0.4rem;
+  font-size: 1rem;
+}
+
+.textarea {
+  resize: none;
+  height: 5rem;
+  min-height: 3rem;
+}
+
+.bill {
+  background: #f7faf9;
+  padding: 0.6rem;
+  border-radius: 0.6rem;
+  display: flex;
+  // overflow-y: scroll;
+  // scrollbar-width: none;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.items{
+  overflow-y: scroll;
+  scrollbar-width: none;
+}
+
+.total{
+  // position: fixed;
+}
+
+.billDelivery {
+  height: 12.5rem; // Adjust this as needed
+}
+
+.billRegular {
+  height: 18rem; // Same height for takeaway and dinein
+}
+
+.line,
+.extra,
+.preparationTime {
+  display: flex;
+  justify-content: space-between;
+}
+
+.extra {
+  font-style: italic;
+  color: #555;
+}
+
+.preparationTime {
+  background: #fff3cd;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid #ffeaa7;
+  font-size: 0.9rem;
+  color: #856404;
+  margin: 0.5rem 0;
+}
+
+.divider {
+  height: 1px;
+  background: #bbb;
+  margin: 0.6rem 0;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.button {
+  padding: 0.6rem;
+  background: #01796f;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes scaleIn {
+  to {
+    transform: scale(1.15);
+  }
+}

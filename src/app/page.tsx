@@ -5,9 +5,9 @@ import HeroSection from "./components/Landing/HeroSection";
 import WhatWeDoSection from "./components/Landing/WhatWeDoSection";
 import FeaturesSection from "./components/Landing/FeaturesSection";
 // import TestimonialsSection from "@/components/TestimonialsSection";
-import CollegesSection from "./components/CollegesSection";
+import CollegesSection from "./components/admin/CollegesSection/CollegesSection";
 import FaqSection from "./components/Landing/FaqSection";
-import Header from "./components/Header";
+import Header from "./components/layout/Header/Header";
 
 const Index = () => {
   useEffect(() => {

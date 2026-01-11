@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import DishCard from "@/app/components/DishCard";
-import SearchBar from "@/app/components/SearchBar";
+import DishCard from "@/app/components/food/DishCard/DishCard";
+import SearchBar from "@/app/components/search/SearchBar/SearchBar";
 import styles from "./styles/VendorPage.module.scss";
 import { FaRegHeart } from "react-icons/fa";
 import { FaHeart } from "react-icons/fa";

@@ -1,12 +1,12 @@
-import Footer from "./components/Footer";
+import Footer from "./components/layout/Footer/Footer";
 import "./globals.css"; // Optional global styles
 import { GoogleOAuthProvider } from "@react-oauth/google";// Import AuthProvider
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { Metadata } from "next";
 import { SearchCartProvider } from './components/context/SearchCartContext';
-import ConditionalHeader from './components/ConditionalHeader';
-import Snowflakes from './components/Snowflakes';
+import ConditionalHeader from './components/layout/ConditionalHeader/ConditionalHeader';
+import Snowflakes from './components/layout/Snowflakes/Snowflakes';
 
 export const metadata: Metadata = {
   title: {

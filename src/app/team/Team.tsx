@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import TeamCard from "../components/TeamCard";
-import SkeletonCard from "../components/SkeletonCard";
+import TeamCard from "../components/team/TeamCard/TeamCard";
+import SkeletonCard from "../components/skeleton/SkeletonCard/SkeletonCard";
 import styles from "./styles/Team.module.scss";
 import { motion, Variants } from "framer-motion";
 

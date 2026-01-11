@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { SearchResult } from '../SearchBar';
+import { SearchResult } from '../search/SearchBar/SearchBar';
 import { CART_COUNT_UPDATE_EVENT } from '@/app/hooks/useCartCount';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";

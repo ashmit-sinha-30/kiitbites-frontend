@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { toast } from 'react-toastify';
 import { FoodItem, CartItem, Vendor } from '../types';
 import { addToCart, increaseQuantity, decreaseQuantity } from '../utils/cartUtils';
-import { SearchResult } from '@/app/components/SearchBar';
+import { SearchResult } from '@/app/components/search/SearchBar/SearchBar';
 import { CART_COUNT_UPDATE_EVENT } from '@/app/hooks/useCartCount';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../components/search/SearchBar/SearchBar";
 import { CartProvider } from "../home/[slug]/context/CartContext";
 
 export default function SearchBarPage() {
