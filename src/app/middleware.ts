@@ -2,8 +2,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
+  const hostname = request.headers.get("host") || "";
   const url = request.nextUrl;
   const lowercasePath = url.pathname.toLowerCase();
+
+  // Handle admin subdomain routing
+  if (hostname.startsWith("admin.")) {
+    return NextResponse.rewrite(
+      new URL("/admin-dashboard" + url.pathname, request.url)
+    );
+  }
 
   // If the current path is not already in lowercase, redirect to the lowercase version
   if (url.pathname !== lowercasePath) {
