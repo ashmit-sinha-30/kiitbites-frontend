@@ -8,9 +8,12 @@ export function middleware(request: NextRequest) {
 
   // Handle admin subdomain routing
   if (hostname.startsWith("admin.")) {
-    return NextResponse.rewrite(
-      new URL("/admin-dashboard" + url.pathname, request.url)
-    );
+    // Only prepend /admin-dashboard if the path doesn't already start with it
+    if (!url.pathname.startsWith("/admin-dashboard")) {
+      return NextResponse.rewrite(
+        new URL("/admin-dashboard" + url.pathname, request.url)
+      );
+    }
   }
 
   // If the current path is not already in lowercase, redirect to the lowercase version
@@ -24,3 +27,4 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: "/:path*", // Apply this middleware to all paths
 };
+
