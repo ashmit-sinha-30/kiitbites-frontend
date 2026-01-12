@@ -27,7 +27,7 @@ jobs:
         run: |
           COMMENT=$(cat <<EOF
           {
-            "body": "✅ **PR Merged Successfully**\n\nGreat work on this contribution! Your changes have been reviewed and merged into **main**. Thanks for the thought, effort, and care you put into improving the codebase.\n\nIf you spot any follow-ups or have ideas for further enhancements, feel free to jump right back in. Contributions like this keep the project moving forward. 🚀"
+            "body": "👋 Hi @${{ github.actor }} your **PR has been merged successfully**\n\nGreat work on this contribution! Your changes have been reviewed and merged into **main**. Thanks for the thought, effort, and care you put into improving the codebase.\n\nIf you spot any follow-ups or have ideas for further enhancements, feel free to jump right back in. Contributions like this keep the project moving forward. 🚀"
           }
           EOF
           )

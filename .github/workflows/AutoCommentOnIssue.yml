@@ -17,7 +17,7 @@ jobs:
         run: |
           COMMENT=$(cat <<EOF
           {
-            "body": "👋 Thanks for opening this issue!\n\nWe appreciate you taking the time to report it. The team will review the details and follow up if any additional information is needed.\n\nIf you have relevant logs, screenshots, or steps to reproduce, feel free to add them here — it helps us resolve things faster. 🚀"
+            "body": "👋 Hi @${{ github.actor }}, Thanks for opening this issue!\n\nWe appreciate you taking the time to report it. The team will review the details and follow up if any additional information is needed.\n\nIf you have relevant logs, screenshots, or steps to reproduce, feel free to add them here — it helps us resolve things faster. 🚀"
           }
           EOF
           )
