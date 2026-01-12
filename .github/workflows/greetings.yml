@@ -1,0 +1,40 @@
+name: Greetings
+
+on:
+  pull_request_target:
+    branches:
+      - beta
+      - main
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Greet first-time contributors
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          issue-message: |
+            👋 Hi @${{ github.actor }} — thanks for opening this issue!
+
+            We appreciate you taking the time to report it. The team will review the details and follow up if any additional context is needed.
+
+            If you have logs, screenshots, or clear steps to reproduce, feel free to add them here — they help us resolve things faster. 🚀
+
+          pr-message: |
+            🙌 Thanks for your contribution, @${{ github.actor }}!
+
+            Your pull request is now in the review queue. A maintainer will review the changes and share feedback if anything is needed.
+
+            Please ensure the PR description is complete and includes testing notes or screenshots (if applicable). Looking forward to reviewing this! 🚀
