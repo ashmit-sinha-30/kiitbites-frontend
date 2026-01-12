@@ -4,20 +4,29 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") || "";
   const url = request.nextUrl;
-  const lowercasePath = url.pathname.toLowerCase();
+  const pathname = url.pathname;
+  const lowercasePath = pathname.toLowerCase();
+
+  // Skip middleware for Next.js internals and API routes
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api")
+  ) {
+    return NextResponse.next();
+  }
 
   // Handle admin subdomain routing
   if (hostname.startsWith("admin.")) {
     // Only prepend /admin-dashboard if the path doesn't already start with it
-    if (!url.pathname.startsWith("/admin-dashboard")) {
+    if (!pathname.startsWith("/admin-dashboard")) {
       return NextResponse.rewrite(
-        new URL("/admin-dashboard" + url.pathname, request.url)
+        new URL("/admin-dashboard" + pathname, request.url)
       );
     }
   }
 
   // If the current path is not already in lowercase, redirect to the lowercase version
-  if (url.pathname !== lowercasePath) {
+  if (pathname !== lowercasePath) {
     return NextResponse.redirect(new URL(lowercasePath, request.url));
   }
 
