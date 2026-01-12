@@ -6,29 +6,83 @@
 
 ---
 
-## Executive Summary
+## PR Metadata
+
+- **PR Size:** [ ] Small [ ] Medium [ ] Large [ ] Release  
+- **Priority:** [ ] Low [ ] Medium [ ] High [ ] Critical  
+- **Impact:** [ ] Low [ ] Medium [ ] High [ ] Critical  
+- **Complexity:** [ ] Low [ ] Medium [ ] High [ ] Very High
+- **Estimated Review Time:** 
+- **Target Deployment Date:** 
+- **Related PRs:** <!-- Link to related PRs if any -->
+- **Blocks/Blocked By:** <!-- PRs that block or are blocked by this PR -->
+
+
+> ### Section Requirements by PR Size/Priority/Impact
+> 
+> **Small PRs (Low Priority/Impact):**
+> - ✅ Core Sections (Executive Summary, Related Context, Change Classification, Detailed Changes)
+> - ✅ Basic Testing Strategy
+> - ✅ Deployment Notes (basic)
+> - ⚠️ Skip Advanced sections unless relevant
+> 
+> **Medium PRs (Medium Priority/Impact):**
+> - ✅ All Core Sections
+> - ✅ Comprehensive Testing Strategy
+> - ✅ Performance Analysis (if applicable)
+> - ✅ Security Considerations (if applicable)
+> - ✅ Deployment Notes + Basic Rollback Strategy
+> 
+> **Large PRs (High Priority/Impact):**
+> - ✅ All sections required
+> - ✅ Full Testing Strategy with device/browser testing
+> - ✅ Complete Performance Analysis
+> - ✅ Comprehensive Security Considerations
+> - ✅ Full Deployment & Rollback Plan
+> - ✅ Risk Assessment
+> - ✅ Business Impact & Metrics
+> 
+> **Release/Critical PRs (Critical Priority/Impact):**
+> - ✅ ALL sections mandatory
+> - ✅ Extensive testing documentation
+> - ✅ Complete deployment plan with monitoring
+> - ✅ Comprehensive rollback strategy with testing
+> - ✅ Detailed risk assessment and mitigation
+> - ✅ Full business impact analysis
+> - ✅ Stakeholder communication plan
+
+---
+
+## Executive Summary (CORE – Required)
+
+### What & Why
+<!-- What problem does this PR solve? Why does it matter to users or the business? -->
+
+### Outcome
+<!-- Clear, one-line result of this change -->
 
 ### Change Overview
 <!-- Provide a comprehensive executive summary of what this PR accomplishes and its business impact -->
 
 
-### Related Work
-- **Epic/Feature:** 
-- **User Stories:** 
-- **Design System Updates:** 
-- **API Dependencies:** 
+## Related Context (CORE – Required)
+
+- **Epic / Feature:**  
+- **User Story / Ticket:**  
+- **Design Reference (Figma):**  
+- **API / Backend Dependency:**  
 
 ---
 
-## Change Classification
+## Change Classification (CORE – Required)
 
 ### Primary Type
-- [x] **Bug Fix** - Non-breaking change that fixes an issue
+- [ ] **Bug Fix** - Non-breaking change that fixes an issue
 - [ ] **Feature** - New functionality or enhancement
 - [ ] **Breaking Change** - Changes that affect existing functionality
 
 - [ ] **Documentation** - Documentation updates only
-- [x] **UI/UX** - User interface or user experience improvements
+- [ ] **UI/UX** - User interface or user experience improvements
 - [ ] **Performance** - Performance optimization or improvements
 - [ ] **Refactoring** - Code restructuring without functional changes
 - [ ] **Testing** - Test coverage improvements or test-related changes
@@ -36,9 +90,9 @@
 - [ ] **Dependencies** - Package updates or dependency management
 - [ ] **Infrastructure** - Build, deployment, or infrastructure changes
 
-### Secondary Categories
+### Secondary Categories (Optional)
 - [ ] **State Management** - Redux, Context, or state-related changes
-- [x] **Styling** - CSS, SCSS, or styling framework changes
+- [ ] **Styling** - CSS, SCSS, or styling framework changes
 - [ ] **Responsive** - Mobile, tablet, or responsive design changes
 - [ ] **Accessibility** - A11y improvements or WCAG compliance
 - [ ] **Internationalization** - i18n or localization changes
@@ -47,12 +101,12 @@
 
 ---
 
-## Detailed Changes
+## Detailed Changes (CORE – Required)
 
 ### Components & Pages
 
 #### New Components
-<!-- List all new React components created -->
+<!-- List all new Next components created -->
 - [ ] Component Name: `src/components/...`
 - [ ] Component Name: `src/components/...`
 
@@ -150,7 +204,7 @@
 
 ---
 
-## Comprehensive Testing Strategy
+## Comprehensive Testing Strategy (ADVANCED – Medium+ PRs)
 
 ### Unit Testing
 - [ ] Component unit tests added/updated
@@ -217,7 +271,7 @@
 
 ---
 
-## Performance Analysis
+## Performance Analysis (ADVANCED – Medium+ PRs)
 
 ### Bundle Analysis
 - **Bundle Size Before:** 
@@ -254,7 +308,7 @@
 
 ---
 
-## Security Considerations
+## Security Considerations (ADVANCED – Medium+ PRs)
 
 ### Security Checklist
 - [ ] Input validation implemented
@@ -285,7 +339,7 @@
 
 ---
 
-## Dependencies & Configuration
+## Dependencies & Configuration (ADVANCED – Medium+ PRs)
 
 ### Package Management
 
@@ -329,49 +383,237 @@
 
 ---
 
-## Deployment & Release Management
+## Deployment & Rollback Plan (ADVANCED/RELEASE – Required for Medium+ PRs)
+
+> _Note: Requirements vary by PR Size/Priority/Impact:_  
+> **Small/Low:** Deployment Notes only  
+> **Medium:** Deployment Notes + Basic Rollback Strategy  
+> **Large/High/Critical:** Full Deployment Plan + Comprehensive Rollback Strategy  
+> **Release/Critical:** Complete Deployment Plan + Advanced Rollback + Monitoring Plan
+
+### Deployment Notes
+<!-- Anything DevOps / reviewers should know -->
+- **Deployment Type:** [ ] Standard [ ] Blue-Green [ ] Canary [ ] Rolling [ ] Zero-Downtime
+- **Deployment Window:** 
+- **Estimated Deployment Time:** 
+- **Deployment Complexity:** [ ] Low [ ] Medium [ ] High [ ] Very High
+- **Downtime Expected:** [ ] No [ ] Yes - Duration: 
+- **Manual Steps Required:** [ ] No [ ] Yes - Details below
+- **Database Migrations:** [ ] None [ ] Forward Only [ ] Reversible [ ] Complex
+- **Cache Invalidation Required:** [ ] No [ ] Yes - Details:
+- **CDN Cache Clear:** [ ] No [ ] Yes - Paths:
+- **Environment Variables:** [ ] No changes [ ] New variables [ ] Modified variables - See Dependencies section
+- **Infrastructure Changes:** [ ] None [ ] Scaling [ ] New services [ ] Configuration updates
+- **Third-Party Service Updates:** [ ] None [ ] API key changes [ ] Service configuration
+- **Feature Flags Required:** [ ] No [ ] Yes - Flag name(s):
+- **Pre-Deployment Validation:** 
+- **Post-Deployment Validation:** 
+
+#### Manual Deployment Steps
+<!-- List any manual steps that need to be performed during deployment -->
+1. 
+2. 
+3. 
+
+#### Post-Deployment Tasks
+- [ ] Health checks verified
+- [ ] Smoke tests executed
+- [ ] Monitoring dashboards checked
+- [ ] Error logs reviewed
+- [ ] Performance metrics validated
+- [ ] User acceptance verification
+- [ ] Documentation updated
 
 ### Environment Deployment
 
 #### Development Environment
 - [ ] Local development setup verified
-- [ ] Docker configuration updated
-- [ ] Development database migrations
-- [ ] Mock data updates
+- [ ] Docker configuration updated (if applicable)
+- [ ] Development database migrations tested
+- [ ] Mock data updates applied
+- [ ] Environment variables configured
+- [ ] Build process verified
 
 #### Staging Environment
 - [ ] Staging deployment tested
 - [ ] Integration testing completed
 - [ ] Performance testing conducted
-- [ ] User acceptance testing
+- [ ] User acceptance testing passed
+- [ ] Cross-browser testing verified
+- [ ] Mobile device testing completed
+- [ ] Accessibility testing validated
 
 #### Production Environment
-- [ ] Production deployment plan
-- [ ] Database migration strategy
-- [ ] Rollback procedures defined
-- [ ] Monitoring and alerting setup
-- [ ] Feature flag configuration
+- [ ] Production deployment plan reviewed and approved
+- [ ] Database migration strategy defined and tested
+- [ ] Rollback procedures documented and tested
+- [ ] Monitoring and alerting configured
+- [ ] Feature flag configuration prepared
+- [ ] Backup strategy verified
+- [ ] Security review completed
+- [ ] Performance baseline established
+
+### Rollback Strategy
+
+#### Trigger Conditions
+<!-- Specify conditions that would trigger a rollback -->
+- **Critical Errors:** 
+  - Application crashes or 500 errors > X%
+  - Database connection failures
+  - API integration failures
+- **Performance Issues:** 
+  - Response time degradation > X%
+  - Error rate increase > X%
+  - Resource utilization > X%
+- **Business Impact:** 
+  - Revenue loss > X%
+  - User complaints > X threshold
+  - Security vulnerabilities detected
+- **Other Conditions:** 
+
+#### Rollback Method
+- **Rollback Type:** [ ] Automated [ ] Manual [ ] Hybrid
+- **Rollback Approach:** [ ] Git revert [ ] Version rollback [ ] Feature flag disable [ ] Configuration rollback [ ] Database rollback
+- **Previous Stable Version:** 
+- **Rollback Commit/Tag:** 
+- **Feature Flag Toggle:** [ ] N/A [ ] Available - Flag name(s):
+
+#### Rollback Procedure
+<!-- Step-by-step rollback procedure -->
+1. **Immediate Actions:**
+   - [ ] Stop new deployments
+   - [ ] Notify stakeholders
+   - [ ] Assess impact severity
+   
+2. **Code Rollback:**
+   - [ ] Revert to previous commit/tag: 
+   - [ ] Trigger deployment pipeline
+   - [ ] Verify rollback deployment
+   
+3. **Database Rollback (if applicable):**
+   - [ ] Rollback migration script:
+   - [ ] Data restoration plan:
+   - [ ] Backup verification:
+   
+4. **Configuration Rollback:**
+   - [ ] Environment variable revert
+   - [ ] Infrastructure config revert
+   - [ ] Service configuration restore
+   
+5. **Cache/CDN Rollback:**
+   - [ ] CDN cache clear
+   - [ ] Application cache clear
+   - [ ] Browser cache considerations
+
+#### Expected Recovery Time
+- **Target Recovery Time (RTO):** 
+- **Actual Recovery Time (last rollback):** N/A
+- **Rollback Execution Time:** 
+- **Validation Time:** 
+- **Total Estimated Downtime:** 
+
+#### Rollback Testing
+- [ ] Rollback procedure documented
+- [ ] Rollback tested in staging environment
+- [ ] Rollback scripts validated
+- [ ] Team trained on rollback procedure
+- [ ] Runbook created/updated
+
+#### Post-Rollback Actions
+- [ ] Root cause analysis initiated
+- [ ] Incident report created
+- [ ] Stakeholders notified
+- [ ] Monitoring enhanced
+- [ ] Fix implementation planned
+- [ ] Lessons learned documented
 
 ### Release Checklist
-- [ ] Version number incremented
+
+#### Pre-Release
+- [ ] Version number incremented (Semantic Versioning: MAJOR.MINOR.PATCH)
 - [ ] Changelog updated
 - [ ] Release notes prepared
 - [ ] Documentation updated
 - [ ] Team notification sent
-- [ ] Stakeholder communication
-- [ ] Post-deployment monitoring plan
+- [ ] Stakeholder communication completed
+- [ ] Release branch created (if applicable)
+- [ ] Release candidate tested
 
-### Rollback Strategy
-<!-- Detailed rollback plan if issues arise -->
-- **Database Rollback:** 
-- **Code Rollback:** 
-- **Configuration Rollback:** 
-- **Timeline for Rollback:** 
-- **Success Criteria:** 
+#### Release Day
+- [ ] Deployment window confirmed
+- [ ] All stakeholders available/on-call
+- [ ] Monitoring team notified
+- [ ] Support team briefed
+- [ ] Communication plan executed
+- [ ] Deployment executed
+- [ ] Health checks passed
+- [ ] Smoke tests passed
+
+#### Post-Release
+- [ ] Post-deployment monitoring plan active
+- [ ] Success metrics tracked
+- [ ] Error logs reviewed
+- [ ] Performance metrics analyzed
+- [ ] User feedback collected
+- [ ] Release retrospective scheduled
+- [ ] Known issues documented
+
+### Monitoring & Observability
+
+#### Metrics to Monitor
+- **Application Metrics:**
+  - Error rates
+  - Response times
+  - Request throughput
+  - User sessions
+- **Infrastructure Metrics:**
+  - CPU/Memory usage
+  - Network traffic
+  - Database performance
+  - CDN performance
+- **Business Metrics:**
+  - User engagement
+  - Conversion rates
+  - Revenue impact
+  - Feature adoption
+
+#### Alerting Configuration
+- [ ] Error rate alerts configured
+- [ ] Performance degradation alerts
+- [ ] Resource utilization alerts
+- [ ] Business metric alerts
+- [ ] On-call rotation notified
+- [ ] Escalation path defined
+
+#### Dashboards
+- [ ] Real-time monitoring dashboard available
+- [ ] Performance dashboard updated
+- [ ] Business metrics dashboard configured
+- [ ] Error tracking dashboard set up
+
+### Risk Assessment for Deployment
+
+#### Deployment Risks
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Deployment failure |  |  |  |
+| Performance degradation |  |  |  |
+| Data loss/corruption |  |  |  |
+| Integration failures |  |  |  |
+| User experience disruption |  |  |  |
+
+#### Mitigation Strategies
+- [ ] Feature flags for gradual rollout
+- [ ] Canary deployment strategy
+- [ ] Blue-green deployment setup
+- [ ] Comprehensive testing in staging
+- [ ] Monitoring and alerting in place
+- [ ] Rollback plan tested and ready
+- [ ] Communication plan prepared 
 
 ---
 
-## Visual Documentation
+## Visual Documentation (ADVANCED – Medium+ PRs)
 
 ### Screenshots
 
@@ -408,7 +650,7 @@
 
 ---
 
-## Documentation Updates
+## Documentation Updates (ADVANCED – Medium+ PRs)
 
 ### Technical Documentation
 - [ ] README.md updated
@@ -434,7 +676,7 @@
 
 ---
 
-## Code Quality & Standards
+## Code Quality & Standards (ADVANCED – Medium+ PRs)
 
 ### Code Review Checklist
 
@@ -473,7 +715,7 @@
 
 ---
 
-## Business Impact & Metrics
+## Business Impact & Metrics (RELEASE – Large/Release PRs)
 
 ### Success Metrics
 <!-- Define how success will be measured -->
@@ -501,7 +743,7 @@
 
 ---
 
-## Integration & Dependencies
+## Integration & Dependencies (RELEASE – Large/Release PRs)
 
 ### External Integrations
 - [ ] Third-party APIs
@@ -529,7 +771,14 @@
 
 ---
 
-## Risk Assessment & Mitigation
+## Risk Assessment & Mitigation (RELEASE – Large/Release PRs)
+
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Risk 1 |        |            |
+| Risk 2 |        |            |
+
 
 ### Identified Risks
 <!-- List potential risks and mitigation strategies -->
@@ -554,7 +803,7 @@
 
 ---
 
-## Final Review Checklist
+## Final Review Checklist (RELEASE – Large/Release PRs)
 
 ### For Author (Self-Review)
 - [ ] All changes have been thoroughly tested
@@ -593,7 +842,7 @@
 
 ---
 
-## Related Resources
+## Related Resources (RELEASE – Large/Release PRs)
 
 ### Documentation Links
 - [Design System Documentation](#)
@@ -619,7 +868,7 @@
 
 ---
 
-## Contact Information
+## Contact Information (RELEASE – Large/Release PRs)
 
 ### Team Contacts
 - **Frontend Lead:** @username
@@ -638,7 +887,7 @@
 
 ---
 
-## Labels & Metadata
+## Labels & Metadata (RELEASE – Large/Release PRs)
 
 ### Standard Labels
 - `frontend`
@@ -664,7 +913,7 @@
 
 ---
 
-## Additional Notes
+## Additional Notes (RELEASE – Large/Release PRs)
 
 ### Implementation Notes
 <!-- Any special implementation considerations -->
