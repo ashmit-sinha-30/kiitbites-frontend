@@ -18,7 +18,7 @@ jobs:
       run: |
         COMMENT=$(cat <<EOF
         {
-          "body": "Thank you for submitting your pull request! 🙌 We'll review it as soon as possible. 😊"
+          "body": "👋 **Thanks for opening this pull request!**\n\nYour changes are now in the review queue. The team will go through the implementation, and we’ll follow up with feedback or questions if needed.\n\nIn the meantime, please ensure the PR description is complete and includes relevant context, testing notes, and screenshots (if applicable). This helps us review faster and more effectively. 🚀"
         }
         EOF
         )
