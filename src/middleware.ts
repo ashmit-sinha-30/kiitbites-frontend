@@ -7,10 +7,12 @@ export function middleware(request: NextRequest) {
   const pathname = url.pathname;
   const lowercasePath = pathname.toLowerCase();
 
-  // Skip middleware for Next.js internals and API routes
+  // Skip middleware for Next.js internals, API routes, and static assets
   if (
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api")
+    pathname.startsWith("/api") ||
+    pathname === "/favicon.ico" ||
+    pathname.startsWith("/favicon")
   ) {
     return NextResponse.next();
   }
