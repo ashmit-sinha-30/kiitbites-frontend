@@ -948,8 +948,8 @@
 
 ---
 
-**Reviewers:** @exsolvia/frontend-team @exsolvia/qa-team @exsolvia/design-team  
-**Approvers:** @tech-lead @product-owner  
+**Reviewers:** @kampyn/frontend-team @kampyn/qa-team @kampyn/design-team  
+**Approvers:** @AnshRaj112 @GuinAditi @Devesh-Jaiswal @ashmit-sinha-30
 **Labels:** `frontend`, `ready-for-review`, `priority-medium`  
 **Milestone:** Sprint X.X  
 **Estimated Review Time:** 2-4 hours  
