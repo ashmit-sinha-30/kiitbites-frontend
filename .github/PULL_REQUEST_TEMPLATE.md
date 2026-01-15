@@ -8,10 +8,26 @@
 
 ## PR Metadata
 
-- **PR Size:** [ ] Small [ ] Medium [ ] Large [ ] Release  
-- **Priority:** [ ] Low [ ] Medium [ ] High [ ] Critical  
-- **Impact:** [ ] Low [ ] Medium [ ] High [ ] Critical  
-- **Complexity:** [ ] Low [ ] Medium [ ] High [ ] Very High
+- **PR Size:** 
+  - [ ] Small 
+  - [ ] Medium 
+  - [ ] Large 
+  - [ ] Release  
+- **Priority:** 
+  - [ ] Low 
+  - [ ] Medium 
+  - [ ] High 
+  - [ ] Critical  
+- **Impact:** 
+  - [ ] Low 
+  - [ ] Medium 
+  - [ ] High 
+  - [ ] Critical  
+- **Complexity:** 
+  - [ ] Low 
+  - [ ] Medium 
+  - [ ] High 
+  - [ ] Critical  
 - **Estimated Review Time:** 
 - **Target Deployment Date:** 
 - **Related PRs:** <!-- Link to related PRs if any -->
