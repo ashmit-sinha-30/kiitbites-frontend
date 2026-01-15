@@ -11,7 +11,7 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   flex-direction: row;
   isolation: isolate;
-  overflow: hidden;
+  overflow: visible;
 
   &.scrolled {
     background: rgba(255, 255, 255, 1);
@@ -202,7 +202,7 @@
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     padding: 10px 0;
-    z-index: 10;
+    z-index: 2000;
   }
 
   .dropdownMenu {
