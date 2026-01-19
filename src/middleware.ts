@@ -27,8 +27,20 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // Skip lowercase redirect for dashboard routes that use camelCase
+  const camelCaseRoutes = [
+    "/uniDashboard",
+    "/vendorDashboard",
+    "/food-ordering-uniDashboard",
+  ];
+  
+  const isCamelCaseRoute = camelCaseRoutes.some(route => 
+    pathname.startsWith(route)
+  );
+
   // If the current path is not already in lowercase, redirect to the lowercase version
-  if (pathname !== lowercasePath) {
+  // BUT skip this for camelCase routes
+  if (!isCamelCaseRoute && pathname !== lowercasePath) {
     return NextResponse.redirect(new URL(lowercasePath, request.url));
   }
 
