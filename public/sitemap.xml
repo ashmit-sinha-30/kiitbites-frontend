@@ -4,7 +4,7 @@
 <url><loc>https://kampyn.com/food-ordering-uniDashboard</loc><lastmod>2026-01-19T18:56:07.801Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
 <url><loc>https://kampyn.com</loc><lastmod>2026-01-19T18:56:07.801Z</lastmod><changefreq>daily</changefreq><priority>1</priority></url>
 <url><loc>https://kampyn.com/uni-login</loc><lastmod>2026-01-19T18:56:07.801Z</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-<url><loc>https://kampyn.com/unidashboard</loc><lastmod>2026-01-19T18:56:07.801Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://kampyn.com/uniDashboard</loc><lastmod>2026-01-19T18:56:07.801Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
 <url><loc>https://kampyn.com/pastorders</loc><lastmod>2026-01-19T18:56:07.801Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
 <url><loc>https://kampyn.com/search</loc><lastmod>2026-01-19T18:56:07.801Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
 <url><loc>https://kampyn.com/vendor-login</loc><lastmod>2026-01-19T18:56:07.801Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
@@ -19,5 +19,5 @@
 <url><loc>https://kampyn.com/termncondition</loc><lastmod>2026-01-19T18:56:07.802Z</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://kampyn.com/team</loc><lastmod>2026-01-19T18:56:07.802Z</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
 <url><loc>https://kampyn.com/signup</loc><lastmod>2026-01-19T18:56:07.802Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://kampyn.com/vendordashboard</loc><lastmod>2026-01-19T18:56:07.802Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>https://kampyn.com/vendorDashboard</loc><lastmod>2026-01-19T18:56:07.802Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>
