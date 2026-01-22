@@ -69,6 +69,12 @@ const ShieldIcon = () => (
   </svg>
 );
 
+const MonitorIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  </svg>
+);
+
 interface DashboardOption {
   id: string;
   title: string;
@@ -171,6 +177,14 @@ const AdminDashboard: React.FC = () => {
       icon: <ShieldIcon />,
       color: 'bg-red-500',
       onClick: () => setSelectedOption('security')
+    },
+    {
+      id: 'server-monitoring',
+      title: 'Server Monitoring',
+      description: 'Monitor backend status, API hits, crashes, and server events',
+      icon: <MonitorIcon />,
+      color: 'bg-indigo-500',
+      onClick: () => router.push('/admin-dashboard/monitoring')
     }
   ];
 
