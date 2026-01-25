@@ -188,9 +188,9 @@ const Footer: React.FC = () => {
             </h3>
             <address className="not-italic">
               <p className="mb-2 text-gray-300">
-                123 Campus Way
+                Bikramganj
                 <br />
-                College Town, CT 10101
+                Bihar, 802212
               </p>
               <p className="mb-2">
                 <a
@@ -202,10 +202,10 @@ const Footer: React.FC = () => {
               </p>
               <p>
                 <a
-                  href="tel:+18005551234"
+                  href="tel:+917737549787"
                   className="text-gray-300 hover:text-white transition-colors"
                 >
-                  (800) 555-1234
+                  7737549787
                 </a>
               </p>
             </address>
