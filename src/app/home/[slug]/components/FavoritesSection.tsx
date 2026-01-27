@@ -1,4 +1,5 @@
 import Slider, { Settings } from "react-slick";
+import { Heart } from "lucide-react";
 import styles from "../styles/CollegePage.module.scss";
 import { FavoriteItem, FoodItem } from "../types";
 import ProductCard from "./ProductCard";
@@ -23,7 +24,10 @@ const FavoritesSection = ({
   return (
     <section className={styles.categorySection}>
       <div className={styles.categoryHeader}>
-        <h3 className={styles.categoryTitle}>Your Favorites</h3>
+        <div className={styles.categoryTitleWithIcon}>
+          <Heart className={styles.categoryIcon} size={24} fill="#4ea199" color="#4ea199" />
+          <h3 className={styles.categoryTitle}>Your Favorites</h3>
+        </div>
       </div>
       <div className={styles.carouselContainer}>
         <Slider

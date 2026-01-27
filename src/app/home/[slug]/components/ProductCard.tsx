@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Minus, Loader2 } from 'lucide-react';
+import { Plus, Minus, Loader2, Sparkles, Circle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import styles from '../styles/CollegePage.module.scss';
 import { FoodItem, Vendor } from '../types';
@@ -224,17 +224,27 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
             {item.image ? (
               <img src={item.image} alt={item.title} className={styles.foodImage} />
             ) : null}
+            {item.isSpecial === 'Y' && (
+              <div className={styles.specialBadge}>
+                <Sparkles size={14} />
+                <span>Special</span>
+              </div>
+            )}
+            {item.isVeg !== undefined && (
+              <div className={styles.vegIndicator}>
+                <div className={item.isVeg ? styles.veg : styles.nonVeg}>
+                  <Circle 
+                    size={12} 
+                    fill="currentColor" 
+                    className={styles.vegIcon}
+                  />
+                  <span>{item.isVeg ? 'Veg' : 'Non-Veg'}</span>
+                </div>
+              </div>
+            )}
           </div>
           <div className={styles.foodCardContent}>
             <h4 className={styles.foodTitle}>{item.title}</h4>
-            {/* Veg/Non-Veg Indicator - below the name */}
-            {item.isVeg !== undefined && (
-              <div className={styles.vegIndicatorBelowName}>
-                <span className={item.isVeg ? styles.veg : styles.nonVeg}>
-                  {item.isVeg ? '🟢' : '🔴'} {item.isVeg ? 'Veg' : 'Non-Veg'}
-                </span>
-              </div>
-            )}
             {(item.category || item.subtype) && (
               <p className={styles.foodSubtitle}>
                 {item.category}
