@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { ChevronRight, ChevronDown, Plus, Minus } from "lucide-react";
 import styles from "./styles/FavouriteFoodPage.module.scss";
@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaHeart, FaRegHeart } from "react-icons/fa";
-
+import PageLoading from "../components/layout/PageLoading/PageLoading";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -694,9 +694,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className={styles.header}>
-            <h1>Loading...</h1>
-          </div>
+          <PageLoading message="Loading your favourites…" />
         ) : favorites.length === 0 ? (
           <div className={styles.emptyState}>
             <h2>Oops! You have no favorites yet</h2>
@@ -788,11 +786,7 @@ const FavouriteFoodPage: React.FC = () => {
   return (
     <Suspense
       fallback={
-        <div className={styles.container}>
-          <div className={styles.header}>
-            <h1>Loading...</h1>
-          </div>
-        </div>
+        <PageLoading message="Loading your favourites…" />
       }
     >
       <FavouriteFoodPageContent />
