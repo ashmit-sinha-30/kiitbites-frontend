@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./styles/global.css";
@@ -684,7 +684,13 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     return (
       <div className={styles.container}>
         <div className={styles.content}>
-          <h1 className={styles.greeting}>Loading...</h1>
+          <div className={styles.loadingState}>
+            <div className={styles.loadingIconWrapper}>
+              <Loader2 className={styles.loadingIcon} size={64} />
+            </div>
+            <h1 className={styles.greeting}>Loading delicious options...</h1>
+            <p className={styles.loadingSubtext}>Please wait while we fetch the menu</p>
+          </div>
         </div>
       </div>
     );
@@ -694,7 +700,19 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     return (
       <div className={styles.container}>
         <div className={styles.content}>
-          <h1 className={styles.greeting}>Error: {error}</h1>
+          <div className={styles.errorState}>
+            <div className={styles.errorIconWrapper}>
+              <AlertCircle className={styles.errorIcon} size={64} />
+            </div>
+            <h1 className={styles.greeting}>Oops! Something went wrong</h1>
+            <p className={styles.errorText}>{error}</p>
+            <button 
+              className={styles.retryButton}
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
