@@ -82,11 +82,11 @@ export default function RootLayout({
       </head> */}
       <body>
         <GoogleOAuthProvider clientId={googleClientId}>
-            <SearchCartProvider>
-              <ConditionalHeader />
-              <main>{children}</main>
-              <Footer />
-            </SearchCartProvider>
+          <SearchCartProvider>
+            <ConditionalHeader />
+            <main>{children}</main>
+            <Footer />
+          </SearchCartProvider>
         </GoogleOAuthProvider>
         <SpeedInsights />
         <Analytics />

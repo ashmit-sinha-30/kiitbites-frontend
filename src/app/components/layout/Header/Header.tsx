@@ -48,6 +48,22 @@ const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Prefetch the most common app routes so navigation from the navbar feels instant
+  useEffect(() => {
+    try {
+      router.prefetch("/home");
+      router.prefetch("/search");
+      router.prefetch("/cart");
+      router.prefetch("/profile");
+      router.prefetch("/fav");
+      router.prefetch("/activeorders");
+      router.prefetch("/pastorders");
+      router.prefetch("/help");
+    } catch (error) {
+      console.error("Error prefetching routes:", error);
+    }
+  }, [router]);
+
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
