@@ -86,7 +86,18 @@ module.exports = {
       
       // Hard timeout so CI/builds cannot hang indefinitely.
       const controller = new AbortController();
-      const timeoutMs = Number(process.env.NEXT_SITEMAP_FETCH_TIMEOUT_MS || 8000);
+
+      // DS172411 (DevSkim): treat env/config as untrusted; validate + clamp before setTimeout.
+      const DEFAULT_TIMEOUT_MS = 8000;
+      const MAX_TIMEOUT_MS = 60_000;
+      const rawTimeoutMs = process.env.NEXT_SITEMAP_FETCH_TIMEOUT_MS;
+      const parsedTimeoutMs =
+        typeof rawTimeoutMs === 'string' && rawTimeoutMs.trim() !== ''
+          ? parseInt(rawTimeoutMs, 10)
+          : NaN;
+      const timeoutMs = Number.isFinite(parsedTimeoutMs)
+        ? Math.min(Math.max(parsedTimeoutMs, 0), MAX_TIMEOUT_MS)
+        : DEFAULT_TIMEOUT_MS;
       const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
       const response = await fetch(`${backendUrl}/api/user/auth/list`, {
