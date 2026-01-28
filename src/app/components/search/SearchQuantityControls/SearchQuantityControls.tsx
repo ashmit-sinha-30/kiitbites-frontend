@@ -93,9 +93,9 @@ const SearchQuantityControls: React.FC<SearchQuantityControlsProps> = ({
     return (
       <div className={styles.quantityControls}>
         <button
-          className={`${styles.quantityButton} ${quantity === 0 ? styles.disabled : ''}`}
+          className={styles.quantityButton}
           onClick={handleDecrease}
-          disabled={loading || quantity === 0}
+          disabled={loading}
         >
           <Minus size={16} />
         </button>
