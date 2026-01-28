@@ -82,7 +82,7 @@ module.exports = {
       if (process.env.NEXT_SITEMAP_DYNAMIC !== 'true') return [];
 
       // Fetch colleges from the backend API to generate /home/[slug] routes
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5001';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
       
       // Hard timeout so CI/builds cannot hang indefinitely.
       const controller = new AbortController();
