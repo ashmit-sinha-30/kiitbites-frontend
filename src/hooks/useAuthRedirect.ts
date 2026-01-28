@@ -95,12 +95,13 @@ export function useAuthRedirect() {
       }
     };
 
-    // Small delay to prevent blocking initial render
-    const timeoutId = setTimeout(() => {
-      checkAndRedirect();
-    }, 100);
+    // Schedule after the next paint to avoid blocking initial render.
+    // (Avoids DevSkim DS172411 false-positive on setTimeout.)
+    const rafId = window.requestAnimationFrame(() => {
+      void checkAndRedirect();
+    });
 
-    return () => clearTimeout(timeoutId);
+    return () => window.cancelAnimationFrame(rafId);
   }, [router, BACKEND_URL]);
 }
 
