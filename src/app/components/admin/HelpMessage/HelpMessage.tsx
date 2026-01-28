@@ -13,7 +13,7 @@ const HelpMessage: React.FC<FormProps> = ({ formData, handleChange, handleSubmit
   return (
     <div className={styles.container}>
       <div className={styles.box}>
-        <h1>Contact Us</h1>
+        <h1>Get In Touch</h1>
         <form onSubmit={handleSubmit}>
           <input
             type="text"
@@ -44,7 +44,7 @@ const HelpMessage: React.FC<FormProps> = ({ formData, handleChange, handleSubmit
           />
           {errors.message && <p>{errors.message}</p>}
 
-          <button type="submit">Send</button>
+          <button type="submit">SEND MESSAGE</button>
         </form>
       </div>
     </div>
