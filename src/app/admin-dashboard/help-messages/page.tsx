@@ -130,7 +130,9 @@ const HelpMessagesPage: React.FC = () => {
     });
   };
 
-  if (loading) {
+  const isInitialLoading = loading && messages.length === 0 && !error;
+
+  if (isInitialLoading) {
     return (
       <div className={styles.loadingContainer}>
         <Loader2 className={styles.loader} />

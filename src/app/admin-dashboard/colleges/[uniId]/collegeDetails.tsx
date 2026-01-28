@@ -301,7 +301,9 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
     window.history.back();
   };
 
-  if (loading) {
+  const isInitialLoading = loading && !university && !error;
+
+  if (isInitialLoading) {
     return (
       <div className={styles.loadingState}>
         <div className={styles.loadingSpinner}></div>
