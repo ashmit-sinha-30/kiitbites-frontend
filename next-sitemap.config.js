@@ -67,26 +67,32 @@ module.exports = {
   changefreq: 'daily',
   priority: 0.7,
   sitemapSize: 5000,
+  /**
+   * IMPORTANT (Vercel-safe):
+   * - Avoid blocking network calls during `postbuild` unless explicitly enabled.
+   * - If you want dynamic routes (e.g. /home/[slug]) in sitemap, set:
+   *   - NEXT_SITEMAP_DYNAMIC=true
+   *   - NEXT_PUBLIC_BACKEND_URL=<your backend base url>
+   */
   additionalPaths: async () => {
     const paths = [];
     
     try {
+      // Opt-in only to prevent Vercel build deadlocks when backend is unreachable.
+      if (process.env.NEXT_SITEMAP_DYNAMIC !== 'true') return [];
+
       // Fetch colleges from the backend API to generate /home/[slug] routes
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5001';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
       
-      // Use Node.js native fetch (available in Node 18+)
-      // If fetch is not available, use dynamic import of node-fetch
-      let fetchFunction;
-      if (typeof globalThis !== 'undefined' && globalThis.fetch) {
-        fetchFunction = globalThis.fetch;
-      } else if (typeof global !== 'undefined' && global.fetch) {
-        fetchFunction = global.fetch;
-      } else {
-        const nodeFetch = await import('node-fetch');
-        fetchFunction = nodeFetch.default;
-      }
-      
-      const response = await fetchFunction(`${backendUrl}/api/user/auth/list`);
+      // Hard timeout so CI/builds cannot hang indefinitely.
+      const controller = new AbortController();
+      const timeoutMs = Number(process.env.NEXT_SITEMAP_FETCH_TIMEOUT_MS || 8000);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+      const response = await fetch(`${backendUrl}/api/user/auth/list`, {
+        signal: controller.signal,
+        headers: { accept: 'application/json' },
+      }).finally(() => clearTimeout(timeout));
       
       if (response.ok) {
         const colleges = await response.json();
@@ -113,7 +119,7 @@ module.exports = {
         });
       }
     } catch (error) {
-      console.warn('Failed to fetch colleges for sitemap generation:', error.message);
+      console.warn('Failed to fetch colleges for sitemap generation:', error?.message || error);
       // Continue without dynamic paths if fetch fails
     }
     
