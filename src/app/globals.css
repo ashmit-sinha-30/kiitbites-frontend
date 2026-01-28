@@ -93,6 +93,8 @@
 
   body {
     @apply bg-background text-foreground font-poppins;
+    /* Global page background */
+    background-color: #D6E6F3;
   }
 
   .section {
