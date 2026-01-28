@@ -1,8 +1,9 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
-  siteUrl: 'https://kampyn.com', // Explicitly set to kampyn.com
+  siteUrl: 'https://kampyn.com',
   generateRobotsTxt: true,
   generateIndexSitemap: false,
+
   exclude: [
     '/admin-dashboard/*',
     '/vendorDashboard/*',
@@ -28,6 +29,7 @@ module.exports = {
     '/vendor-reset-password',
     '/vendor-forgot-password'
   ],
+
   robotsTxtOptions: {
     policies: [
       {
@@ -60,147 +62,128 @@ module.exports = {
         ]
       }
     ],
-    additionalSitemaps: [
-      'https://kampyn.com/sitemap.xml'
-    ]
+    additionalSitemaps: ['https://kampyn.com/sitemap.xml']
   },
+
   changefreq: 'daily',
   priority: 0.7,
   sitemapSize: 5000,
+
   /**
-   * IMPORTANT (Vercel-safe):
-   * - Avoid blocking network calls during `postbuild` unless explicitly enabled.
-   * - If you want dynamic routes (e.g. /home/[slug]) in sitemap, set:
-   *   - NEXT_SITEMAP_DYNAMIC=true
-   *   - NEXT_PUBLIC_BACKEND_URL=<your backend base url>
+   * Dynamic paths (Vercel-safe, opt-in only)
+   * Enable with:
+   *   NEXT_SITEMAP_DYNAMIC=true
+   *   NEXT_PUBLIC_BACKEND_URL=<backend base url>
    */
   additionalPaths: async () => {
-    const paths = [];
-    
+    if (process.env.NEXT_SITEMAP_DYNAMIC !== 'true') return [];
+
+    const backendUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+
+    if (!backendUrl) {
+      console.warn(
+        '[next-sitemap] Backend URL not set, skipping dynamic sitemap paths'
+      );
+      return [];
+    }
+
     try {
-      // Opt-in only to prevent Vercel build deadlocks when backend is unreachable.
-      if (process.env.NEXT_SITEMAP_DYNAMIC !== 'true') return [];
+      const response = await fetch(
+        `${backendUrl}/api/user/auth/list`,
+        {
+          // Node 18+ / Vercel-safe timeout — no setTimeout, no DevSkim warning
+          signal: AbortSignal.timeout(8000),
+          headers: { accept: 'application/json' }
+        }
+      );
 
-      // Fetch colleges from the backend API to generate /home/[slug] routes
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
-      
-      // Hard timeout so CI/builds cannot hang indefinitely.
-      const controller = new AbortController();
-      // DS172411 (DevSkim): avoid feeding any externally-controlled data into setTimeout.
-      // Keep this timeout constant to prevent scanner false-positives and avoid hangs in CI/builds.
-      const timeout = setTimeout(() => controller.abort(), 8000);
+      if (!response.ok) return [];
 
-      const response = await fetch(`${backendUrl}/api/user/auth/list`, {
-        signal: controller.signal,
-        headers: { accept: 'application/json' },
-      }).finally(() => clearTimeout(timeout));
-      
-      if (response.ok) {
-        const colleges = await response.json();
-        
-        // Normalize college name to create slug (same logic as in CollegePageClient)
-        const normalizeName = (name) => {
-          if (!name) return '';
-          return name
-            .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9-]/g, '')
-            .replace(/-+/g, '-');
-        };
-        
-        // Generate paths for each college
-        colleges.forEach((college) => {
-          const collegeName = college.fullName || college.name || '';
-          if (collegeName) {
-            const slug = normalizeName(collegeName);
-            if (slug) {
-              paths.push(`/home/${slug}`);
-            }
-          }
-        });
-      }
+      const colleges = await response.json();
+
+      const normalizeName = (name = '') =>
+        name
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '')
+          .replace(/-+/g, '-');
+
+      return colleges
+        .map((college) => {
+          const name = college.fullName || college.name;
+          if (!name) return null;
+
+          const slug = normalizeName(name);
+          if (!slug) return null;
+
+          return {
+            loc: `/home/${slug}`,
+            changefreq: 'daily',
+            priority: 0.9,
+            lastmod: new Date().toISOString()
+          };
+        })
+        .filter(Boolean);
     } catch (error) {
-      console.warn('Failed to fetch colleges for sitemap generation:', error?.message || error);
-      // Continue without dynamic paths if fetch fails
+      console.warn(
+        '[next-sitemap] Failed to fetch dynamic sitemap paths:',
+        error?.message || error
+      );
+      return [];
     }
-    
-    return paths.map((path) => ({
-      loc: path,
-      changefreq: 'daily',
-      priority: 0.9,
-      lastmod: new Date().toISOString(),
-    }));
   },
+
   transform: async (config, path) => {
-    // Custom priority and changefreq for different page types
+    const now = new Date().toISOString();
+
     if (path === '/') {
-      return {
-        loc: path,
-        changefreq: 'daily',
-        priority: 1.0,
-        lastmod: new Date().toISOString()
-      }
+      return { loc: path, changefreq: 'daily', priority: 1.0, lastmod: now };
     }
-    
+
     if (path.startsWith('/home')) {
-      return {
-        loc: path,
-        changefreq: 'daily',
-        priority: 0.9,
-        lastmod: new Date().toISOString()
-      }
+      return { loc: path, changefreq: 'daily', priority: 0.9, lastmod: now };
     }
-    
-    if (path.startsWith('/food-ordering-uniDashboard') || path.startsWith('/vendor')) {
-      return {
-        loc: path,
-        changefreq: 'weekly',
-        priority: 0.8,
-        lastmod: new Date().toISOString()
-      }
+
+    if (
+      path.startsWith('/food-ordering-uniDashboard') ||
+      path.startsWith('/vendor')
+    ) {
+      return { loc: path, changefreq: 'weekly', priority: 0.8, lastmod: now };
     }
-    
-    if (path.startsWith('/vendor-login') || path.startsWith('/uni-login')) {
-      return {
-        loc: path,
-        changefreq: 'monthly',
-        priority: 0.6,
-        lastmod: new Date().toISOString()
-      }
+
+    if (
+      path.startsWith('/vendor-login') ||
+      path.startsWith('/uni-login')
+    ) {
+      return { loc: path, changefreq: 'monthly', priority: 0.6, lastmod: now };
     }
-    
-    if (path.startsWith('/refund') || path.startsWith('/termncondition')) {
-      return {
-        loc: path,
-        changefreq: 'monthly',
-        priority: 0.5,
-        lastmod: new Date().toISOString()
-      }
+
+    if (
+      path.startsWith('/refund') ||
+      path.startsWith('/termncondition')
+    ) {
+      return { loc: path, changefreq: 'monthly', priority: 0.5, lastmod: now };
     }
-    
+
     if (path.startsWith('/about') || path.startsWith('/team')) {
-      return {
-        loc: path,
-        changefreq: 'monthly',
-        priority: 0.6,
-        lastmod: new Date().toISOString()
-      }
+      return { loc: path, changefreq: 'monthly', priority: 0.6, lastmod: now };
     }
-    
-    if (path.startsWith('/help') || path.startsWith('/privacy') || path.startsWith('/terms')) {
-      return {
-        loc: path,
-        changefreq: 'monthly',
-        priority: 0.5,
-        lastmod: new Date().toISOString()
-      }
+
+    if (
+      path.startsWith('/help') ||
+      path.startsWith('/privacy') ||
+      path.startsWith('/terms')
+    ) {
+      return { loc: path, changefreq: 'monthly', priority: 0.5, lastmod: now };
     }
-    
+
     return {
       loc: path,
       changefreq: config.changefreq,
       priority: config.priority,
-      lastmod: new Date().toISOString()
-    }
+      lastmod: now
+    };
   }
-}
+};
