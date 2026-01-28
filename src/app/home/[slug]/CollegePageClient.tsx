@@ -1,11 +1,12 @@
 "use client";
 
 import { useSearchParams, usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle, GraduationCap } from "lucide-react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./styles/global.css";
 import styles from "./styles/CollegePage.module.scss";
+import homeStyles from "../../home/styles/Home.module.scss";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -682,14 +683,21 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.content}>
-          <div className={styles.loadingState}>
-            <div className={styles.loadingIconWrapper}>
-              <Loader2 className={styles.loadingIcon} size={64} />
+      <div className={homeStyles.container}>
+        <div className={homeStyles.content}>
+          <div className={homeStyles.headerSection}>
+            <div className={homeStyles.iconWrapper}>
+              <GraduationCap className={homeStyles.headerIcon} size={48} />
             </div>
-            <h1 className={styles.greeting}>Loading delicious options...</h1>
-            <p className={styles.loadingSubtext}>Please wait while we fetch the menu</p>
+            <h1 className={homeStyles.heading}>Discover Your Campus</h1>
+            <p className={homeStyles.subtitle}>Loading delicious options...</p>
+          </div>
+          <div className={homeStyles.collegeGrid}>
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className={homeStyles.skeletonCard}>
+                <div className={homeStyles.skeletonShimmer}></div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
