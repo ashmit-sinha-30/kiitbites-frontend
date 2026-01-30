@@ -293,9 +293,10 @@ export default function SignupForm() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.box}>
-        <h1>Sign Up</h1>
-        <form>
+      <div className={styles.authWrapper}>
+        <div className={styles.box}>
+          <h1>Sign Up</h1>
+          <form>
           {step === 1 && (
             <>
               <input
@@ -426,6 +427,7 @@ export default function SignupForm() {
                 className={styles.stepButton}
                 onClick={handleBack}
               >
+                <span className={styles.buttonArrow}>←</span>
                 Back
               </button>
             )}
@@ -436,6 +438,8 @@ export default function SignupForm() {
               disabled={isLoading}
             >
               {isLoading ? "Signing up..." : step === 3 ? "Submit" : "Next"}
+              {!isLoading && step !== 3 && <span className={styles.buttonArrow}>→</span>}
+              {!isLoading && step === 3 && <span className={styles.buttonArrow}>✈</span>}
             </button>
           </div>
 
@@ -456,7 +460,27 @@ export default function SignupForm() {
               </p>
             </>
           )}
-        </form>
+          </form>
+        </div>
+
+        <div className={styles.infoPanel}>
+          <div className={styles.badge}>Create your account</div>
+          <h2 className={styles.heading}>
+            Join the{" "}
+            <span className={styles.highlight}>KAMPYN campus network</span>
+          </h2>
+          <p className={styles.subtext}>
+            One account to discover nearby vendors, unlock campus-only offers,
+            and keep every order just a tap away.
+          </p>
+          <div className={styles.infoList}>
+            <p className={styles.infoItem}>• Explore food across your campus</p>
+            <p className={styles.infoItem}>
+              • Save your college and personalise your feed
+            </p>
+            <p className={styles.infoItem}>• Track orders in real time</p>
+          </div>
+        </div>
       </div>
       <ToastContainer />
     </div>

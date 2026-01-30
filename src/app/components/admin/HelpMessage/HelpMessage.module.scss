@@ -141,6 +141,10 @@
   transform: translateY(-1px);
   box-shadow: 0 18px 45px rgba(22, 163, 74, 0.5);
   background: linear-gradient(135deg, #d9f99d, #bef264);
+
+  .submitIcon {
+    transform: translateX(1px);
+  }
 }
 
 .submitIconWrapper {
@@ -151,13 +155,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .submitIcon {
   display: inline-block;
-  transform: translateX(1px);
-  color: #e5e7eb;
-  font-size: 0.85rem;
+  color: #ffffff;
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+  margin: 0 auto;
 }
 
 .infoPanel {
