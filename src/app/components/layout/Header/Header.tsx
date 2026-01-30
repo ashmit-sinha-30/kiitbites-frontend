@@ -12,6 +12,11 @@ import { FaBars } from "react-icons/fa";
 import { RxCross2 } from "react-icons/rx";
 import { LuArrowUpRight } from "react-icons/lu";
 import { FaUserCircle } from "react-icons/fa";
+import { 
+  HiOutlineUser,
+  HiOutlineArrowRightOnRectangle
+} from "react-icons/hi2";
+import { IoReceiptOutline } from "react-icons/io5";
 
 import styles from "./Header.module.scss";
 import { useCartCount } from "../../../hooks/useCartCount";
@@ -33,6 +38,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const [scrolling, setScrolling] = useState(false);
   const [userFullName, setUserFullName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -81,6 +87,7 @@ const Header: React.FC<HeaderProps> = ({
       // Clear token and redirect
       localStorage.removeItem("token");
       setUserFullName(null);
+      setUserEmail(null);
       window.dispatchEvent(new Event("authChanged")); // Notify header
       router.push("/login");
     } catch (error) {
@@ -107,12 +114,15 @@ const Header: React.FC<HeaderProps> = ({
         if (response.ok) {
           const data = await response.json();
           setUserFullName(data.fullName);
+          setUserEmail(data.email);
         } else {
           setUserFullName(null);
+          setUserEmail(null);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
         setUserFullName(null);
+        setUserEmail(null);
       }
     };
 
@@ -396,53 +406,94 @@ const Header: React.FC<HeaderProps> = ({
           {userFullName ? (
             <div className={styles.profileContainer} ref={dropdownRef}>
               <div
-                className={styles.navItem}
+                className={styles.profileTrigger}
                 onClick={() => setShowDropdown((prev) => !prev)}
               >
-                <FaUserCircle size={32} />
+                <div className={styles.avatarWrapper}>
+                  <FaUserCircle size={40} className={styles.avatarIcon} />
+                </div>
               </div>
               <AnimatePresence>
                 {showDropdown && (
                   <motion.div
-                    className={styles.dropdownWrapper}
+                    className={`${styles.dropdownWrapper} ${isLandingPage ? styles.landingDropdown : ""}`}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className={styles.dropdownMenu}>
-                      <Link
-                        href="/profile"
-                        className={styles.navItem}
-                        style={{ fontSize: "1rem" }}
-                        onClick={handleDropdownLinkClick}
-                      >
-                        <span style={{ fontSize: "1rem" }}>Profile</span>
-                      </Link>
-                      <Link
-                        href="/activeorders"
-                        className={styles.navItem}
-                        style={{ fontSize: "1rem" }}
-                        onClick={handleDropdownLinkClick}
-                      >
-                        <span style={{ fontSize: "1rem" }}>Orders</span>
-                      </Link>
-                      <Link
-                        href="/fav"
-                        className={styles.navItem}
-                        style={{ fontSize: "1rem" }}
-                        onClick={handleDropdownLinkClick}
-                      >
-                        <span style={{ fontSize: "1rem" }}>Favourites</span>
-                      </Link>
-                      <div
-                        className={styles.navItem}
-                        onClick={handleLogout}
-                        style={{ fontSize: "1rem" }}
-                      >
-                        <span style={{ fontSize: "1rem" }}>Logout</span>
+                    {isLandingPage ? (
+                      <div className={styles.landingDropdownMenu}>
+                        <div className={styles.userInfo}>
+                          <div className={styles.userDetails}>
+                            <h3 className={styles.userName}>{userFullName}</h3>
+                            <p className={styles.userEmail}>{userEmail}</p>
+                          </div>
+                          <div className={styles.avatarContainer}>
+                            <FaUserCircle size={48} className={styles.userAvatar} />
+                          </div>
+                        </div>
+                        <div className={styles.menuItems}>
+                          <Link
+                            href="/profile"
+                            className={`${styles.menuItem} ${pathname?.includes("/profile") ? styles.activeMenuItem : ""}`}
+                            onClick={handleDropdownLinkClick}
+                          >
+                            <HiOutlineUser size={20} />
+                            <span>Profile</span>
+                          </Link>
+                          <Link
+                            href="/pastorders"
+                            className={`${styles.menuItem} ${pathname?.includes("/pastorders") ? styles.activeMenuItem : ""}`}
+                            onClick={handleDropdownLinkClick}
+                          >
+                            <IoReceiptOutline size={20} />
+                            <span>Past orders</span>
+                          </Link>
+                          <div
+                            className={styles.menuItem}
+                            onClick={handleLogout}
+                          >
+                            <HiOutlineArrowRightOnRectangle size={20} />
+                            <span>Sign out</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className={styles.dropdownMenu}>
+                        <Link
+                          href="/profile"
+                          className={styles.navItem}
+                          style={{ fontSize: "1rem" }}
+                          onClick={handleDropdownLinkClick}
+                        >
+                          <span style={{ fontSize: "1rem" }}>Profile</span>
+                        </Link>
+                        <Link
+                          href="/activeorders"
+                          className={styles.navItem}
+                          style={{ fontSize: "1rem" }}
+                          onClick={handleDropdownLinkClick}
+                        >
+                          <span style={{ fontSize: "1rem" }}>Orders</span>
+                        </Link>
+                        <Link
+                          href="/fav"
+                          className={styles.navItem}
+                          style={{ fontSize: "1rem" }}
+                          onClick={handleDropdownLinkClick}
+                        >
+                          <span style={{ fontSize: "1rem" }}>Favourites</span>
+                        </Link>
+                        <div
+                          className={styles.navItem}
+                          onClick={handleLogout}
+                          style={{ fontSize: "1rem" }}
+                        >
+                          <span style={{ fontSize: "1rem" }}>Logout</span>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
