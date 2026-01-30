@@ -8,14 +8,12 @@ interface FormProps {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
   handleSubmit: (e: React.FormEvent) => void;
-  errors: { [key: string]: string };
 }
 
 const HelpMessage: React.FC<FormProps> = ({
   formData,
   handleChange,
   handleSubmit,
-  errors,
 }) => {
   return (
     <section className={styles.helpSection}>
@@ -38,9 +36,6 @@ const HelpMessage: React.FC<FormProps> = ({
                   placeholder="Enter your name"
                   className={styles.input}
                 />
-                {errors.name && (
-                  <p className={styles.errorText}>{errors.name}</p>
-                )}
               </div>
 
               <div className={styles.fieldGroup}>
@@ -54,9 +49,6 @@ const HelpMessage: React.FC<FormProps> = ({
                   placeholder="Enter your email"
                   className={styles.input}
                 />
-                {errors.email && (
-                  <p className={styles.errorText}>{errors.email}</p>
-                )}
               </div>
 
               <div className={styles.fieldGroup}>
@@ -69,9 +61,6 @@ const HelpMessage: React.FC<FormProps> = ({
                   placeholder="How can we help?"
                   className={`${styles.input} ${styles.textarea}`}
                 />
-                {errors.message && (
-                  <p className={styles.errorText}>{errors.message}</p>
-                )}
               </div>
 
               <button type="submit" className={styles.submitButton}>

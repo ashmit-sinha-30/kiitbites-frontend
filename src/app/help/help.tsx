@@ -9,7 +9,6 @@ import Form from "../components/admin/HelpMessage/HelpMessage";
 
 const Help: React.FC = () => {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -30,7 +29,9 @@ const Help: React.FC = () => {
     if (!formData.message) formErrors.message = "Message is required";
 
     if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
+      const firstError =
+        formErrors.name || formErrors.email || formErrors.message;
+      toast.error(firstError || "Please fill in all required fields.");
       return;
     }
 
@@ -48,7 +49,6 @@ const Help: React.FC = () => {
 
       if (response.ok) {
         setFormData({ name: "", email: "", message: "" });
-        setErrors({});
         toast.success("Message sent successfully!");
       } else {
         const data = await response.json();
@@ -68,7 +68,6 @@ const Help: React.FC = () => {
       formData={formData}
       handleChange={handleChange}
       handleSubmit={handleSubmit}
-      errors={errors}
     />
     <ToastContainer position="bottom-right" autoClose={3000} />
   </div>
