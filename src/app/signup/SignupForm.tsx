@@ -299,43 +299,57 @@ export default function SignupForm() {
           <form>
           {step === 1 && (
             <>
-              <input
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                type="text"
-                placeholder="Full Name"
-                required
-              />
-              <input
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                type="email"
-                placeholder="Email"
-                required
-              />
-              <input
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                type="tel"
-                placeholder="Phone Number"
-                pattern="[0-9]{10}"
-                required
-              />
+              <div className={styles.fieldGroup}>
+                <label htmlFor="fullName">Your name</label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  type="text"
+                  placeholder="Enter your name"
+                  required
+                />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label htmlFor="email">Your email</label>
+                <input
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  type="email"
+                  placeholder="Enter your email"
+                  required
+                />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label htmlFor="phone">Your phone</label>
+                <input
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  pattern="[0-9]{10}"
+                  required
+                />
+              </div>
             </>
           )}
 
           {step === 2 && (
             <>
               <div className={styles.passwordField}>
+                <label htmlFor="password">Enter password</label>
                 <input
+                  id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
                   type={showPassword ? "text" : "password"}
-                  placeholder="Password"
+                  placeholder="Enter your password"
                   required
                 />
                 <span
@@ -347,12 +361,14 @@ export default function SignupForm() {
               </div>
 
               <div className={styles.passwordField}>
+                <label htmlFor="confirmPassword">Confirm password</label>
                 <input
+                  id="confirmPassword"
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm Password"
+                  placeholder="Confirm your password"
                   required
                 />
                 <span

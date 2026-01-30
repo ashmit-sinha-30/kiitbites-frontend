@@ -241,24 +241,28 @@ export default function LoginForm() {
         <div className={styles.box}>
           <h1>Sign In</h1>
           <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              name="identifier"
-              placeholder="Email or Phone"
-              value={formData.identifier}
-              onChange={handleInputChange}
-              required
-              style={{ color: "black" }}
-            />
-            <div className={styles.passwordField}>
+            <div className={styles.fieldGroup}>
+              <label htmlFor="identifier">Your email or phone</label>
               <input
+                id="identifier"
+                type="text"
+                name="identifier"
+                placeholder="Enter your email or phone"
+                value={formData.identifier}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className={styles.passwordField}>
+              <label htmlFor="password">Enter password</label>
+              <input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="Password"
+                placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleInputChange}
                 required
-                style={{ color: "black" }}
               />
               <span
                 className={styles.eyeIcon}

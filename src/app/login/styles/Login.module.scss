@@ -10,13 +10,14 @@
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
     gap: 2.5rem;
-    align-items: stretch;
+    align-items: center;
     max-width: 960px;
     width: 100%;
     background: #ffffff;
     border-radius: 24px;
     box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
     padding: 2.25rem;
+    margin: 0 auto;
   }
 
   .box {
@@ -25,7 +26,7 @@
     border-radius: 18px;
     position: relative;
     overflow: hidden;
-    text-align: center;
+    text-align: left;
     color: #f9fafb;
 
     .text-black {
@@ -37,50 +38,85 @@
       color: rgba(241, 245, 249, 0.9);
       font-size: 2rem;
       font-weight: 600;
+      text-align: left;
     }
 
     form {
       display: flex;
       flex-direction: column;
 
-      input {
+      .fieldGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
         margin: 0.5rem 0;
-        padding: 0.8rem 1.1rem;
+        text-align: left;
+
+        label {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: rgba(226, 232, 240, 0.95);
+          text-align: left;
+        }
+      }
+
+      input {
+        margin: 0;
+        padding: 0.75rem 1.1rem;
         font-size: 0.95rem;
-        border-radius: 999px; /* Pill-shaped inputs */
-        border: 1px solid rgba(148, 163, 184, 0.6);
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.5);
         outline: none;
+        color: #0f172a;
+        background: rgba(241, 245, 249, 0.9);
+        text-align: left;
         transition: border-color 0.18s ease, box-shadow 0.18s ease,
           background-color 0.18s ease;
-        background-color: rgba(248, 250, 252, 0.98);
+
+        &::placeholder {
+          color: rgba(100, 116, 139, 0.8);
+          text-align: left;
+        }
 
         &:focus {
           border-color: #a3e635;
           box-shadow: 0 0 0 1px rgba(163, 230, 53, 0.55);
-          background-color: #ffffff;
+          background-color: #f9fafb;
         }
       }
 
       .passwordField {
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        gap: 0.45rem;
+        margin: 0.5rem 0;
         position: relative;
+        text-align: left;
+
+        label {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: rgba(226, 232, 240, 0.95);
+          text-align: left;
+        }
 
         input {
           flex-grow: 1;
-          padding-right: 40px; /* Space for eye icon */
+          padding-right: 40px;
+          margin: 0;
         }
 
         .eyeIcon {
           position: absolute;
           right: 10px;
+          bottom: 0.75rem;
           cursor: pointer;
           font-size: 1.2em;
-          color: #4ea199; /* Match the button color */
+          color: #4ea199;
         }
 
         .eyeIcon:hover {
-          color: #3a8273;
+          color: #01796f;
         }
       }
 
