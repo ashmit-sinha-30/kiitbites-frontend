@@ -80,47 +80,70 @@ export default function ResetPassword() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.box}>
-        <h1>Reset Password</h1>
-        <form onSubmit={handleResetPassword}>
-          <div className={styles.passwordField}>
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="New Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ color: "black" }}
-            />
-            <span
-              className={styles.eyeIcon}
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <FaEye /> : <FaEyeSlash />}
-            </span>
-          </div>
+      <div className={styles.authWrapper}>
+        <div className={styles.box}>
+          <h1>Reset Password</h1>
+          <form onSubmit={handleResetPassword}>
+            <div className={styles.passwordField}>
+              <label htmlFor="password">Enter password</label>
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your new password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <span
+                className={styles.eyeIcon}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEye /> : <FaEyeSlash />}
+              </span>
+            </div>
 
-          <div className={styles.passwordField}>
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              style={{ color: "black" }}
-            />
-            <span
-              className={styles.eyeIcon}
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <FaEye /> : <FaEyeSlash />}
-            </span>
-          </div>
+            <div className={styles.passwordField}>
+              <label htmlFor="confirmPassword">Confirm password</label>
+              <input
+                id="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <span
+                className={styles.eyeIcon}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEye /> : <FaEyeSlash />}
+              </span>
+            </div>
 
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? "Resetting..." : "Reset Password"}
-          </button>
-        </form>
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? "Resetting..." : "Reset Password"}
+              {!isLoading && <span className={styles.buttonArrow}>→</span>}
+            </button>
+          </form>
+        </div>
+
+        <div className={styles.infoPanel}>
+          <div className={styles.badge}>Create new password</div>
+          <h2 className={styles.heading}>
+            Set a{" "}
+            <span className={styles.highlight}>strong password</span>
+          </h2>
+          <p className={styles.subtext}>
+            Choose a secure password that you haven&apos;t used before. Make
+            sure it includes uppercase, lowercase, numbers, and special
+            characters.
+          </p>
+          <div className={styles.infoList}>
+            <p className={styles.infoItem}>• At least 8 characters long</p>
+            <p className={styles.infoItem}>• Mix of letters, numbers, and symbols</p>
+            <p className={styles.infoItem}>• Keep it unique and memorable</p>
+          </div>
+        </div>
       </div>
       <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
