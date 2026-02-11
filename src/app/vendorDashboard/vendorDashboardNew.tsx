@@ -391,15 +391,15 @@ export default function VendorDashboardPage() {
         <h1>Pending Order Requests</h1>
         <p>Review and respond to new order requests from customers</p>
       </div>
-      {vendorId ? (
+      {loading ? (
+        <div className="p-4 text-sm text-gray-500">Loading vendor information…</div>
+      ) : (
         <PendingOrderRequests
-          vendorId={vendorId || ""}
+          vendorId={vendorId ?? ""}
           onOrderProcessed={() => {
             console.log("Pending order processed");
           }}
         />
-      ) : (
-        <div className="p-4 text-sm text-gray-500">Loading vendor information…</div>
       )}
     </>
   );

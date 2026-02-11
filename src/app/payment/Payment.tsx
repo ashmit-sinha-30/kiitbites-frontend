@@ -1,9 +1,10 @@
-"use client";
+ "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import styles from "./styles/Payment.module.scss";
+import PageLoading from "../components/layout/PageLoading/PageLoading";
 
 interface OrderItem {
   name: string;
@@ -135,11 +136,7 @@ const PaymentPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Loading order details...</div>
-      </div>
-    );
+    return <PageLoading message="Loading your order details…" />;
   }
 
   if (!orderId || orderId === 'undefined') {

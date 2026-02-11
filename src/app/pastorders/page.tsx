@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import styles from "./styles/pastorder.module.scss";
@@ -7,6 +7,7 @@ import ReviewForm from "./components/ReviewForm";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import PageLoading from "../components/layout/PageLoading/PageLoading";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -306,9 +307,7 @@ const PastOrdersPageContent: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className={styles.header}>
-            <h1>Loading...</h1>
-          </div>
+          <PageLoading message="Loading your past orders…" />
         ) : pastOrders.length === 0 ? (
           <div className={styles.emptyState}>
             <h2>No past orders found</h2>
@@ -424,11 +423,7 @@ const PastOrdersPage: React.FC = () => {
   return (
     <Suspense
       fallback={
-        <div className={styles.container}>
-          <div className={styles.header}>
-            <h1>Loading...</h1>
-          </div>
-        </div>
+        <PageLoading message="Loading your past orders…" />
       }
     >
       <PastOrdersPageContent />

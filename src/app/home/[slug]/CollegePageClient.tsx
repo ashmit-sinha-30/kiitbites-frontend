@@ -1,11 +1,12 @@
 "use client";
 
 import { useSearchParams, usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle, GraduationCap } from "lucide-react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./styles/global.css";
 import styles from "./styles/CollegePage.module.scss";
+import homeStyles from "../../home/styles/Home.module.scss";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -233,8 +234,12 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
 
   // Fetch food items for given uniId and categories
   useEffect(() => {
-    if (!uniId) return;
+    if (!uniId) {
+      console.log('No uniId available, skipping item fetch');
+      return;
+    }
 
+    console.log('Fetching items for uniId:', uniId);
     const requestId = ++currentRequest.current;
 
     const fetchItems = async () => {
@@ -297,9 +302,33 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           fetch(`${BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
           fetch(`${BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
         ]);
-        const retailData = await retailRes.json();
-        const produceData = await produceRes.json();
-        if (!retailRes.ok || !produceRes.ok) throw new Error("Failed to fetch items");
+        
+        // Check response status before parsing JSON
+        if (!retailRes.ok) {
+          let errorMessage = `Failed to fetch retail items: ${retailRes.status} ${retailRes.statusText}`;
+          try {
+            const errorData = await retailRes.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // If JSON parsing fails, use status text
+          }
+          console.warn(`Failed to fetch retail items (${retailRes.status}):`, errorMessage);
+        }
+        
+        if (!produceRes.ok) {
+          let errorMessage = `Failed to fetch produce items: ${produceRes.status} ${produceRes.statusText}`;
+          try {
+            const errorData = await produceRes.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // If JSON parsing fails, use status text
+          }
+          console.warn(`Failed to fetch produce items (${produceRes.status}):`, errorMessage);
+        }
+        
+        // Parse JSON only if response is ok, otherwise use empty data
+        const retailData = retailRes.ok ? await retailRes.json() : { items: [] };
+        const produceData = produceRes.ok ? await produceRes.json() : { items: [] };
         
         let retailItems: FoodItem[] = (retailData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
@@ -502,7 +531,14 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       } catch (error) {
         console.error('Error fetching items:', error);
         if (requestId === currentRequest.current) {
-          setError('Failed to load items.');
+          // Don't set error state if it's just a 404 - just log it and show empty menu
+          if (error instanceof Error && error.message.includes('404')) {
+            console.warn("University not found, showing empty menu");
+            setItems({});
+            setCategories({ retail: [], produce: [] });
+          } else {
+            setError('Failed to load items.');
+          }
           setLoading(false);
         }
       }
@@ -526,6 +562,13 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       produceInventory?: VendorInventoryEntry[];
     };
     const fetchVendorSpecials = async () => {
+      // Early return if uniId is not available
+      if (!uniId) {
+        console.warn('uniId is not available, skipping vendor specials fetch');
+        setVendorSpecialItems([]);
+        return;
+      }
+
       try {
         // Fetch vendors and all items in parallel
         const [vendorsRes, retailRes, produceRes] = await Promise.all([
@@ -543,8 +586,18 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           } catch {
             // If JSON parsing fails, use status text
           }
+          
+          // Handle 404 (University not found) gracefully
+          if (vendorsRes.status === 404) {
+            console.warn(`University not found for uniId: ${uniId}. Setting empty vendor specials.`);
+            setVendorSpecialItems([]);
+            return;
+          }
+          
+          // For other errors, log but don't throw - just set empty array
           console.error(`Failed to fetch vendors (${vendorsRes.status}):`, errorMessage);
-          throw new Error(errorMessage);
+          setVendorSpecialItems([]);
+          return;
         }
         
         if (!retailRes.ok) {
@@ -555,8 +608,17 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           } catch {
             // If JSON parsing fails, use status text
           }
+          
+          // Handle 404 gracefully
+          if (retailRes.status === 404) {
+            console.warn(`Retail items not found for uniId: ${uniId}`);
+            setVendorSpecialItems([]);
+            return;
+          }
+          
           console.error(`Failed to fetch retail items (${retailRes.status}):`, errorMessage);
-          throw new Error(errorMessage);
+          setVendorSpecialItems([]);
+          return;
         }
         
         if (!produceRes.ok) {
@@ -567,8 +629,17 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           } catch {
             // If JSON parsing fails, use status text
           }
+          
+          // Handle 404 gracefully
+          if (produceRes.status === 404) {
+            console.warn(`Produce items not found for uniId: ${uniId}`);
+            setVendorSpecialItems([]);
+            return;
+          }
+          
           console.error(`Failed to fetch produce items (${produceRes.status}):`, errorMessage);
-          throw new Error(errorMessage);
+          setVendorSpecialItems([]);
+          return;
         }
         
         const vendors: Vendor[] = await vendorsRes.json();
@@ -682,9 +753,22 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.content}>
-          <h1 className={styles.greeting}>Loading...</h1>
+      <div className={homeStyles.container}>
+        <div className={homeStyles.content}>
+          <div className={homeStyles.headerSection}>
+            <div className={homeStyles.iconWrapper}>
+              <GraduationCap className={homeStyles.headerIcon} size={48} />
+            </div>
+            <h1 className={homeStyles.heading}>Discover Your Campus</h1>
+            <p className={homeStyles.subtitle}>Loading delicious options...</p>
+          </div>
+          <div className={homeStyles.collegeGrid}>
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className={homeStyles.skeletonCard}>
+                <div className={homeStyles.skeletonShimmer}></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -694,7 +778,19 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     return (
       <div className={styles.container}>
         <div className={styles.content}>
-          <h1 className={styles.greeting}>Error: {error}</h1>
+          <div className={styles.errorState}>
+            <div className={styles.errorIconWrapper}>
+              <AlertCircle className={styles.errorIcon} size={64} />
+            </div>
+            <h1 className={styles.greeting}>Oops! Something went wrong</h1>
+            <p className={styles.errorText}>{error}</p>
+            <button 
+              className={styles.retryButton}
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );

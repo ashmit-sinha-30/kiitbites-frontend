@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Plus, Minus, Loader2 } from 'lucide-react';
+import { X, Plus, Minus, Loader2, Sparkles, Circle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import styles from '../styles/CollegePage.module.scss';
 import { FoodItem, Vendor } from '../types';
@@ -205,6 +205,24 @@ const ItemDetailModal = ({
             {item.image ? (
               <img src={item.image} alt={item.title} className={styles.itemDetailImage} />
             ) : null}
+            {item.isSpecial === 'Y' && (
+              <div className={styles.specialBadge}>
+                <Sparkles size={16} />
+                <span>Special Offer</span>
+              </div>
+            )}
+            {item.isVeg !== undefined && (
+              <div className={styles.vegIndicator}>
+                <div className={item.isVeg ? styles.veg : styles.nonVeg}>
+                  <Circle 
+                    size={14} 
+                    fill="currentColor" 
+                    className={styles.vegIcon}
+                  />
+                  <span>{item.isVeg ? 'Veg' : 'Non-Veg'}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className={styles.itemDetailContent}>
@@ -213,9 +231,14 @@ const ItemDetailModal = ({
             {/* Veg/Non-Veg Indicator - below the name */}
             {item.isVeg !== undefined && (
               <div className={styles.vegIndicatorBelowName}>
-                <span className={item.isVeg ? styles.veg : styles.nonVeg}>
-                  {item.isVeg ? '🟢' : '🔴'} {item.isVeg ? 'Veg' : 'Non-Veg'}
-                </span>
+                <div className={item.isVeg ? styles.veg : styles.nonVeg}>
+                  <Circle 
+                    size={12} 
+                    fill="currentColor" 
+                    className={styles.vegIcon}
+                  />
+                  <span>{item.isVeg ? 'Veg' : 'Non-Veg'}</span>
+                </div>
               </div>
             )}
             

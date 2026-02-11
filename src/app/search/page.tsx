@@ -1,12 +1,15 @@
-"use client";
+ "use client";
 
 import { Suspense, useEffect, useState } from "react";
 import SearchBar from "../components/search/SearchBar/SearchBar";
 import { CartProvider } from "../home/[slug]/context/CartContext";
+import PageLoading from "../components/layout/PageLoading/PageLoading";
 
 export default function SearchBarPage() {
   const [userId, setUserId] = useState<string>("");
 
+  // Fetch user ID in the background without blocking initial render,
+  // so the search page shows instantly and cart features become active once ready.
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
@@ -29,7 +32,7 @@ export default function SearchBarPage() {
   }, []);
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<PageLoading message="Loading search results…" />}>
       <CartProvider userId={userId}>
         <SearchBar />
       </CartProvider>

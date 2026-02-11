@@ -36,7 +36,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden">
       <Header showGetApp={true} showProfile={true} />
       <HeroSection />
       <WhatWeDoSection />

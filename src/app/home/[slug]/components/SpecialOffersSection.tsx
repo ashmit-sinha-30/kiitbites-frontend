@@ -1,4 +1,5 @@
 import Slider, { Settings } from "react-slick";
+import { Sparkles } from "lucide-react";
 import styles from "../styles/CollegePage.module.scss";
 import ProductCard from "./ProductCard";
 import { useEffect, useState } from 'react';
@@ -26,7 +27,10 @@ const SpecialOffersSection = ({ allItems, sliderSettings, userId, categories }: 
   return (
     <section className={styles.categorySection}>
       <div className={styles.categoryHeader}>
-        <h3 className={styles.categoryTitle}>Special Offers</h3>
+        <div className={styles.categoryTitleWithIcon}>
+          <Sparkles className={styles.categoryIcon} size={24} fill="#4ea199" color="#4ea199" />
+          <h3 className={styles.categoryTitle}>Special Offers</h3>
+        </div>
       </div>
       <div className={styles.carouselContainer}>
         <Slider {...sliderSettings} className={styles.slider}>

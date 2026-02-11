@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom';
+import { Store, CheckCircle2, X } from 'lucide-react';
 import styles from "../styles/CollegePage.module.scss";
 import { Vendor } from "../types";
 
@@ -22,23 +23,59 @@ const VendorModal = ({
   if (!show) return null;
 
   return createPortal(
-    <div className={styles.modalOverlay}>
-      <div className={styles.modal}>
-        <h2>Select Vendor</h2>
+    <div className={styles.modalOverlay} onClick={onCancel}>
+      <div className={styles.vendorModal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.vendorModalHeader}>
+          <div className={styles.vendorModalTitleWrapper}>
+            <Store className={styles.vendorModalIcon} size={28} />
+            <h2 className={styles.vendorModalTitle}>Select Vendor</h2>
+          </div>
+          <button 
+            className={styles.vendorModalCloseButton}
+            onClick={onCancel}
+            aria-label="Close modal"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        
         <div className={styles.vendorList}>
           {availableVendors.map((vendor) => (
             <div
               key={vendor._id}
-              className={`${styles.vendorItem} ${
-                selectedVendor?._id === vendor._id ? styles.selected : ""
+              className={`${styles.vendorCard} ${
+                selectedVendor?._id === vendor._id ? styles.vendorCardSelected : ""
               }`}
               onClick={() => onVendorSelect(vendor)}
             >
-              <h3>{vendor.name}</h3>
-              <p>₹{vendor.price}</p>
+              <div className={styles.vendorCardContent}>
+                <div className={styles.vendorCardInfo}>
+                  <div className={styles.vendorCardIconWrapper}>
+                    <Store className={styles.vendorCardIcon} size={24} />
+                  </div>
+                  <div className={styles.vendorCardDetails}>
+                    <h3 className={styles.vendorCardName}>{vendor.name}</h3>
+                    <div className={styles.vendorCardPriceWrapper}>
+                      <span className={styles.vendorCardPriceLabel}>Price:</span>
+                      <span className={styles.vendorCardPrice}>₹{vendor.price}</span>
+                    </div>
+                    {vendor.quantity !== undefined && (
+                      <p className={styles.vendorCardQuantity}>
+                        Available: {vendor.quantity}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {selectedVendor?._id === vendor._id && (
+                  <div className={styles.vendorCardCheck}>
+                    <CheckCircle2 size={24} />
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
+        
         <div className={styles.modalButtons}>
           <button className={styles.cancelButton} onClick={onCancel}>
             Cancel
@@ -48,7 +85,7 @@ const VendorModal = ({
             onClick={onConfirm}
             disabled={!selectedVendor}
           >
-            Confirm
+            Confirm Selection
           </button>
         </div>
       </div>

@@ -36,7 +36,7 @@ const Footer: React.FC = () => {
                 </svg>
               </a>
               <a
-                href="https://x.com/bites_bay"
+                href="https://x.com/KAMPYN_HQ"
                 aria-label="X (formerly Twitter)"
                 className="text-gray-300 hover:text-white transition-colors"
               >
@@ -54,7 +54,7 @@ const Footer: React.FC = () => {
                 </svg>
               </a>
               <a
-                href="https://www.instagram.com/bites.bay/"
+                href="https://www.instagram.com/kampyn_hq/"
                 aria-label="Instagram"
                 className="text-gray-300 hover:text-white transition-colors"
               >

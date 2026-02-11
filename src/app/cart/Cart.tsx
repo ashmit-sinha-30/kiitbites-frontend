@@ -15,6 +15,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Script from "next/script";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CART_COUNT_UPDATE_EVENT } from "../hooks/useCartCount";
+import PageLoading from "../components/layout/PageLoading/PageLoading";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
 
 interface ExtraItem {
@@ -86,6 +87,7 @@ export default function Cart() {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const extrasListRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchExtras = async () => {
@@ -133,6 +135,8 @@ export default function Cart() {
         window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
         } catch {
           setCart([]);
+        } finally {
+          setLoading(false);
         }
         return;
       }
@@ -224,6 +228,8 @@ export default function Cart() {
       } catch {
         localStorage.removeItem("token");
         setUserLoggedIn(false);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -621,6 +627,10 @@ export default function Cart() {
       clearTimeout(timeoutId);
     };
   }, [filteredExtras]);
+
+  if (loading) {
+    return <PageLoading message="Loading your cart and recommendations…" />;
+  }
 
   return (
     <>

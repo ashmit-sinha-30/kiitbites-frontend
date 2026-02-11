@@ -293,48 +293,63 @@ export default function SignupForm() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.box}>
-        <h1>Sign Up</h1>
-        <form>
+      <div className={styles.authWrapper}>
+        <div className={styles.box}>
+          <h1>Sign Up</h1>
+          <form>
           {step === 1 && (
             <>
-              <input
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                type="text"
-                placeholder="Full Name"
-                required
-              />
-              <input
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                type="email"
-                placeholder="Email"
-                required
-              />
-              <input
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                type="tel"
-                placeholder="Phone Number"
-                pattern="[0-9]{10}"
-                required
-              />
+              <div className={styles.fieldGroup}>
+                <label htmlFor="fullName">Your name</label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  type="text"
+                  placeholder="Enter your name"
+                  required
+                />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label htmlFor="email">Your email</label>
+                <input
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  type="email"
+                  placeholder="Enter your email"
+                  required
+                />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label htmlFor="phone">Your phone</label>
+                <input
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  pattern="[0-9]{10}"
+                  required
+                />
+              </div>
             </>
           )}
 
           {step === 2 && (
             <>
               <div className={styles.passwordField}>
+                <label htmlFor="password">Enter password</label>
                 <input
+                  id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
                   type={showPassword ? "text" : "password"}
-                  placeholder="Password"
+                  placeholder="Enter your password"
                   required
                 />
                 <span
@@ -346,12 +361,14 @@ export default function SignupForm() {
               </div>
 
               <div className={styles.passwordField}>
+                <label htmlFor="confirmPassword">Confirm password</label>
                 <input
+                  id="confirmPassword"
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm Password"
+                  placeholder="Confirm your password"
                   required
                 />
                 <span
@@ -426,6 +443,7 @@ export default function SignupForm() {
                 className={styles.stepButton}
                 onClick={handleBack}
               >
+                <span className={styles.buttonArrow}>←</span>
                 Back
               </button>
             )}
@@ -436,6 +454,8 @@ export default function SignupForm() {
               disabled={isLoading}
             >
               {isLoading ? "Signing up..." : step === 3 ? "Submit" : "Next"}
+              {!isLoading && step !== 3 && <span className={styles.buttonArrow}>→</span>}
+              {!isLoading && step === 3 && <span className={styles.buttonArrow}>✈</span>}
             </button>
           </div>
 
@@ -456,7 +476,27 @@ export default function SignupForm() {
               </p>
             </>
           )}
-        </form>
+          </form>
+        </div>
+
+        <div className={styles.infoPanel}>
+          <div className={styles.badge}>Create your account</div>
+          <h2 className={styles.heading}>
+            Join the{" "}
+            <span className={styles.highlight}>KAMPYN campus network</span>
+          </h2>
+          <p className={styles.subtext}>
+            One account to discover nearby vendors, unlock campus-only offers,
+            and keep every order just a tap away.
+          </p>
+          <div className={styles.infoList}>
+            <p className={styles.infoItem}>• Explore food across your campus</p>
+            <p className={styles.infoItem}>
+              • Save your college and personalise your feed
+            </p>
+            <p className={styles.infoItem}>• Track orders in real time</p>
+          </div>
+        </div>
       </div>
       <ToastContainer />
     </div>

@@ -182,7 +182,9 @@ const PlatformFeesPage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  const isInitialLoading = loading && universities.length === 0 && !error;
+
+  if (isInitialLoading) {
     return (
       <div className={styles.loadingContainer}>
         <Loader2 className={styles.loader} />
