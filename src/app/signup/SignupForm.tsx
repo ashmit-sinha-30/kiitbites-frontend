@@ -294,47 +294,47 @@ export default function SignupForm() {
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
-        <div className={styles.box}>
-          <h1>Sign Up</h1>
-          <form>
+      <div className={styles.box}>
+        <h1>Sign Up</h1>
+        <form>
           {step === 1 && (
             <>
               <div className={styles.fieldGroup}>
                 <label htmlFor="fullName">Your name</label>
-                <input
+              <input
                   id="fullName"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                type="text"
                   placeholder="Enter your name"
-                  required
-                />
+                required
+              />
               </div>
               <div className={styles.fieldGroup}>
                 <label htmlFor="email">Your email</label>
-                <input
+              <input
                   id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                type="email"
                   placeholder="Enter your email"
-                  required
-                />
+                required
+              />
               </div>
               <div className={styles.fieldGroup}>
                 <label htmlFor="phone">Your phone</label>
-                <input
+              <input
                   id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                type="tel"
                   placeholder="Enter your phone number"
-                  pattern="[0-9]{10}"
-                  required
-                />
+                pattern="[0-9]{10}"
+                required
+              />
               </div>
             </>
           )}
@@ -476,7 +476,7 @@ export default function SignupForm() {
               </p>
             </>
           )}
-          </form>
+        </form>
         </div>
 
         <div className={styles.infoPanel}>

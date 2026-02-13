@@ -239,7 +239,7 @@ export default function LoginForm() {
     <div className={styles.container}>
       <div className={styles.authWrapper}>
         <div className={styles.box}>
-          <h1>Sign In</h1>
+          <h1>Login</h1>
           <form onSubmit={handleSubmit}>
             <div className={styles.fieldGroup}>
               <label htmlFor="identifier">Your email or phone</label>
@@ -289,7 +289,7 @@ export default function LoginForm() {
         <div className={styles.infoPanel}>
           <div className={styles.badge}>Welcome back</div>
           <h2 className={styles.heading}>
-            Sign in to{" "}
+            Login to{" "}
             <span className={styles.highlight}>your campus food hub</span>
           </h2>
           <p className={styles.subtext}>
