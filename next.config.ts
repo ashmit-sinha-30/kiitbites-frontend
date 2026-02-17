@@ -27,11 +27,12 @@ const nextConfig: NextConfig = {
     // Content Security Policy directives
     const cspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://vercel.live",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://vercel.live https://accounts.google.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "connect-src 'self' https:",
-      "frame-src https://checkout.razorpay.com",
+      "frame-src https://checkout.razorpay.com https://vercel.live https://accounts.google.com",
+      "font-src 'self' https:",
     ].join("; ");
 
     return [
