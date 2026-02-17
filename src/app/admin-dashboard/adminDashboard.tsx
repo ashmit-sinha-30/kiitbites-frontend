@@ -179,6 +179,14 @@ const AdminDashboard: React.FC = () => {
       onClick: () => setSelectedOption('security')
     },
     {
+      id: 'rate-limits',
+      title: 'Rate Limit Management',
+      description: 'View and release rate-limited IP addresses',
+      icon: <ShieldIcon />,
+      color: 'bg-amber-500',
+      onClick: () => router.push('/admin-dashboard/rate-limits')
+    },
+    {
       id: 'server-monitoring',
       title: 'Server Monitoring',
       description: 'Monitor backend status, API hits, crashes, and server events',
@@ -211,8 +219,8 @@ const AdminDashboard: React.FC = () => {
       {/* Dashboard Options Grid */}
       <div className={styles.optionsGrid}>
         {dashboardOptions.map((option) => (
-          <Card 
-            key={option.id} 
+          <Card
+            key={option.id}
             className={`${styles.optionCard} ${selectedOption === option.id ? styles.selectedCard : ''}`}
             onClick={() => handleOptionClick(option)}
           >

@@ -1,0 +1,183 @@
+.rateLimitsContainer {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.errorBanner {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  p {
+    margin: 0;
+    color: #c33;
+    font-weight: 500;
+  }
+  
+  button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #c33;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    
+    &:hover {
+      color: #a11;
+    }
+  }
+}
+
+.confirmDialog {
+  margin-bottom: 1.5rem;
+  border: 2px solid #f59e0b;
+  background-color: #fffbeb;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.tableCard {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  thead {
+    background-color: #f9fafb;
+    
+    th {
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #e5e7eb;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+  
+  tbody {
+    tr {
+      border-bottom: 1px solid #e5e7eb;
+      transition: background-color 0.2s;
+      
+      &:hover {
+        background-color: #f9fafb;
+      }
+      
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+    
+    td {
+      padding: 1rem;
+      color: #1f2937;
+      font-size: 0.875rem;
+    }
+  }
+}
+
+.endpoint {
+  font-family: 'Courier New', monospace;
+  color: #6366f1;
+  font-size: 0.8rem;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.empty {
+  text-align: center;
+  padding: 3rem;
+  color: #999;
+  
+  p {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .rateLimitsContainer {
+    padding: 1rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .actions {
+    width: 100%;
+    
+    button {
+      flex: 1;
+    }
+  }
+  
+  .table {
+    font-size: 0.75rem;
+    
+    thead th,
+    tbody td {
+      padding: 0.5rem;
+    }
+  }
+  
+  .endpoint {
+    max-width: 150px;
+  }
+}
