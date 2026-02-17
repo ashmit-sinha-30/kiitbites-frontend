@@ -96,7 +96,7 @@ interface Vendor {
   };
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ 
+const SearchBar: React.FC<SearchBarProps> = ({
   hideUniversityDropdown = false,
   placeholder = "Search for food or vendors...",
   vendorId,
@@ -148,7 +148,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     if (vendorId) {
       try {
         const response = await fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}`);
-        
+
         if (!response.ok) {
           console.error("Vendor search failed:", response.status);
           setSearchResults([]);
@@ -167,7 +167,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           if (onSearchResults) onSearchResults([]);
           return;
         }
-        
+
         if (!data.success) {
           console.error("Vendor data fetch failed:", data.message);
           setSearchResults([]);
@@ -217,35 +217,35 @@ const SearchBar: React.FC<SearchBarProps> = ({
             }));
           setSearchResults(results);
           setSuggestedItems([]);
-                  // Ensure items have the correct structure for vendor page
-        const vendorItems = allVendorItems
-          .filter(item => item.itemId && item.itemId !== '') // Filter out items without valid itemId
-          .map(item => ({
+          // Ensure items have the correct structure for vendor page
+          const vendorItems = allVendorItems
+            .filter(item => item.itemId && item.itemId !== '') // Filter out items without valid itemId
+            .map(item => ({
+              itemId: item.itemId,
+              name: item.name,
+              type: item.type,
+              price: item.price,
+              image: item.image,
+              quantity: item.quantity,
+              isAvailable: item.isAvailable
+              // vendorId intentionally omitted
+            }));
+          console.log('DEBUG: Filtered vendor items:', vendorItems.map(item => ({
             itemId: item.itemId,
             name: item.name,
-            type: item.type,
-            price: item.price,
-            image: item.image,
-            quantity: item.quantity,
-            isAvailable: item.isAvailable
-            // vendorId intentionally omitted
-          }));
-        console.log('DEBUG: Filtered vendor items:', vendorItems.map(item => ({
-          itemId: item.itemId,
-          name: item.name,
-          type: item.type
-        })));
-        if (onSearchResults) onSearchResults(vendorItems);
+            type: item.type
+          })));
+          if (onSearchResults) onSearchResults(vendorItems);
           return;
         }
 
         const searchLower = searchText.toLowerCase();
-        const exactMatches = allVendorItems.filter(item => 
+        const exactMatches = allVendorItems.filter(item =>
           item.name.toLowerCase().includes(searchLower)
         );
 
         const matchedTypes = new Set(exactMatches.map(item => item.type));
-        const suggestions = allVendorItems.filter(item => 
+        const suggestions = allVendorItems.filter(item =>
           matchedTypes.has(item.type) && !exactMatches.some(match => match.itemId === item.itemId)
         );
 
@@ -284,7 +284,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             vendorId: vendorId
           }));
         setSuggestedItems(suggestedResults);
-        
+
         console.log('DEBUG: Passing to vendor page:', exactMatches.map(item => ({
           itemId: item.itemId,
           name: item.name,
@@ -367,18 +367,18 @@ const SearchBar: React.FC<SearchBarProps> = ({
   // Trigger search when query is set from URL params (e.g., on page refresh)
   useEffect(() => {
     const searchQuery = searchParams.get("search") || "";
-    
+
     // Skip if this is the same query we just searched (prevents duplicate searches)
     if (searchQuery === lastSearchedQuery.current) {
       return;
     }
-    
+
     if (searchQuery.trim()) {
       // For vendor pages, search immediately
       if (vendorId) {
         lastSearchedQuery.current = searchQuery;
         fetchSearchResults(searchQuery);
-      } 
+      }
       // For normal search, wait until university is selected
       else if (selectedUniversity || hideUniversityDropdown) {
         lastSearchedQuery.current = searchQuery;
@@ -402,7 +402,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         const res = await fetch(`${BACKEND_URL}/api/user/auth/list`);
         const data = await res.json();
         setUniversities(data);
-        
+
         // If user is not authenticated, select the first college
         if (!isAuthenticated && data.length > 0) {
           setSelectedUniversity(data[0]._id);
@@ -422,7 +422,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         const res = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-    
+
         const user = await res.json();
         if (user?.uniID) {
           setSelectedUniversity(user.uniID);
@@ -444,26 +444,26 @@ const SearchBar: React.FC<SearchBarProps> = ({
   // Load popular foods
   useEffect(() => {
     if (!selectedUniversity || hideUniversityDropdown) return;
-  
+
     const fetchPopularFoods = async () => {
       try {
         const [retailRes, produceRes] = await Promise.all([
           fetch(`${BACKEND_URL}/api/item/retail/uni/${selectedUniversity}`),
           fetch(`${BACKEND_URL}/api/item/produce/uni/${selectedUniversity}`),
         ]);
-  
+
         const [retailData, produceData] = await Promise.all([
           retailRes.json(),
           produceRes.json(),
         ]);
-  
+
         const combined = [...retailData.items, ...produceData.items];
         setPopularFoods(combined.slice(0, 24));
       } catch (error) {
         console.error("Error fetching popular foods:", error);
       }
     };
-  
+
     fetchPopularFoods();
   }, [selectedUniversity, hideUniversityDropdown]);
 
@@ -584,7 +584,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         return;
       }
       const user = await response.json();
-      
+
       if (!user._id) {
         toast.error('Invalid user data');
         return;
@@ -641,12 +641,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setSuggestedItems([]);
     router.push("?", undefined);
     if (onSearchResults) onSearchResults([]);
-  
+
     if (clearSearch) {
       clearSearch(); // ✅ Call custom clear handler from parent (like VendorPage)
     }
   };
-  
+
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -699,7 +699,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                   className={styles.searchInput}
                 />
                 {query && (
-                  <button 
+                  <button
                     className={styles.clearButton}
                     onClick={handleClearSearch}
                     aria-label="Clear search"
@@ -738,8 +738,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     );
 
                     return (
-                      <div 
-                        key={item._id} 
+                      <div
+                        key={item._id}
                         className={styles.resultCard}
                         onClick={() => item.isVendor && item._id ? handleVendorClick(item._id!) : null}
                       >
@@ -764,11 +764,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
                               image={item.image || '/images/coffee.jpeg'}
                               variant="search-result"
                             />
-                          {(item.type || item.subtype) && (
-                            <p className={styles.itemType}>
-                              {item.type}{item.subtype ? ` • ${item.subtype}` : ''}
-                            </p>
-                          )}
+                            {(item.type || item.subtype) && (
+                              <p className={styles.itemType}>
+                                {item.type}{item.subtype ? ` • ${item.subtype}` : ''}
+                              </p>
+                            )}
                             {isAuthenticated && (
                               <SearchQuantityControls
                                 item={{
@@ -794,8 +794,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
                   <h2 className="text-xl font-bold mb-4">You may also like</h2>
                   <div className={styles.resultsGrid}>
                     {suggestedItems.map((item) => (
-                      <div 
-                        key={item._id} 
+                      <div
+                        key={item._id}
                         className={styles.resultCard}
                         onClick={() => handleSelectSuggestion(item.name)}
                       >
@@ -821,47 +821,45 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </div>
       </div>
 
-        {showVendorModal && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-              <h2 className="text-xl font-bold mb-4">Select Vendor</h2>
-              {availableVendors.length === 0 ? (
-                <div className="text-center py-4">Loading vendors...</div>
-              ) : (
-                <div className={styles.vendorList}>
-                  {availableVendors.map((vendor) => (
-                    <div
-                      key={vendor._id}
-                      className={`${styles.vendorItem} ${
-                        selectedVendor?._id === vendor._id ? styles.selected : ""
+      {showVendorModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h2 className="text-xl font-bold mb-4">Select Vendor</h2>
+            {availableVendors.length === 0 ? (
+              <div className="text-center py-4">Loading vendors...</div>
+            ) : (
+              <div className={styles.vendorList}>
+                {availableVendors.map((vendor) => (
+                  <div
+                    key={vendor._id}
+                    className={`${styles.vendorItem} ${selectedVendor?._id === vendor._id ? styles.selected : ""
                       }`}
-                      onClick={() => handleVendorSelect(vendor)}
-                    >
-                      <h3 className="font-semibold">{vendor.name}</h3>
-                      <p className="text-gray-600">₹{vendor.price}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className={styles.modalButtons}>
-                <button 
-                  className={`${styles.cancelButton} px-4 py-2 border rounded-md mr-2`} 
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={`${styles.confirmButton} px-4 py-2 bg-blue-500 text-white rounded-md ${
-                    !selectedVendor ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  onClick={handleVendorConfirm}
-                  disabled={!selectedVendor}
-                >
-                  Confirm
-                </button>
+                    onClick={() => handleVendorSelect(vendor)}
+                  >
+                    <h3 className="font-semibold">{vendor.name}</h3>
+                    <p className="text-gray-600">₹{vendor.price}</p>
+                  </div>
+                ))}
               </div>
+            )}
+            <div className={styles.modalButtons}>
+              <button
+                className={`${styles.cancelButton} px-4 py-2 border rounded-md mr-2`}
+                onClick={handleCancel}
+              >
+                Cancel
+              </button>
+              <button
+                className={`${styles.confirmButton} px-4 py-2 bg-blue-500 text-white rounded-md ${!selectedVendor ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                onClick={handleVendorConfirm}
+                disabled={!selectedVendor}
+              >
+                Confirm
+              </button>
             </div>
           </div>
+        </div>
       )}
     </Suspense>
   );

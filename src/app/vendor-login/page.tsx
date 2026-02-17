@@ -68,7 +68,7 @@ const VendorLoginPage: React.FC = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('vendorRole', 'seller'); // Default role, can be updated later
         toast.success('Login successful!');
-        router.push('/vendorDashboard');
+        router.push('/vendordashboard');
       } else {
         if (data.redirectTo) {
           // User not verified, redirect to OTP verification

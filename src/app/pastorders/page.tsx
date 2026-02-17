@@ -1,4 +1,4 @@
- "use client";
+"use client";
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import styles from "./styles/pastorder.module.scss";
@@ -312,7 +312,7 @@ const PastOrdersPageContent: React.FC = () => {
           <div className={styles.emptyState}>
             <h2>No past orders found</h2>
             <p>You haven&apos;t placed any orders yet. Start ordering to see your history here!</p>
-            <button 
+            <button
               className={styles.homeButton}
               onClick={() => router.push('/')}
             >
@@ -343,7 +343,7 @@ const PastOrdersPageContent: React.FC = () => {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <span 
+                      <span
                         className={styles.orderStatus}
                         style={{ backgroundColor: getStatusColor(order.status) }}
                       >
@@ -380,34 +380,34 @@ const PastOrdersPageContent: React.FC = () => {
                       ))}
                     </div>
 
-                  <div className={styles.orderTotal}>
-                    <p className={styles.totalAmount}>
-                      Total: ₹{order.total}
-                    </p>
-                  </div>
-                  {allowedReview && (
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <ReviewForm
-                        orderNumber={order.orderNumber}
-                        disabled={submitting === order._id}
-                        onSubmit={async (rating, comment) => {
-                          try {
-                            setSubmitting(order._id);
-                            const token = getAuthToken();
-                            await axios.post(`${BACKEND_URL}/api/reviews/order/${order._id}`,
-                              { rating, comment },
-                              { headers: { Authorization: `Bearer ${token}` } }
-                            );
-                            toast.success('Review submitted');
-                          } catch {
-                            toast.error('Failed to submit review');
-                          } finally {
-                            setSubmitting(null);
-                          }
-                        }}
-                      />
+                    <div className={styles.orderTotal}>
+                      <p className={styles.totalAmount}>
+                        Total: ₹{order.total}
+                      </p>
                     </div>
-                  )}
+                    {allowedReview && (
+                      <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <ReviewForm
+                          orderNumber={order.orderNumber}
+                          disabled={submitting === order._id}
+                          onSubmit={async (rating, comment) => {
+                            try {
+                              setSubmitting(order._id);
+                              const token = getAuthToken();
+                              await axios.post(`${BACKEND_URL}/api/reviews/order/${order._id}`,
+                                { rating, comment },
+                                { headers: { Authorization: `Bearer ${token}` } }
+                              );
+                              toast.success('Review submitted');
+                            } catch {
+                              toast.error('Failed to submit review');
+                            } finally {
+                              setSubmitting(null);
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -14,7 +14,7 @@ const VendorOtpVerificationContent: React.FC = () => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const email = searchParams.get('email')?.toLowerCase(); // Ensure lowercase consistency
   const fromPage = searchParams.get('from');
 
@@ -96,7 +96,7 @@ const VendorOtpVerificationContent: React.FC = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('vendorRole', 'seller'); // Default role
         toast.success('OTP verified successfully!');
-        
+
         if (fromPage === 'forgotpassword' || fromPage === '/forgotpassword') {
           router.push(`/vendor-reset-password?email=${encodeURIComponent(email || '')}`);
         } else {
@@ -197,10 +197,10 @@ const VendorOtpVerificationContent: React.FC = () => {
             disabled={resendLoading || countdown > 0}
             className={styles.resendButton}
           >
-            {resendLoading 
-              ? 'Sending...' 
-              : countdown > 0 
-                ? `Resend in ${countdown}s` 
+            {resendLoading
+              ? 'Sending...'
+              : countdown > 0
+                ? `Resend in ${countdown}s`
                 : 'Resend OTP'
             }
           </button>

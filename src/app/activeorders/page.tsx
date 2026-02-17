@@ -1,4 +1,4 @@
- "use client";
+"use client";
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import styles from "./styles/activeorder.module.scss";
@@ -300,7 +300,7 @@ const ActiveOrdersPageContent: React.FC = () => {
           <div className={styles.emptyState}>
             <h2>No active orders found</h2>
             <p>You don&apos;t have any active orders at the moment. Start ordering to see your active orders here!</p>
-            <button 
+            <button
               className={styles.homeButton}
               onClick={() => router.push('/')}
             >
@@ -331,7 +331,7 @@ const ActiveOrdersPageContent: React.FC = () => {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <span 
+                      <span
                         className={styles.orderStatus}
                         style={{ backgroundColor: getStatusColor(order.status) }}
                       >
