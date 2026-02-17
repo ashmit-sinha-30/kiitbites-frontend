@@ -29,7 +29,6 @@ export default function LoginForm() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true);
   const router = useRouter();
 
   const BACKEND_URL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -194,15 +193,6 @@ export default function LoginForm() {
 
   // Refresh session on component mount - deferred to not block initial render
   useEffect(() => {
-    // Simulate slow internet by showing skeleton for 1-2 seconds
-    const minDelay = 800;
-    const maxDelay = 1500;
-    const delay = Math.random() * (maxDelay - minDelay) + minDelay;
-
-    const loadingTimeout = setTimeout(() => {
-      setIsPageLoading(false);
-    }, delay);
-
     // Defer session check to after initial render (keeps logic identical, just timing)
     const timeoutId = setTimeout(() => {
       checkSession(); // Refresh on page load
@@ -213,28 +203,10 @@ export default function LoginForm() {
     }, 60 * 60 * 1000); // Refresh every 1 hour
 
     return () => {
-      clearTimeout(loadingTimeout);
       clearTimeout(timeoutId);
       clearInterval(interval); // Cleanup on unmount
     };
   }, [checkSession]);
-
-  if (isPageLoading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.box}>
-          <div className={styles.skeletonTitle}></div>
-          <form>
-            <div className={styles.skeletonInput}></div>
-            <div className={styles.skeletonInput}></div>
-            <div className={styles.skeletonLink}></div>
-            <div className={styles.skeletonButton}></div>
-            <div className={styles.skeletonText}></div>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.container}>

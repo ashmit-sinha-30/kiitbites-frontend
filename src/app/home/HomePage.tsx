@@ -21,7 +21,6 @@ const generateSlug = (name: string): string => {
 const HomePage = () => {
   const router = useRouter();
   const [colleges, setColleges] = useState<College[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -42,8 +41,6 @@ const HomePage = () => {
         setColleges(collegesWithSlugs);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -56,29 +53,6 @@ const HomePage = () => {
     router.push(`/home/${college.slug}`);
   };
 
-  if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.content}>
-          <div className={styles.headerSection}>
-            <div className={styles.iconWrapper}>
-              <GraduationCap className={styles.headerIcon} size={48} />
-            </div>
-            <h1 className={styles.heading}>Discover Your Campus</h1>
-            <p className={styles.subtitle}>Loading colleges...</p>
-          </div>
-          <div className={styles.collegeGrid}>
-            {[...Array(6)].map((_, index) => (
-              <div key={index} className={styles.skeletonCard}>
-                <div className={styles.skeletonShimmer}></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className={styles.container}>
@@ -89,7 +63,7 @@ const HomePage = () => {
             </div>
             <h1 className={styles.heading}>Oops! Something went wrong</h1>
             <p className={styles.error}>{error}</p>
-            <button 
+            <button
               className={styles.retryButton}
               onClick={() => window.location.reload()}
             >

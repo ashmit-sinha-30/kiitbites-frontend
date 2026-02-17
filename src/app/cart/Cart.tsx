@@ -15,7 +15,6 @@ import "react-toastify/dist/ReactToastify.css";
 import Script from "next/script";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CART_COUNT_UPDATE_EVENT } from "../hooks/useCartCount";
-import PageLoading from "../components/layout/PageLoading/PageLoading";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
 
 interface ExtraItem {
@@ -87,7 +86,6 @@ export default function Cart() {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const extrasListRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchExtras = async () => {
@@ -131,12 +129,10 @@ export default function Cart() {
             category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
           }));
           setCart(guestCartWithCategory);
-        // Dispatch event to update cart count in navbar
-        window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
+          // Dispatch event to update cart count in navbar
+          window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
         } catch {
           setCart([]);
-        } finally {
-          setLoading(false);
         }
         return;
       }
@@ -211,7 +207,7 @@ export default function Cart() {
             if (vendorServicesRes.data.success && vendorServicesRes.data.data.services) {
               const services = vendorServicesRes.data.data.services || [];
               const hasPendingOrder = services.some(
-                (service: { name?: string }) => 
+                (service: { name?: string }) =>
                   service.name?.toLowerCase().includes("pending order")
               );
               setHasPendingOrderService(hasPendingOrder);
@@ -228,8 +224,6 @@ export default function Cart() {
       } catch {
         localStorage.removeItem("token");
         setUserLoggedIn(false);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -270,7 +264,7 @@ export default function Cart() {
     } else {
       setExtras([]);
     }
-     
+
   }, [cart, userData?._id]);
 
   // Check vendor services when cart vendorId changes
@@ -295,7 +289,7 @@ export default function Cart() {
         if (vendorServicesRes.data.success && vendorServicesRes.data.data.services) {
           const services = vendorServicesRes.data.data.services || [];
           const hasPendingOrder = services.some(
-            (service: { name?: string }) => 
+            (service: { name?: string }) =>
               service.name?.toLowerCase().includes("pending order")
           );
           setHasPendingOrderService(hasPendingOrder);
@@ -311,7 +305,7 @@ export default function Cart() {
 
     checkVendorServices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, userLoggedIn, userData?._id]);  
+  }, [cart, userLoggedIn, userData?._id]);
 
   const reFetchCart = async () => {
     try {
@@ -356,7 +350,7 @@ export default function Cart() {
   // Cancel all pending orders when cart changes (only if vendor has approval service)
   const cancelPendingOrders = async () => {
     if (!userLoggedIn || !userData || !hasPendingOrderService) return;
-    
+
     try {
       // Silently cancel pending orders - don't show toast if none exist
       await axios.post(
@@ -382,7 +376,7 @@ export default function Cart() {
     if (userLoggedIn && userData) {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
-      
+
       axios
         .post(
           `${BACKEND_URL}/cart/add-one/${userData._id}`,
@@ -399,8 +393,7 @@ export default function Cart() {
             toast.warning(`Maximum limit reached for ${thisItem.name}`);
           } else if (errorMsg.includes("Only")) {
             toast.warning(
-              `Only ${errorMsg.split("Only ")[1]} available for ${
-                thisItem.name
+              `Only ${errorMsg.split("Only ")[1]} available for ${thisItem.name
               }`
             );
           } else {
@@ -432,7 +425,7 @@ export default function Cart() {
     if (userLoggedIn && userData) {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
-      
+
       axios
         .post(
           `${BACKEND_URL}/cart/remove-one/${userData._id}`,
@@ -469,7 +462,7 @@ export default function Cart() {
     if (userLoggedIn && userData) {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
-      
+
       axios
         .post(
           `${BACKEND_URL}/cart/remove-item/${userData._id}`,
@@ -536,31 +529,31 @@ export default function Cart() {
       const existingItem = cart.find((i) => i._id === item._id);
       const updatedCart = existingItem
         ? cart.map((i) =>
-            i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
-          )
+          i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
+        )
         : [
-            ...cart,
-            {
+          ...cart,
+          {
+            _id: item._id,
+            userId: "guest",
+            foodcourtId: "guest",
+            itemId: {
               _id: item._id,
-              userId: "guest",
-              foodcourtId: "guest",
-              itemId: {
-                _id: item._id,
-                name: item.name,
-                price: item.price,
-                image: item.image,
-                kind: item.kind || "Retail",
-              },
-              quantity: 1,
-              kind: item.kind || "Retail",
               name: item.name,
               price: item.price,
               image: item.image,
-              vendorName: "guest",
-              vendorId: "guest",
-              category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
+              kind: item.kind || "Retail",
             },
-          ];
+            quantity: 1,
+            kind: item.kind || "Retail",
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            vendorName: "guest",
+            vendorId: "guest",
+            category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
+          },
+        ];
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.success(`${item.name} added to cart!`);
@@ -627,10 +620,6 @@ export default function Cart() {
       clearTimeout(timeoutId);
     };
   }, [filteredExtras]);
-
-  if (loading) {
-    return <PageLoading message="Loading your cart and recommendations…" />;
-  }
 
   return (
     <>
@@ -702,9 +691,8 @@ export default function Cart() {
                 )}
                 <div
                   ref={extrasListRef}
-                  className={`${styles.extrasList} ${
-                    filteredExtras.length === 1 ? styles.singleCard : ""
-                  }`}
+                  className={`${styles.extrasList} ${filteredExtras.length === 1 ? styles.singleCard : ""
+                    }`}
                 >
                   {filteredExtras.length > 0 ? (
                     filteredExtras.map((item) => {
@@ -773,7 +761,7 @@ export default function Cart() {
           )}
         </div>
       </div>
-      
+
       {/* Order waiting screen overlay - only show if using approval workflow */}
       {hasPendingOrderService && showWaitingScreen && currentOrderId && userData && (
         <OrderWaitingScreen

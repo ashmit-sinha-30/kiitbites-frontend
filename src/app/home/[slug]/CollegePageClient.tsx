@@ -1,12 +1,11 @@
 "use client";
 
 import { useSearchParams, usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, AlertCircle, GraduationCap } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./styles/global.css";
 import styles from "./styles/CollegePage.module.scss";
-import homeStyles from "../../home/styles/Home.module.scss";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -84,8 +83,6 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [userFullName, setUserFullName] = useState<string>("");
   const [items, setItems] = useState<{ [key: string]: FoodItem[] }>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [userFavorites, setUserFavorites] = useState<FavoriteItem[]>([]);
   const [vendorSpecialItems, setVendorSpecialItems] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<{ retail: string[]; produce: string[] }>({ retail: [], produce: [] });
@@ -103,7 +100,6 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
   // Get college list and match collegeName to get actual college id
   const fetchCollegesAndSetUniId = useCallback(async (collegeSlug: string) => {
     try {
-      setLoading(true);
       const response = await fetch(`${BACKEND_URL}/api/user/auth/list`, {
         credentials: "include",
       });
@@ -123,20 +119,16 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
         setUniId(matchedCollege._id);
         localStorage.setItem("currentCollegeId", matchedCollege._id);
         updateUrlWithCollegeId(matchedCollege._id);
-        setLoading(false);
         return true;
       } else {
-        // Only set error if we've actually tried to load the data
+        // College not found - just log it
         if (colleges.length > 0) {
-          setError(`College not found: ${collegeSlug}`);
+          console.warn(`College not found: ${collegeSlug}`);
         }
-        setLoading(false);
         return false;
       }
     } catch (err) {
       console.error("Error fetching colleges:", err);
-      setError("Failed to load college information");
-      setLoading(false);
       return false;
     }
   }, [updateUrlWithCollegeId]);
@@ -166,7 +158,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
               updateUrlWithCollegeId(found._id);
               return;
             }
-          } catch {}
+          } catch { }
         } else {
           if (isMounted) {
             setUniId(cid);
@@ -243,8 +235,6 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     const requestId = ++currentRequest.current;
 
     const fetchItems = async () => {
-      setLoading(true);
-      setError(null);
 
       const allItems: { [key: string]: FoodItem[] } = {};
 
@@ -302,7 +292,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           fetch(`${BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
           fetch(`${BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
         ]);
-        
+
         // Check response status before parsing JSON
         if (!retailRes.ok) {
           let errorMessage = `Failed to fetch retail items: ${retailRes.status} ${retailRes.statusText}`;
@@ -314,7 +304,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           }
           console.warn(`Failed to fetch retail items (${retailRes.status}):`, errorMessage);
         }
-        
+
         if (!produceRes.ok) {
           let errorMessage = `Failed to fetch produce items: ${produceRes.status} ${produceRes.statusText}`;
           try {
@@ -325,11 +315,11 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           }
           console.warn(`Failed to fetch produce items (${produceRes.status}):`, errorMessage);
         }
-        
+
         // Parse JSON only if response is ok, otherwise use empty data
         const retailData = retailRes.ok ? await retailRes.json() : { items: [] };
         const produceData = produceRes.ok ? await produceRes.json() : { items: [] };
-        
+
         let retailItems: FoodItem[] = (retailData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
           title: item.name as string,
@@ -345,7 +335,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           quantity: item.quantity as number,
           isVeg: item.isVeg !== undefined ? (item.isVeg as boolean) : true,
         }));
-        
+
         let produceItems: FoodItem[] = (produceData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
           title: item.name as string,
@@ -374,7 +364,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             if (bIndex !== undefined) return 1;
             return a.title.localeCompare(b.title);
           });
-          
+
           produceItems = produceItems.sort((a, b) => {
             const aIndex = sortMap.get(a.id);
             const bIndex = sortMap.get(b.id);
@@ -390,10 +380,10 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           retailItems.sort((a, b) => a.title.localeCompare(b.title));
           produceItems.sort((a, b) => a.title.localeCompare(b.title));
         }
-        
+
         // Track subtypes for each category
         const subtypesMap: { [key: string]: Set<string> } = {};
-        
+
         // Group by category-type and subtype when subtype exists
         // Items are already sorted, so they will maintain order when grouped
         [...retailItems, ...produceItems].forEach(item => {
@@ -402,7 +392,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             const key = `${item.type}-${item.category}-${item.subtype}`;
             if (!allItems[key]) allItems[key] = [];
             allItems[key].push(item);
-            
+
             // Track subtypes for this category
             const categoryKey = `${item.type}-${item.category}`;
             if (!subtypesMap[categoryKey]) {
@@ -416,17 +406,17 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             allItems[key].push(item);
           }
         });
-        
+
         // Convert subtypes map to array format and apply subtype order
         // Key format: "type-category" where type is "retail"/"produce", category is item type like "pizza"
         const subtypesMapArrays: { [key: string]: string[] } = {};
         Object.keys(subtypesMap).forEach(key => {
           const subtypes = Array.from(subtypesMap[key]);
-          
+
           // Extract type and category from key (format: "type-category")
           // type is "retail" or "produce", category is item type like "pizza"
           const [itemType, category] = key.split('-');
-          
+
           // Apply subtype order if available
           // subtypeOrder key format: "category-type-subtype" where category is "retail"/"produce"
           if (subtypeOrderMap.size > 0) {
@@ -447,11 +437,11 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             // Sort alphabetically if no subtype order
             subtypes.sort();
           }
-          
+
           subtypesMapArrays[key] = subtypes;
         });
         setCategorySubtypes(subtypesMapArrays);
-        
+
         // Ensure items within each group maintain sort order
         // (Items are already sorted before grouping, but let's verify each group is sorted)
         Object.keys(allItems).forEach(key => {
@@ -470,7 +460,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             });
           }
         });
-        
+
         // Dynamically generate categories from fetched items
         // Note: In FoodItem, item.category is the item type (like "pizza"), item.type is "retail" or "produce"
         const retailTypes = new Set<string>();
@@ -481,11 +471,11 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
         produceItems.forEach(item => {
           if (item.category) produceTypes.add(item.category); // item.category is the type like "pizza"
         });
-        
+
         // Apply type order if available
         const sortedRetailTypes = Array.from(retailTypes);
         const sortedProduceTypes = Array.from(produceTypes);
-        
+
         if (typeOrderMap.size > 0) {
           sortedRetailTypes.sort((a, b) => {
             const aKey = `retail-${a}`; // a is the item type like "pizza"
@@ -499,7 +489,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             if (bIndex !== undefined) return 1;
             return a.localeCompare(b);
           });
-          
+
           sortedProduceTypes.sort((a, b) => {
             const aKey = `produce-${a}`; // a is the item type like "pizza"
             const bKey = `produce-${b}`;
@@ -516,17 +506,16 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           sortedRetailTypes.sort();
           sortedProduceTypes.sort();
         }
-        
+
         setCategories({
           retail: sortedRetailTypes,
           produce: sortedProduceTypes,
         });
-        
+
         if (requestId === currentRequest.current) {
           console.log('DEBUG allItems:', allItems);
           console.log('DEBUG categories:', { retail: Array.from(retailTypes), produce: Array.from(produceTypes) });
           setItems(allItems);
-          setLoading(false);
         }
       } catch (error) {
         console.error('Error fetching items:', error);
@@ -537,9 +526,8 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             setItems({});
             setCategories({ retail: [], produce: [] });
           } else {
-            setError('Failed to load items.');
+            console.error('Failed to load items.');
           }
-          setLoading(false);
         }
       }
     };
@@ -576,7 +564,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           fetch(`${BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
           fetch(`${BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
         ]);
-        
+
         // Check response status before parsing JSON
         if (!vendorsRes.ok) {
           let errorMessage = `Failed to fetch vendors: ${vendorsRes.status} ${vendorsRes.statusText}`;
@@ -586,20 +574,20 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           } catch {
             // If JSON parsing fails, use status text
           }
-          
+
           // Handle 404 (University not found) gracefully
           if (vendorsRes.status === 404) {
             console.warn(`University not found for uniId: ${uniId}. Setting empty vendor specials.`);
             setVendorSpecialItems([]);
             return;
           }
-          
+
           // For other errors, log but don't throw - just set empty array
           console.error(`Failed to fetch vendors (${vendorsRes.status}):`, errorMessage);
           setVendorSpecialItems([]);
           return;
         }
-        
+
         if (!retailRes.ok) {
           let errorMessage = `Failed to fetch retail items: ${retailRes.status} ${retailRes.statusText}`;
           try {
@@ -608,19 +596,19 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           } catch {
             // If JSON parsing fails, use status text
           }
-          
+
           // Handle 404 gracefully
           if (retailRes.status === 404) {
             console.warn(`Retail items not found for uniId: ${uniId}`);
             setVendorSpecialItems([]);
             return;
           }
-          
+
           console.error(`Failed to fetch retail items (${retailRes.status}):`, errorMessage);
           setVendorSpecialItems([]);
           return;
         }
-        
+
         if (!produceRes.ok) {
           let errorMessage = `Failed to fetch produce items: ${produceRes.status} ${produceRes.statusText}`;
           try {
@@ -629,19 +617,19 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           } catch {
             // If JSON parsing fails, use status text
           }
-          
+
           // Handle 404 gracefully
           if (produceRes.status === 404) {
             console.warn(`Produce items not found for uniId: ${uniId}`);
             setVendorSpecialItems([]);
             return;
           }
-          
+
           console.error(`Failed to fetch produce items (${produceRes.status}):`, errorMessage);
           setVendorSpecialItems([]);
           return;
         }
-        
+
         const vendors: Vendor[] = await vendorsRes.json();
         const retailData = await retailRes.json();
         const produceData = await produceRes.json();
@@ -649,17 +637,17 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
         // Create lookup maps for items
         const retailItemsMap = new Map<string, Record<string, unknown>>();
         const produceItemsMap = new Map<string, Record<string, unknown>>();
-        
+
         (retailData.items || []).forEach((item: Record<string, unknown>) => {
           retailItemsMap.set(item._id as string, item);
         });
-        
+
         (produceData.items || []).forEach((item: Record<string, unknown>) => {
           produceItemsMap.set(item._id as string, item);
         });
 
         const specials: FoodItem[] = [];
-        
+
         vendors.forEach((vendor) => {
           // Process retail inventory
           (vendor.retailInventory || []).forEach((entry) => {
@@ -682,7 +670,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
               }
             }
           });
-          
+
           // Process produce inventory
           (vendor.produceInventory || []).forEach((entry) => {
             if (entry.isSpecial && entry.isSpecial === 'Y') {
@@ -705,7 +693,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             }
           });
         });
-        
+
         setVendorSpecialItems(specials);
         console.log('Special items (isSpecial === "Y"):', specials);
       } catch (error) {
@@ -750,51 +738,6 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       isVeg: true, // Default to veg for favorites
     };
   };
-
-  if (loading) {
-    return (
-      <div className={homeStyles.container}>
-        <div className={homeStyles.content}>
-          <div className={homeStyles.headerSection}>
-            <div className={homeStyles.iconWrapper}>
-              <GraduationCap className={homeStyles.headerIcon} size={48} />
-            </div>
-            <h1 className={homeStyles.heading}>Discover Your Campus</h1>
-            <p className={homeStyles.subtitle}>Loading delicious options...</p>
-          </div>
-          <div className={homeStyles.collegeGrid}>
-            {[...Array(6)].map((_, index) => (
-              <div key={index} className={homeStyles.skeletonCard}>
-                <div className={homeStyles.skeletonShimmer}></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.content}>
-          <div className={styles.errorState}>
-            <div className={styles.errorIconWrapper}>
-              <AlertCircle className={styles.errorIcon} size={64} />
-            </div>
-            <h1 className={styles.greeting}>Oops! Something went wrong</h1>
-            <p className={styles.errorText}>{error}</p>
-            <button 
-              className={styles.retryButton}
-              onClick={() => window.location.reload()}
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <CartProvider userId={userId}>
@@ -843,17 +786,17 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                   const categoryKey = `${itemType}-${type}`;
                   const subtypes = categorySubtypes[categoryKey] || [];
                   const itemsWithoutSubtype = items[categoryKey] || [];
-                  
+
                   // Skip if no items at all for this category
                   if (itemsWithoutSubtype.length === 0 && subtypes.length === 0) return null;
-                  
+
                   return (
                     <div key={categoryKey} className={styles.typeContainer}>
                       {/* Main Type Heading */}
                       <h3 className={styles.typeHeading}>
                         {type.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                       </h3>
-                      
+
                       {/* Items without subtype (if any) */}
                       {itemsWithoutSubtype.length > 0 && (
                         <div className={styles.itemsWithoutSubtype}>
@@ -867,7 +810,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                           />
                         </div>
                       )}
-                      
+
                       {/* Subtypes */}
                       {subtypes.length > 0 && (
                         <div className={styles.subtypesContainer}>
@@ -879,9 +822,9 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
                           {subtypes.map((subtype) => {
                             const subtypeKey = `${categoryKey}-${subtype}`;
                             const subtypeItems = items[subtypeKey] || [];
-                            
+
                             if (subtypeItems.length === 0) return null;
-                            
+
                             return (
                               <div key={subtypeKey} className={styles.subtypeSection}>
                                 <CategorySection
@@ -913,7 +856,7 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             />
           )}
 
-          <SpecialOffersSection 
+          <SpecialOffersSection
             allItems={vendorSpecialItems}
             sliderSettings={sliderSettings}
             userId={userId}
