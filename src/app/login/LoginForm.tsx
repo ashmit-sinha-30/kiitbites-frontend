@@ -105,7 +105,7 @@ export default function LoginForm() {
       }
 
       notify("Login successful!", "success");
-      
+
       // Get user data to determine university slug for redirect
       try {
         const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
@@ -115,18 +115,18 @@ export default function LoginForm() {
             Authorization: `Bearer ${data.token}`,
           },
         });
-        
+
         if (userResponse.ok) {
           const userData = await userResponse.json();
           const uniId = userData?.uniID || userData?.college?._id;
-          
+
           if (uniId) {
             // Fetch college data to get the slug
             const collegeResponse = await fetch(`${BACKEND_URL}/api/user/auth/list`);
             if (collegeResponse.ok) {
               const colleges = await collegeResponse.json();
               const userCollege = colleges.find((college: { _id: string; fullName: string }) => college._id === uniId);
-              
+
               if (userCollege) {
                 // Generate slug from college name
                 const generateSlug = (name: string): string => {
@@ -136,7 +136,8 @@ export default function LoginForm() {
                     .replace(/^-+|-+$/g, "");
                 };
                 const collegeSlug = generateSlug(userCollege.fullName);
-                setTimeout(() => router.push(`/home/${collegeSlug}`), 2000);
+                // Redirect with college ID (cid) parameter
+                setTimeout(() => router.push(`/home/${collegeSlug}?cid=${uniId}`), 2000);
                 return;
               }
             }
@@ -145,7 +146,7 @@ export default function LoginForm() {
       } catch (error) {
         console.error("Error fetching user data for redirect:", error);
       }
-      
+
       // Fallback to generic home page
       setTimeout(() => router.push("/home"), 2000);
       // setTimeout(() => {
@@ -168,8 +169,8 @@ export default function LoginForm() {
         credentials: "include",
         headers: token
           ? {
-              Authorization: `Bearer ${token}`,
-            }
+            Authorization: `Bearer ${token}`,
+          }
           : {},
       });
 
@@ -197,7 +198,7 @@ export default function LoginForm() {
     const minDelay = 800;
     const maxDelay = 1500;
     const delay = Math.random() * (maxDelay - minDelay) + minDelay;
-    
+
     const loadingTimeout = setTimeout(() => {
       setIsPageLoading(false);
     }, delay);
