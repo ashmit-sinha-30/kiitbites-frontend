@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import styles from '../styles/UniDashboard.module.scss';
+import styles from '../styles/UniProfile.module.scss';
 import { Camera, Save, Plus, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { toast, ToastContainer } from 'react-toastify';
@@ -9,7 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const ENV_CONFIG = {
     BACKEND: {
-        URL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001"
+        URL: process.env.NEXT_PUBLIC_BACKEND_URL || ""
     }
 };
 
