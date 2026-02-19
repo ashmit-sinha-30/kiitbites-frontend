@@ -17,7 +17,7 @@ import UniversityRecipes from "./components/UniversityRecipes";
 import MenuSorting from "./components/MenuSorting";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
-import UniProfile from "../unidashboard/components/UniProfile";
+import UniProfile from "@/app/unidashboard/components/UniProfile";
 
 export default function UniDashboardPage() {
   const router = useRouter();
