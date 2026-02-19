@@ -37,10 +37,10 @@ export default function UniDashboardPage() {
         if (userRes.ok) {
           const user = await userRes.json();
           const uniId = user._id || user.id;
-          
+
           // Store uniId in localStorage
           localStorage.setItem("uniId", uniId);
-          
+
           const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
           const assignJson = await assignRes.json();
           if (assignJson.success) {
@@ -83,11 +83,7 @@ export default function UniDashboardPage() {
   return (
     <div className={styles.dashboardContainer}>
       <main className={styles.main}>
-        {/* Header Section */}
-        <div className={styles.header}>
-          <h1>University Dashboard</h1>
-          <p>Select a feature to access its dedicated management dashboard</p>
-        </div>
+
 
         {/* Loading State */}
         {loading && (
@@ -103,50 +99,50 @@ export default function UniDashboardPage() {
         {activeSegment === "dashboard" && !loading && (
           <div className={styles.featuresSection}>
             <h2 className={styles.sectionTitle}>Available Features</h2>
-            
-            {features.length > 0 ? (
-              <div className={styles.featuresGrid}>
-                {features.map((feature) => {
-                  const slug = `${feature.name}`
-                    .toLowerCase()
-                    .replace(/[^a-z0-9\s-]/g, "")
-                    .trim()
-                    .replace(/\s+/g, "-");
-                  
-                  return (
-                    <div
-                      key={feature._id}
-                      className={`${styles.featureCard} ${styles.fadeInUp}`}
-                      onClick={() => {
-                        // Clear any existing activeSegment to ensure dashboard is active by default
-                        localStorage.removeItem("activeSegment");
-                        router.push(`/${slug}-uniDashboard`);
-                      }}
-                    >
-                      <div className={styles.cardContent}>
-                        <div className={styles.featureIcon}>
-                          {getFeatureIcon(feature.name)}
-                        </div>
-                        <h3 className={styles.featureTitle}>{feature.name}</h3>
-                        <p className={styles.featureDescription}>
-                          Access and manage your {feature.name.toLowerCase()} dashboard
-                        </p>
+
+            <div className={styles.featuresGrid}>
+              {features.map((feature) => {
+                const slug = `${feature.name}`
+                  .toLowerCase()
+                  .replace(/[^a-z0-9\s-]/g, "")
+                  .trim()
+                  .replace(/\s+/g, "-");
+
+                return (
+                  <div
+                    key={feature._id}
+                    className={`${styles.featureCard} ${styles.fadeInUp}`}
+                    onClick={() => {
+                      localStorage.removeItem("activeSegment");
+                      router.push(`/${slug}-uniDashboard`);
+                    }}
+                  >
+                    <div className={styles.cardContent}>
+                      <div className={styles.featureIcon}>
+                        {getFeatureIcon(feature.name)}
                       </div>
+                      <h3 className={styles.featureTitle}>{feature.name}</h3>
+                      <p className={styles.featureDescription}>
+                        Access and manage your {feature.name.toLowerCase()} dashboard
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
+                  </div>
+                );
+              })}
+            </div>
+
+            {features.length === 0 && (
               <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>📋</div>
-                <h3 className={styles.emptyTitle}>No Features Available</h3>
                 <p className={styles.emptyDescription}>
-                  No features have been assigned to your university yet. Please contact your administrator.
+                  No features assigned. Please contact your administrator.
                 </p>
               </div>
             )}
           </div>
         )}
+
+
+
       </main>
     </div>
   );

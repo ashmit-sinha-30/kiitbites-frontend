@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
         hostname: "kiitbites-backend.onrender.com",
         pathname: "/team/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
   },
   async rewrites() {

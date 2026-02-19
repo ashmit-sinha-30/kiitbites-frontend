@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { IoMdSearch } from "react-icons/io";
-import { IoHelp, IoPersonOutline } from "react-icons/io5";
+import { IoPersonOutline } from "react-icons/io5";
 import { PiShoppingCartSimpleBold } from "react-icons/pi";
 import { FaBars } from "react-icons/fa";
 import { RxCross2 } from "react-icons/rx";
@@ -268,7 +268,7 @@ const Header: React.FC<HeaderProps> = ({
                     <IoMdSearch size={24} />
                     <span>Search</span>
                   </Link>
-                  <Link
+                  {/* <Link
                     href="/help"
                     className={`${styles.navItem} ${
                       pathname === "/help" ? styles.activeNavItem : ""
@@ -277,7 +277,7 @@ const Header: React.FC<HeaderProps> = ({
                   >
                     <IoHelp size={24} />
                     <span>Help</span>
-                  </Link>
+                  </Link> */}
                   <Link
                     href={userFullName ? "/profile" : "/login"}
                     className={`${styles.navItem} ${
@@ -321,7 +321,7 @@ const Header: React.FC<HeaderProps> = ({
                 <IoMdSearch size={24} />
                 <span>Search</span>
               </Link>
-              <Link
+              {/* <Link
                 href="/help"
                 className={`${styles.navItem} ${
                   pathname === "/help" ? styles.activeNavItem : ""
@@ -329,7 +329,7 @@ const Header: React.FC<HeaderProps> = ({
               >
                 <IoHelp size={24} />
                 <span>Help</span>
-              </Link>
+              </Link> */}
               <Link
                 href={userFullName ? "/profile" : "/login"}
                 className={`${styles.navItem} ${

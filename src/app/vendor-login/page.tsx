@@ -131,11 +131,6 @@ const VendorLoginPage: React.FC = () => {
               {!isLoading && <span className={styles.buttonArrow}>→</span>}
             </button>
           </form>
-          <div className={styles.register}>
-            <p className={styles["text-black"]}>
-              Don&apos;t have an account? <a href="/vendor-signup">Sign Up</a>
-            </p>
-          </div>
         </div>
 
         <div className={styles.infoPanel}>

@@ -27,8 +27,10 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
   const { cartItems, addItemToCart, increaseItemQuantity, decreaseItemQuantity } = useCart();
 
   // Find the cart item for this product
-  const cartItem = cartItems.find(
-    (cartItem) => cartItem.itemId === item.id
+  // If item has a specific vendorId (e.g. from favorites), match both itemId and vendorId
+  // Otherwise, fallback to the item already in cart from any vendor (single-vendor policy)
+  const cartItem = cartItems.find((ci) =>
+    ci.itemId === item.id && (item.vendorId ? ci.vendorId === item.vendorId : true)
   );
   const quantity = cartItem?.quantity || 0;
 
@@ -56,12 +58,12 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
       tempElement.style.width = element.offsetWidth + 'px';
       tempElement.textContent = item.description;
       document.body.appendChild(tempElement);
-      
+
       const fullHeight = tempElement.offsetHeight;
       const currentHeight = element.offsetHeight;
-      
+
       document.body.removeChild(tempElement);
-      
+
       // Check if text is truncated (full height > current height with some tolerance)
       setIsDescriptionTruncated(fullHeight > currentHeight + 5);
     } else {
@@ -91,6 +93,27 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
 
     try {
       setLoading(true);
+
+      // If item already has a specific vendorId (from favorites)
+      if (item.vendorId) {
+        // Enforce single-vendor cart policy
+        if (cartItems.length > 0 && cartItems[0].vendorId !== item.vendorId) {
+          toast.error(`Food item is only available in ${cartItems[0].vendorName} for your current cart`);
+          return;
+        }
+
+        // Check if item is available in this specific vendor
+        const { isAvailable, vendors } = await checkItemAvailability(item, item.vendorId, categories);
+        if (!isAvailable || !vendors || vendors.length === 0) {
+          toast.error('This item is currently unavailable from your favorite vendor');
+          return;
+        }
+
+        const vendor = vendors[0];
+        await addItemToCart(item, vendor);
+        return;
+      }
+
       const { vendors } = await checkItemAvailability(item, null, categories);
       let filteredVendors = vendors || [];
       // If the item is a special, only show vendors with isSpecial === 'Y'
@@ -159,7 +182,7 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
       handleAddToCart();
       return;
     }
-    
+
     try {
       setLoading(true);
       // Create a new item object with the existing vendor ID
@@ -194,7 +217,7 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
     }
 
     if (!cartItem) return;
-    
+
     try {
       setLoading(true);
       // Create a new item object with the existing vendor ID
@@ -233,9 +256,9 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
             {item.isVeg !== undefined && (
               <div className={styles.vegIndicator}>
                 <div className={item.isVeg ? styles.veg : styles.nonVeg}>
-                  <Circle 
-                    size={12} 
-                    fill="currentColor" 
+                  <Circle
+                    size={12}
+                    fill="currentColor"
                     className={styles.vegIcon}
                   />
                   <span>{item.isVeg ? 'Veg' : 'Non-Veg'}</span>
@@ -255,7 +278,7 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
               <div className={styles.foodDescriptionContainer}>
                 <p ref={descriptionRef} className={styles.foodDescription}>{item.description}</p>
                 {isDescriptionTruncated && (
-                  <button 
+                  <button
                     className={styles.readMoreButton}
                     onClick={handleReadMore}
                   >
@@ -264,10 +287,10 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
                 )}
               </div>
             )}
-            <p className={styles.foodPrice}>₹{item.price}</p>
           </div>
           {userId && (
             <div className={styles.foodCardActions}>
+              <p className={styles.foodPrice}>₹{item.price}</p>
               <div className={styles.quantityControls}>
                 <button
                   className={`${styles.quantityButton} ${quantity === 0 ? styles.disabled : ''}`}
