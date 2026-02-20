@@ -6,6 +6,7 @@ import { FaSearch, FaArrowLeft } from "react-icons/fa";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DishListItemV2 from "../../food/DishListItem/DishListItemV2";
+import { Store, X, CheckCircle2 } from "lucide-react";
 import styles from "./SearchBar.module.scss";
 import { useSearchCart } from '../../context/SearchCartContext';
 import { FoodItem as SharedFoodItem } from "@/app/home/[slug]/types";
@@ -895,40 +896,69 @@ const SearchBar: React.FC<SearchBarProps> = ({
       </div>
 
       {showVendorModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <h2 className="text-xl font-bold mb-4">Select Vendor</h2>
+        <div className={styles.modalOverlay} onClick={handleCancel}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.vendorModalHeader}>
+              <div className={styles.vendorModalTitleWrapper}>
+                <Store className={styles.vendorModalIcon} size={28} />
+                <h2 className={styles.vendorModalTitle}>Select Vendor</h2>
+              </div>
+              <button
+                className={styles.vendorModalCloseButton}
+                onClick={handleCancel}
+                aria-label="Close modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
             {availableVendors.length === 0 ? (
-              <div className="text-center py-4">Loading vendors...</div>
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading vendors...</p>
+              </div>
             ) : (
               <div className={styles.vendorList}>
                 {availableVendors.map((vendor) => (
                   <div
                     key={vendor._id}
-                    className={`${styles.vendorItem} ${selectedVendor?._id === vendor._id ? styles.selected : ""
+                    className={`${styles.vendorCard} ${selectedVendor?._id === vendor._id ? styles.vendorCardSelected : ""
                       }`}
                     onClick={() => handleVendorSelect(vendor)}
                   >
-                    <h3 className="font-semibold">{vendor.name}</h3>
-                    <p className="text-gray-600">₹{vendor.price}</p>
+                    <div className={styles.vendorCardContent}>
+                      <div className={styles.vendorCardInfo}>
+                        <div className={styles.vendorCardIconWrapper}>
+                          <Store className={styles.vendorCardIcon} size={24} />
+                        </div>
+                        <div className={styles.vendorCardDetails}>
+                          <h3 className={styles.vendorCardName}>{vendor.name}</h3>
+                          <div className={styles.vendorCardPriceWrapper}>
+                            <span className={styles.vendorCardPriceLabel}>Price:</span>
+                            <span className={styles.vendorCardPrice}>₹{vendor.price}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {selectedVendor?._id === vendor._id && (
+                        <div className={styles.vendorCardCheck}>
+                          <CheckCircle2 size={24} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+
             <div className={styles.modalButtons}>
-              <button
-                className={`${styles.cancelButton} px-4 py-2 border rounded-md mr-2`}
-                onClick={handleCancel}
-              >
+              <button className={styles.cancelButton} onClick={handleCancel}>
                 Cancel
               </button>
               <button
-                className={`${styles.confirmButton} px-4 py-2 bg-blue-500 text-white rounded-md ${!selectedVendor ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                className={styles.confirmButton}
                 onClick={handleVendorConfirm}
                 disabled={!selectedVendor}
               >
-                Confirm
+                Confirm Selection
               </button>
             </div>
           </div>

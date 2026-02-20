@@ -953,7 +953,7 @@
   animation: fadeIn 0.3s ease-out;
 }
 
-.vendorModal {
+.modal {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
   padding: 0;
@@ -1076,20 +1076,34 @@
   box-shadow: 
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  border: 2px solid #e2e8f0; // Neutral border
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 0; // Remove padding for full bleed image
+  padding: 0;
 
   &:hover {
     transform: translateY(-5px);
     box-shadow: 
       0 20px 25px -5px rgba(0, 0, 0, 0.1),
       0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    border-color: rgba(78, 161, 153, 0.5);
+    border-color: #cbd5e1; // Neutral hover border
+  }
+
+  &Selected {
+    border-color: #4ea199;
+    background: rgba(78, 161, 153, 0.08);
+    box-shadow: 
+      0 0 0 4px rgba(78, 161, 153, 0.15),
+      0 10px 15px -3px rgba(78, 161, 153, 0.2);
+    transform: scale(1.02);
+
+    &:hover {
+      transform: translateY(-5px) scale(1.02);
+      border-color: #3d8a82;
+    }
   }
 }
 
@@ -1220,17 +1234,17 @@
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(78, 161, 153, 0.15), rgba(111, 195, 189, 0.15));
+  background: #f1f5f9; // Neutral background
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 2px solid rgba(78, 161, 153, 0.2);
+  border: 2px solid #e2e8f0; // Neutral border
   transition: all 0.3s ease;
 
   .vendorCard:hover & {
-    background: linear-gradient(135deg, rgba(78, 161, 153, 0.25), rgba(111, 195, 189, 0.25));
-    border-color: rgba(78, 161, 153, 0.4);
+    background: #e2e8f0;
+    border-color: #cbd5e1;
     transform: scale(1.05);
   }
 
@@ -1241,7 +1255,7 @@
 }
 
 .vendorCardIcon {
-  color: #4ea199;
+  color: #64748b; // Neutral icon color
   transition: all 0.3s ease;
 
   .vendorCardSelected & {
@@ -1295,7 +1309,8 @@
 .vendorCardCheck {
   color: #4ea199;
   flex-shrink: 0;
-  animation: scaleIn 0.3s ease-out;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 2px 4px rgba(78, 161, 153, 0.2));
 }
 
 @keyframes scaleIn {

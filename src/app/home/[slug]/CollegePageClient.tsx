@@ -764,11 +764,7 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
       setSelectedItemForModal(item);
       setItemVendors(fetchedVendors);
 
-      if (fetchedVendors.length === 1) {
-        setModalSelectedVendor(fetchedVendors[0]);
-      } else {
-        setModalSelectedVendor(null);
-      }
+      setModalSelectedVendor(null);
 
       setIsVendorModalOpen(true);
 
