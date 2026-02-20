@@ -206,8 +206,8 @@
   padding-bottom: 2px; // Visual alignment
   
   &.decrease {
-    background: #94a3b8;
-    &:hover { background: #64748b; }
+    background: #FA8072;
+    &:hover { background: #CD5C5C; }
   }
 
   &.increase {
@@ -247,3 +247,4 @@
     transform: translateY(0);
   }
 }
+

@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import styles from "../styles/CollegePage.module.scss";
 import { FavoriteItem, FoodItem } from "../types";
 import DishListItem from "@/app/components/food/DishListItem/DishListItemV2";
+import { FavoriteSkeleton } from "@/app/components/skeleton/SkeletonLoader/SkeletonLoader";
 
 interface FavoritesSectionProps {
   favoriteItems: FavoriteItem[];
@@ -14,6 +15,7 @@ interface FavoritesSectionProps {
   onDecrease: (item: FoodItem) => void;
   getCartItemQuantity: (itemId: string) => number;
   loadingItemId: string | null;
+  isLoading?: boolean;
 }
 
 const FavoritesSection = ({
@@ -24,8 +26,22 @@ const FavoritesSection = ({
   onDecrease,
   getCartItemQuantity,
   loadingItemId,
+  isLoading,
 }: FavoritesSectionProps) => {
   const [showAll, setShowAll] = useState(false);
+
+  if (isLoading) {
+    return (
+      <section className={styles.favoritesSectionTransparent}>
+        <div className={styles.categoryHeader}>
+          <div className={styles.categoryTitleWithIcon}>
+            <h2 className={styles.sectionTitle}>Your Favorites</h2>
+          </div>
+        </div>
+        <FavoriteSkeleton />
+      </section>
+    );
+  }
 
   if (!favoriteItems || favoriteItems.length === 0) return null;
 

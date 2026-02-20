@@ -24,6 +24,7 @@ import DishListItem from "@/app/components/food/DishListItem/DishListItemV2";
 import { toast } from "react-toastify";
 import VendorModal from "./components/VendorModal";
 import FavoritesSection from "./components/FavoritesSection";
+import { VendorSkeleton, CategorySkeleton } from "@/app/components/skeleton/SkeletonLoader/SkeletonLoader";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -117,6 +118,11 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
   // State to hold valid vendors for the modal
   const [itemVendors, setItemVendors] = useState<VendorType[]>([]);
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
+
+  // Loading states for sections
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
+  const [isLoadingVendors, setIsLoadingVendors] = useState(true);
+  const [isLoadingItems, setIsLoadingItems] = useState(true);
 
   const currentRequest = useRef<number>(0);
 
@@ -318,6 +324,8 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
       } catch (err) {
         console.error("Error fetching user or favorites:", err);
         setUserFavorites([]);
+      } finally {
+        setIsLoadingFavorites(false);
       }
     };
     fetchUserAndFavorites();
@@ -335,6 +343,8 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
         }
       } catch (err) {
         console.error("Error fetching vendors:", err);
+      } finally {
+        setIsLoadingVendors(false);
       }
     };
     getVendors();
@@ -436,6 +446,10 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
           setItems({});
           setCategories({ retail: [], produce: [] });
         }
+      } finally {
+        if (requestId === currentRequest.current) {
+          setIsLoadingItems(false);
+        }
       }
     };
 
@@ -502,41 +516,54 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
   const renderVendorList = () => (
     <div className={styles.sectionContainer}>
       <h2 className={styles.sectionTitle}>Available Vendors</h2>
-      <div className={styles.vendorGrid}>
-        {vendors.map((vendor) => (
-          <div
-            key={vendor._id}
-            className={styles.vendorCard}
-            onClick={() => router.push(`/vendor/${vendor._id}`)}
-          >
-            <div className={styles.vendorImagePlaceholder}>
-              {vendor.image ? (
-                <Image
-                  src={vendor.image}
-                  alt={vendor.fullName}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                  className={styles.vendorImage}
-                />
-              ) : (
-                <Store size={40} color="#4ea199" />
-              )}
+      {isLoadingVendors ? (
+        <VendorSkeleton />
+      ) : (
+        <div className={styles.vendorGrid}>
+          {vendors.map((vendor) => (
+            <div
+              key={vendor._id}
+              className={styles.vendorCard}
+              onClick={() => router.push(`/vendor/${vendor._id}`)}
+            >
+              <div className={styles.vendorImagePlaceholder}>
+                {vendor.image ? (
+                  <Image
+                    src={vendor.image}
+                    alt={vendor.fullName}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    className={styles.vendorImage}
+                  />
+                ) : (
+                  <Store size={40} color="#4ea199" />
+                )}
+              </div>
+              <div className={styles.vendorInfo}>
+                <h3 className={styles.vendorName}>{vendor.fullName}</h3>
+                <button className={styles.checkMenuBtn}> Check menu</button>
+                {vendor.isAvailable === 'N' && <span className={styles.unavailableBadge}>Unavailable</span>}
+              </div>
             </div>
-            <div className={styles.vendorInfo}>
-              <h3 className={styles.vendorName}>{vendor.fullName}</h3>
-              <button className={styles.checkMenuBtn}> Check menu</button>
-              {vendor.isAvailable === 'N' && <span className={styles.unavailableBadge}>Unavailable</span>}
-            </div>
-          </div>
-        ))}
-        {vendors.length === 0 && <p>No vendors available at the moment.</p>}
-      </div>
+          ))}
+          {vendors.length === 0 && <p>No vendors available at the moment.</p>}
+        </div>
+      )}
     </div>
   );
 
   const renderCategorySelection = () => {
     const showRetail = categories.retail.length > 0;
     const showProduce = categories.produce.length > 0;
+
+    if (isLoadingItems) {
+      return (
+        <div className={styles.sectionContainer}>
+          <h2 className={styles.sectionTitle}>Explore Food Options</h2>
+          <CategorySkeleton />
+        </div>
+      );
+    }
 
     if (!showRetail && !showProduce) {
       return (
@@ -1007,6 +1034,7 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
                 onDecrease={handleDecrease}
                 getCartItemQuantity={getCartItemQuantity}
                 loadingItemId={loadingItemId}
+                isLoading={isLoadingFavorites}
               />
             )}
             {renderVendorList()}
