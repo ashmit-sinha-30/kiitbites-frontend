@@ -70,6 +70,7 @@ export interface SearchResult {
   isVendor?: boolean;
   kind: string;
   quantity: number;
+  source?: string;
 }
 
 interface SearchResponse {
@@ -587,7 +588,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       return;
     }
 
-    // If not in vendor mode, show vendor selection modal
+    // If not in vendor mode, show vendor selection modal or check existing cart vendor
     try {
       // Fetch vendors for the selected item
       const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id || item._id || item.itemId}`);
@@ -595,12 +596,54 @@ const SearchBar: React.FC<SearchBarProps> = ({
         toast.error('Failed to fetch vendors for this item');
         return;
       }
-      const vendors = await response.json();
-      setAvailableVendors(vendors);
+      const fetchedVendors: Vendor[] = await response.json();
+
+      // Check if cart has items from another vendor
+      const confirmedVendorId = searchCartItems.length > 0 ? searchCartItems[0].vendorId : null;
+
+      if (confirmedVendorId) {
+        const vendor = fetchedVendors.find(v => v._id === confirmedVendorId);
+        if (vendor) {
+          // Item available in current vendor -> Add directly
+          const token = localStorage.getItem("token");
+          if (!token) {
+            toast.error('Please login to add items to cart');
+            return;
+          }
+          const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!userRes.ok) {
+            toast.error('Failed to get user info');
+            return;
+          }
+          const user = await userRes.json();
+          await addToSearchCart(user._id, item, confirmedVendorId);
+          return;
+        } else {
+          // Item NOT available in current vendor -> Show error "Item not available in {vendorName}"
+          try {
+            const vRes = await fetch(`${BACKEND_URL}/api/vendor/${confirmedVendorId}`);
+            if (vRes.ok) {
+              const vData = await vRes.json();
+              toast.error(`Item not available in ${vData.fullName || vData.name || 'your current vendor'}`);
+            } else {
+              toast.error('Item not available in your current vendor');
+            }
+          } catch {
+            toast.error('Item not available in your current vendor');
+          }
+          return;
+        }
+      }
+
+      // No confirmed vendor -> Show selection modal
+      setAvailableVendors(fetchedVendors);
+      setSelectedVendor(null); // Ensure no auto-selection
       setShowVendorModal(true);
     } catch (error) {
-      console.error('Error fetching vendors:', error);
-      toast.error('Failed to fetch vendors');
+      console.error('Error in handleAddToCart:', error);
+      toast.error('Failed to process request');
     }
   };
 
@@ -831,7 +874,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       category: item.category || item.type || 'retail',
                       isSpecial: item.isSpecial ? 'true' : 'false',
                       isAvailable: 'Y',
-                      quantity: 10
+                      quantity: 10,
+                      source: item.source
                     };
 
                     return (
@@ -865,7 +909,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
                         category: item.category || item.type || 'retail',
                         isSpecial: item.isSpecial ? 'true' : 'false',
                         isAvailable: 'Y',
-                        quantity: 10
+                        quantity: 10,
+                        source: item.source
                       };
 
                       return (

@@ -13,6 +13,7 @@ export interface FoodItem {
   quantity?: number;
   isAvailable?: string;
   isVeg?: boolean;
+  source?: string;
 }
 
 export interface FavoriteItem {

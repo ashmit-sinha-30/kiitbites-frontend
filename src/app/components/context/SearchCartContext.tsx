@@ -81,7 +81,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
 
   const refreshSearchCart = useCallback(async () => {
     if (isRefreshing) return;
-    
+
     try {
       setIsRefreshing(true);
       const token = localStorage.getItem("token");
@@ -165,12 +165,16 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         throw new Error('Item ID is missing');
       }
 
-      // Determine the kind based on the item's type
+      // Determine the kind based on the item's source, kind, or type
       let kind;
-      if (item.type === 'retail' || item.type === 'produce') {
+      if (item.source) {
+        kind = item.source.charAt(0).toUpperCase() + item.source.slice(1);
+      } else if (item.kind && (item.kind.toLowerCase() === 'retail' || item.kind.toLowerCase() === 'produce')) {
+        kind = item.kind.charAt(0).toUpperCase() + item.kind.slice(1);
+      } else if (item.type === 'retail' || item.type === 'produce') {
         kind = item.type.charAt(0).toUpperCase() + item.type.slice(1);
       } else {
-        // For other types like 'biscuits', treat them as retail items
+        // Fallback for other cases
         kind = 'Retail';
       }
 
@@ -231,7 +235,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           itemId,
           kind: item.type === 'retail' ? 'Retail' : 'Produce'
         }),
@@ -271,7 +275,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           itemId,
           kind: item.type === 'retail' ? 'Retail' : 'Produce'
         }),
