@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaArrowLeft } from "react-icons/fa";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import DishCard from "../../food/DishCard/DishCard";
+import DishListItemV2 from "../../food/DishListItem/DishListItemV2";
 import styles from "./SearchBar.module.scss";
 import { useSearchCart } from '../../context/SearchCartContext';
-import SearchQuantityControls from '../../search/SearchQuantityControls/SearchQuantityControls';
+import { FoodItem as SharedFoodItem } from "@/app/home/[slug]/types";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -112,6 +112,27 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [suggestedItems, setSuggestedItems] = useState<SearchResult[]>([]);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [availableVendors, setAvailableVendors] = useState<Vendor[]>([]);
+  // const [selectedUniversityInternal, setSelectedUniversityInternal] = useState<string>("");
+
+  // Normalize name for matching
+  const normalizeName = (name: string) =>
+    name
+      ?.toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "";
+
+  const handleBack = () => {
+    if (isAuthenticated && (selectedUniversity || universityId)) {
+      const targetUniId = selectedUniversity || universityId;
+      const uni = universities.find(u => u._id === targetUniId);
+      if (uni) {
+        const slug = normalizeName(uni.fullName);
+        router.push(`/home/${slug}?cid=${uni._id}`);
+        return;
+      }
+    }
+    router.push("/");
+  };
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
@@ -119,6 +140,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const { searchCartItems, addToSearchCart } = useSearchCart();
   const [selectedItem, setSelectedItem] = useState<SearchResult | null>(null);
   const lastSearchedQuery = useRef<string>("");
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -129,7 +151,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
     checkAuth();
     // Add event listener for storage changes
     window.addEventListener('storage', checkAuth);
-    return () => window.removeEventListener('storage', checkAuth);
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -472,20 +499,37 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setQuery(value);
     lastSearchedQuery.current = value;
     router.push(`?search=${value}`, undefined);
-    fetchSearchResults(value);
+
+    // Debounce search
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    searchTimeout.current = setTimeout(() => {
+      fetchSearchResults(value);
+    }, 300); // 300ms debounce
   };
 
   const handleSelectSuggestion = async (foodName: string) => {
+    // 1. Update UI state immediately
     setQuery(foodName);
     lastSearchedQuery.current = foodName;
+
+    // 2. Clear any pending debounced searches
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    // 3. Trigger search and navigation
     router.push(`?search=${foodName}`, undefined);
     fetchSearchResults(foodName);
 
-    await fetch(`${BACKEND_URL}/api/increase-search`, {
+    // Track analytics in background without blocking UI
+    fetch(`${BACKEND_URL}/api/increase-search`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ foodName }),
-    });
+    }).catch(err => console.error("Failed to track search:", err));
   };
 
   const handleUniversityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -665,6 +709,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <div className={styles.mainContainer}>
         <div className={styles.container}>
           <div className={styles.header}>
+            <button className={styles.backButton} onClick={handleBack} aria-label="Go back">
+              <FaArrowLeft />
+            </button>
             {!hideUniversityDropdown && (
               <div className={`${styles.selectBar} ${query !== "" ? styles.selectBarHidden : ""}`}>
                 {selectedUniversity ? (
@@ -713,18 +760,37 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
           {query === "" && !hideUniversityDropdown ? (
             <div className={styles.popularChoices}>
-              <h2 className="text-xl font-bold mb-2">Popular Choices</h2>
+              <h2 className="text-xl font-bold mb-6">Popular Choices</h2>
               <div className={styles.popularGrid}>
-                {Array.isArray(popularFoods) && popularFoods.map((food) => (
-                  <div key={food._id} className={styles.foodCard} onClick={() => handleSelectSuggestion(food.name)}>
-                    <DishCard
-                      dishName={food.name}
-                      price={food.price}
-                      image={food.image}
-                      variant="search-result"
-                    />
-                  </div>
-                ))}
+                {Array.isArray(popularFoods) && popularFoods.map((food) => {
+                  // Map FoodItem to DishListItemV2 expected format
+                  const itemForList: SharedFoodItem = {
+                    id: food._id,
+                    title: food.name,
+                    price: food.price,
+                    image: food.image,
+                    description: "",
+                    isVeg: true,
+                    type: food.type as 'retail' | 'produce',
+                    category: food.type,
+                    isSpecial: food.isSpecial,
+                    isAvailable: food.isSpecial === 'true' ? 'Y' : 'Y',
+                    quantity: 10
+                  };
+
+                  return (
+                    <div key={food._id} onClick={() => handleSelectSuggestion(food.name)}>
+                      <DishListItemV2
+                        item={itemForList}
+                        quantity={0}
+                        showActions={false}
+                        onAdd={() => handleSelectSuggestion(food.name)}
+                        onIncrease={() => { }}
+                        onDecrease={() => { }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -733,56 +799,49 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 <div className={styles.resultsGrid}>
                   {searchResults.map((item) => {
                     const quantity = getCartItemQuantity(item._id || item.id);
-                    const cartItem = searchCartItems.find(
-                      (cartItem) => cartItem.id === (item._id || item.id)
-                    );
+
+                    if (item.isVendor) {
+                      return (
+                        <div key={item._id || item.id} className={styles.vendorCard}>
+                          <h3 className="font-semibold">{item.name}</h3>
+                          <button
+                            className={styles.checkMenuButton}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleVendorClick(item._id!);
+                            }}
+                          >
+                            Check Menu
+                          </button>
+                        </div>
+
+                      );
+                    }
+
+                    // Map SearchResult to SharedFoodItem
+                    const itemForList: SharedFoodItem = {
+                      id: item._id || item.id,
+                      title: item.name,
+                      price: item.price || 0,
+                      image: item.image || '/images/coffee.jpeg',
+                      description: "",
+                      isVeg: true,
+                      type: item.type as 'retail' | 'produce' || 'retail',
+                      category: item.category || item.type || 'retail',
+                      isSpecial: item.isSpecial ? 'true' : 'false',
+                      isAvailable: 'Y',
+                      quantity: 10
+                    };
 
                     return (
-                      <div
-                        key={item._id}
-                        className={styles.resultCard}
-                        onClick={() => item.isVendor && item._id ? handleVendorClick(item._id!) : null}
-                      >
-                        {item.isVendor ? (
-                          <div className={styles.vendorCard}>
-                            <h3 className="font-semibold">{item.name}</h3>
-                            <button
-                              className={styles.checkMenuButton}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleVendorClick(item._id!);
-                              }}
-                            >
-                              Check Menu
-                            </button>
-                          </div>
-                        ) : (
-                          <div className={styles.foodCard}>
-                            <DishCard
-                              dishName={item.name}
-                              price={item.price || 0}
-                              image={item.image || '/images/coffee.jpeg'}
-                              variant="search-result"
-                            />
-                            {(item.type || item.subtype) && (
-                              <p className={styles.itemType}>
-                                {item.type}{item.subtype ? ` • ${item.subtype}` : ''}
-                              </p>
-                            )}
-                            {isAuthenticated && (
-                              <SearchQuantityControls
-                                item={{
-                                  id: item._id || item.id,
-                                  name: item.name,
-                                  type: item.type,
-                                  vendorId: cartItem?.vendorId
-                                }}
-                                quantity={quantity}
-                                onAddToCart={() => handleAddToCart(item)}
-                              />
-                            )}
-                          </div>
-                        )}
+                      <div key={item._id || item.id}>
+                        <DishListItemV2
+                          item={itemForList}
+                          quantity={quantity}
+                          onAdd={() => handleAddToCart(item)}
+                          onIncrease={() => handleAddToCart(item)}
+                          onDecrease={() => { }} // SearchCartContext needs decrease support or handle via SearchQuantityControls if kept
+                        />
                       </div>
                     );
                   })}
@@ -791,22 +850,36 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
               {suggestedItems.length > 0 && (
                 <div className={styles.suggestedItems}>
-                  <h2 className="text-xl font-bold mb-4">You may also like</h2>
+                  <h2 className="text-xl font-bold">You may also like</h2>
                   <div className={styles.resultsGrid}>
-                    {suggestedItems.map((item) => (
-                      <div
-                        key={item._id}
-                        className={styles.resultCard}
-                        onClick={() => handleSelectSuggestion(item.name)}
-                      >
-                        <DishCard
-                          dishName={item.name}
-                          price={item.price || 0}
-                          image={item.image || '/images/coffee.jpeg'}
-                          variant="search-result"
-                        />
-                      </div>
-                    ))}
+                    {suggestedItems.map((item) => {
+                      const itemForList: SharedFoodItem = {
+                        id: item._id || item.id,
+                        title: item.name,
+                        price: item.price || 0,
+                        image: item.image || '/images/coffee.jpeg',
+                        description: "",
+                        isVeg: true,
+                        type: item.type as 'retail' | 'produce' || 'retail',
+                        category: item.category || item.type || 'retail',
+                        isSpecial: item.isSpecial ? 'true' : 'false',
+                        isAvailable: 'Y',
+                        quantity: 10
+                      };
+
+                      return (
+                        <div key={item._id || item.id} onClick={() => handleSelectSuggestion(item.name)}>
+                          <DishListItemV2
+                            item={itemForList}
+                            quantity={0}
+                            showActions={false}
+                            onAdd={() => handleSelectSuggestion(item.name)}
+                            onIncrease={() => { }}
+                            onDecrease={() => { }}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

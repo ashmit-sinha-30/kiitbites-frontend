@@ -7,6 +7,7 @@ interface DishListItemProps {
     item: FoodItem;
     quantity: number;
     isLoading?: boolean;
+    showActions?: boolean;
     onAdd: (item: FoodItem) => void;
     onIncrease: (item: FoodItem) => void;
     onDecrease: (item: FoodItem) => void;
@@ -16,6 +17,7 @@ const DishListItem: React.FC<DishListItemProps> = ({
     item,
     quantity,
     isLoading = false,
+    showActions = true,
     onAdd,
     onIncrease,
     onDecrease,
@@ -81,26 +83,28 @@ const DishListItem: React.FC<DishListItemProps> = ({
 
                 <div className={styles.footer}>
                     <div className={styles.price}>₹ {item.price}</div>
-                    <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
-                        {isLoading ? (
-                            <div className={styles.loader}></div>
-                        ) : quantity > 0 ? (
-                            <div className={styles.quantityControls}>
-                                <button className={`${styles.qtyBtn} ${styles.decrease}`} onClick={() => onDecrease(item)}>-</button>
-                                <span className={styles.qtyValue}>{quantity}</span>
-                                <button className={`${styles.qtyBtn} ${styles.increase}`} onClick={() => onIncrease(item)}>+</button>
-                            </div>
-                        ) : (
-                            <button
-                                className={styles.addBtn}
-                                onClick={() => onAdd(item)}
-                                disabled={!inStock}
-                                style={{ opacity: inStock ? 1 : 0.5, cursor: inStock ? 'pointer' : 'not-allowed' }}
-                            >
-                                Add +
-                            </button>
-                        )}
-                    </div>
+                    {showActions && (
+                        <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
+                            {isLoading ? (
+                                <div className={styles.loader}></div>
+                            ) : quantity > 0 ? (
+                                <div className={styles.quantityControls}>
+                                    <button className={`${styles.qtyBtn} ${styles.decrease}`} onClick={() => onDecrease(item)}>-</button>
+                                    <span className={styles.qtyValue}>{quantity}</span>
+                                    <button className={`${styles.qtyBtn} ${styles.increase}`} onClick={() => onIncrease(item)}>+</button>
+                                </div>
+                            ) : (
+                                <button
+                                    className={styles.addBtn}
+                                    onClick={() => onAdd(item)}
+                                    disabled={!inStock}
+                                    style={{ opacity: inStock ? 1 : 0.5, cursor: inStock ? 'pointer' : 'not-allowed' }}
+                                >
+                                    Add +
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
