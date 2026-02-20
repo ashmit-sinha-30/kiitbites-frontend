@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
-import styles from './DishListItemV2.module.scss';
+import styles from './DishListItem.module.scss';
 import { FoodItem } from '@/app/home/[slug]/types'; // Assuming types are exported here or similar path
 
 interface DishListItemProps {
