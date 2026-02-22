@@ -124,6 +124,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
       .replace(/^-+|-+$/g, "") || "";
 
   const handleBack = () => {
+    if (vendorId) {
+      // Use the local query if the user has typed something, 
+      // otherwise fall back to the search param from the URL
+      const backQuery = query || searchParams.get("search") || "";
+      router.push(`/search?search=${encodeURIComponent(backQuery)}`);
+      return;
+    }
+
     if (isAuthenticated && (selectedUniversity || universityId)) {
       const targetUniId = selectedUniversity || universityId;
       const uni = universities.find(u => u._id === targetUniId);
@@ -168,8 +176,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
   }, [universityId]);
 
   useEffect(() => {
-    setQuery(searchParams.get("search") || "");
-  }, [searchParams]);
+    // Sync query from URL - only if NOT on vendor page
+    // This provides a "clear view" initially when entering a vendor
+    if (!vendorId) {
+      const q = searchParams.get("search") || "";
+      setQuery(q);
+    }
+  }, [searchParams, vendorId]); // Stable dependency count
 
   // Search foods and vendors
   const fetchSearchResults = useCallback(async (searchText: string) => {
@@ -403,10 +416,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
     }
 
     if (searchQuery.trim()) {
-      // For vendor pages, search immediately
+      // For vendor pages, we DON'T trigger search automatically from URL params
+      // unless the user has actually typed something (which is handled by handleInputChange)
+      // This ensures they see the full menu initially
       if (vendorId) {
-        lastSearchedQuery.current = searchQuery;
-        fetchSearchResults(searchQuery);
+        // Just clear results to be safe, or do nothing
+        return;
       }
       // For normal search, wait until university is selected
       else if (selectedUniversity || hideUniversityDropdown) {
@@ -420,7 +435,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
       setSuggestedItems([]);
       if (onSearchResults) onSearchResults([]);
     }
-  }, [searchParams, selectedUniversity, vendorId, hideUniversityDropdown, fetchSearchResults, onSearchResults]);
+  }, [
+    searchParams,
+    selectedUniversity,
+    vendorId,
+    hideUniversityDropdown,
+    fetchSearchResults,
+    onSearchResults
+  ]);
 
   // Load universities and user data
   useEffect(() => {
@@ -539,7 +561,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   const handleVendorClick = (vendorId: string) => {
-    router.push(`/vendor/${vendorId}`);
+    const url = query
+      ? `/vendor/${vendorId}?search=${encodeURIComponent(query)}`
+      : `/vendor/${vendorId}`;
+    router.push(url);
   };
 
   const handleAddToCart = async (item: SearchResult) => {
