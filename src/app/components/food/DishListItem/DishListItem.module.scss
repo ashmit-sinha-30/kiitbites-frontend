@@ -7,7 +7,7 @@
   background: white;
   border-radius: 16px; // Reduced radius
   padding: 0.75rem; // Reduced padding
-  margin-bottom: 1rem; // Reduced margin
+  margin-bottom: 0.5rem; // Reduced margin
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(226, 232, 240, 0.8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -126,6 +126,36 @@
 
   @media (max-width: 480px) {
     font-size: 0.85rem;
+  }
+}
+
+.favoriteBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: auto; // Push to the right
+  margin-left: 1rem; // Add explicit space from the name
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+.heartIcon {
+  font-size: 1.2rem;
+  color: #4ea199;
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
   }
 }
 

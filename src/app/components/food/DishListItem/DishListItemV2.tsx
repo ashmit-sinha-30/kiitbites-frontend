@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import styles from './DishListItem.module.scss';
 import { FoodItem } from '@/app/home/[slug]/types'; // Assuming types are exported here or similar path
 
@@ -8,9 +9,11 @@ interface DishListItemProps {
     quantity: number;
     isLoading?: boolean;
     showActions?: boolean;
+    isFavorite?: boolean;
     onAdd: (item: FoodItem) => void;
     onIncrease: (item: FoodItem) => void;
     onDecrease: (item: FoodItem) => void;
+    onToggleFavorite?: (item: FoodItem) => void;
 }
 
 const DishListItem: React.FC<DishListItemProps> = ({
@@ -18,9 +21,11 @@ const DishListItem: React.FC<DishListItemProps> = ({
     quantity,
     isLoading = false,
     showActions = true,
+    isFavorite = false,
     onAdd,
     onIncrease,
     onDecrease,
+    onToggleFavorite,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -60,6 +65,17 @@ const DishListItem: React.FC<DishListItemProps> = ({
                             <div className={styles.dot}></div>
                         </div>
                         <h3 className={styles.title}>{item.title}</h3>
+                        {onToggleFavorite && (
+                            <button
+                                className={styles.favoriteBtn}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleFavorite(item);
+                                }}
+                            >
+                                {isFavorite ? <FaHeart className={styles.heartIcon} /> : <FaRegHeart className={styles.heartIcon} />}
+                            </button>
+                        )}
                     </div>
                     {inStock ? (
                         <span className={styles.stockBadge}>In Stock</span>

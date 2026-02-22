@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
-import DishCard from "@/app/components/food/DishCard/DishCard";
+import { useParams } from "next/navigation";
+import DishListItem from "@/app/components/food/DishListItem/DishListItemV2";
 import SearchBar from "@/app/components/search/SearchBar/SearchBar";
 import styles from "./styles/VendorPage.module.scss";
-import { FaRegHeart } from "react-icons/fa";
-import { FaHeart } from "react-icons/fa";
 import { addToCart, increaseQuantity, decreaseQuantity } from "./utils/cartUtils";
 import { toast } from "react-toastify";
 
@@ -62,8 +60,24 @@ interface Favourite {
 
 const VendorPage = () => {
   const { id } = useParams();
+
+  // Helper to map VendorItem to FoodItem for DishListItemV2
+  const mapToFoodItem = (item: VendorItem) => ({
+    id: item.itemId,
+    title: item.name,
+    description: item.description,
+    image: item.image || '/images/placeholder_food.jpg',
+    category: item.category || 'retail',
+    type: item.type || 'retail',
+    subtype: item.subtype,
+    isSpecial: 'N', // Default
+    price: item.price,
+    vendorId: item.vendorId || (id as string),
+    quantity: item.quantity,
+    isAvailable: item.isAvailable,
+    isVeg: item.isVeg
+  });
   console.log('[DEBUG] useParams id:', id, 'type:', typeof id);
-  const router = useRouter();
   const [vendorData, setVendorData] = useState<VendorData | null>(null);
   const [universityId, setUniversityId] = useState<string>("");
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -231,14 +245,17 @@ const VendorPage = () => {
     fetchData();
   }, [id]);
 
-  const toggleFavourite = async (item: VendorItem) => {
+  const toggleFavourite = async (item: VendorItem | FoodItem) => {
     if (!userData) {
       toast.error("Please login to favourite items");
       return;
     }
-    const kind = item.category === "retail" ? "Retail" : "Produce";
+    const itemId = "itemId" in item ? item.itemId : item.id;
+    const category = item.category;
+    const kind = category === "retail" ? "Retail" : "Produce";
+
     try {
-      const res = await fetch(`${BACKEND_URL}/fav/${userData._id}/${item.itemId}/${kind}/${getRealVendorId(item)}`, {
+      const res = await fetch(`${BACKEND_URL}/fav/${userData._id}/${itemId}/${kind}/${getRealVendorId(item as VendorItem)}`, {
         method: "PATCH",
       });
       const data = await res.json();
@@ -496,24 +513,36 @@ const VendorPage = () => {
     return cartItem?.quantity || 0;
   };
 
-  const handleAddToCart = async (item: VendorItem) => {
+  const handleAddToCart = async (item: VendorItem | FoodItem) => {
     if (!userData) {
       toast.error("Please login to add items to cart");
       return;
     }
 
+    const itemId = "itemId" in item ? item.itemId : item.id;
+    const itemCategory = item.category || 'retail';
+
     console.log('DEBUG: Adding item to cart:', {
-      itemId: item.itemId,
-      name: item.name,
-      category: item.category,
+      itemId: itemId,
+      name: ("name" in item ? item.name : item.title),
+      category: itemCategory,
       vendorId: id
     });
 
-    const quantity = getItemQuantity(item.itemId, item.category);
+    const quantity = getItemQuantity(itemId, itemCategory);
+
+    // Create a normalized item for cart utils
+    const normalizedItem = {
+      ...item,
+      itemId: itemId,
+      category: itemCategory,
+      name: ("name" in item ? item.name : item.title)
+    };
+
     if (quantity === 0) {
-      await addToCart(userData._id, item, id as string);
+      await addToCart(userData._id, normalizedItem as unknown as VendorItem, id as string);
     } else {
-      await increaseQuantity(userData._id, item, id as string);
+      await increaseQuantity(userData._id, normalizedItem as unknown as VendorItem, id as string);
     }
 
     // Refresh user data to update cart
@@ -531,9 +560,20 @@ const VendorPage = () => {
     }
   };
 
-  const handleDecreaseQuantity = async (item: VendorItem) => {
+  const handleDecreaseQuantity = async (item: VendorItem | FoodItem) => {
     if (!userData) return;
-    await decreaseQuantity(userData._id, item, id as string);
+
+    const itemId = "itemId" in item ? item.itemId : item.id;
+    const itemCategory = item.category || 'retail';
+
+    const normalizedItem = {
+      ...item,
+      itemId: itemId,
+      category: itemCategory,
+      name: ("name" in item ? item.name : item.title)
+    };
+
+    await decreaseQuantity(userData._id, normalizedItem as unknown as VendorItem, id as string);
 
     // Refresh user data to update cart
     const token = localStorage.getItem("token");
@@ -550,21 +590,6 @@ const VendorPage = () => {
     }
   };
 
-  const handleItemClick = async (item: VendorItem) => {
-    try {
-      // Log the search in the backend
-      await fetch(`${BACKEND_URL}/api/increase-search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ foodName: item.name }),
-      });
-
-      // Navigate to the item details page
-      router.push(`/item/${item.itemId}`);
-    } catch (error) {
-      console.error("Error handling item click:", error);
-    }
-  };
 
   const handleSearch = (results: VendorItem[]) => {
     console.log('DEBUG: Vendor page received search results:', results.map(item => ({
@@ -755,82 +780,18 @@ const VendorPage = () => {
             {filteredItems.map(item => {
               const quantity = getItemQuantity(item.itemId, item.category);
               const isFav = isItemFavourited(item);
+              const foodItem = mapToFoodItem(item);
               return (
-                <div
+                <DishListItem
                   key={item.itemId}
-                  className={styles.itemCard}
-                >
-                  <div className={styles.itemCardContent} onClick={() => handleItemClick(item)}>
-                    <DishCard
-                      dishName={item.name}
-                      price={item.price}
-                      image={item.image || '/images/coffee.jpeg'}
-                      variant="list"
-                    />
-                    <div className={styles.itemDetails}>
-                      {(item.type || item.subtype) && (
-                        <p className={styles.itemMeta}>
-                          {item.type}
-                          {item.subtype ? ` • ${item.subtype}` : ''}
-                        </p>
-                      )}
-                      <p className={styles.itemVeg} style={{
-                        color: (item.isVeg !== false) ? '#22c55e' : '#ef4444',
-                      }}>
-                        {(item.isVeg !== false) ? '🟢 Veg' : '🔴 Non-Veg'}
-                      </p>
-                      <p className={styles.itemDescription}>
-                        {item.description || '\u00A0'}
-                      </p>
-                      <div className={styles.belowdish}>
-                        <div>
-                          {item.quantity !== undefined && (
-                            <p className={styles.quantity}>Available: {item.quantity}</p>
-                          )}
-                        </div>
-                        {userData && (
-                          <button
-                            className={styles.heart}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavourite(item);
-                            }}
-                          >
-                            {isFav ? <FaHeart color="#4ea199" /> : <FaRegHeart color="#4ea199" />}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {userData && (
-                    <div className={styles.cartControls}>
-                      {quantity > 0 ? (
-                        <>
-                          <button
-                            className={styles.quantityButton}
-                            onClick={() => handleDecreaseQuantity(item)}
-                          >
-                            -
-                          </button>
-                          <span className={styles.quantity}>{quantity}</span>
-                          <button
-                            className={styles.quantityButton}
-                            onClick={() => handleAddToCart(item)}
-                          >
-                            +
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          className={styles.addToCartButton}
-                          onClick={() => handleAddToCart(item)}
-                        >
-                          Add to Cart
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                  item={foodItem}
+                  quantity={quantity}
+                  isFavorite={isFav}
+                  onAdd={handleAddToCart}
+                  onIncrease={handleAddToCart}
+                  onDecrease={handleDecreaseQuantity}
+                  onToggleFavorite={toggleFavourite}
+                />
               );
             })}
           </div>
@@ -851,76 +812,18 @@ const VendorPage = () => {
                         const quantity = getItemQuantity(item.itemId, item.category);
                         const isFav = isItemFavourited(item);
                         console.log('[DEBUG] UI itemId:', item.itemId, 'UI vendorId:', getRealVendorId(item), 'isFav:', isFav);
+                        const foodItem = mapToFoodItem(item);
                         return (
-                          <div
+                          <DishListItem
                             key={item.itemId}
-                            className={styles.itemCard}
-                          >
-                            <div className={styles.itemCardContent} onClick={() => handleItemClick(item)}>
-                              <DishCard
-                                dishName={item.name}
-                                price={item.price}
-                                image={item.image || '/images/coffee.jpeg'}
-                                variant="list"
-                              />
-                              <div className={styles.itemDetails}>
-                                <p className={styles.itemVeg} style={{
-                                  color: (item.isVeg !== false) ? '#22c55e' : '#ef4444',
-                                }}>
-                                  {(item.isVeg !== false) ? '🟢 Veg' : '🔴 Non-Veg'}
-                                </p>
-                                <p className={styles.itemDescription}>
-                                  {item.description || '\u00A0'}
-                                </p>
-                                <div className={styles.belowdish}>
-                                  <div>
-                                    {item.quantity !== undefined && (
-                                      <p className={styles.quantity}>Available: {item.quantity}</p>
-                                    )}
-                                  </div>
-                                  {userData && (
-                                    <button
-                                      className={styles.heart}
-                                      onClick={(e) => {
-                                        e.stopPropagation(); // Prevents navigating to item detail
-                                        toggleFavourite(item);
-                                      }}
-                                    >
-                                      {isFav ? <FaHeart color="#4ea199" /> : <FaRegHeart color="#4ea199" />}
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            {userData && (
-                              <div className={styles.cartControls}>
-                                {quantity > 0 ? (
-                                  <>
-                                    <button
-                                      className={styles.quantityButton}
-                                      onClick={() => handleDecreaseQuantity(item)}
-                                    >
-                                      -
-                                    </button>
-                                    <span className={styles.quantity}>{quantity}</span>
-                                    <button
-                                      className={styles.quantityButton}
-                                      onClick={() => handleAddToCart(item)}
-                                    >
-                                      +
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    className={styles.addToCartButton}
-                                    onClick={() => handleAddToCart(item)}
-                                  >
-                                    Add to Cart
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                            item={foodItem}
+                            quantity={quantity}
+                            isFavorite={isFav}
+                            onAdd={handleAddToCart}
+                            onIncrease={handleAddToCart}
+                            onDecrease={handleDecreaseQuantity}
+                            onToggleFavorite={toggleFavourite}
+                          />
                         );
                       })}
                     </div>
