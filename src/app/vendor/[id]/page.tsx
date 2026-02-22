@@ -8,6 +8,8 @@ import SearchBar from "@/app/components/search/SearchBar/SearchBar";
 import styles from "./styles/VendorPage.module.scss";
 import { addToCart, increaseQuantity, decreaseQuantity } from "./utils/cartUtils";
 import { toast } from "react-toastify";
+import { FoodItem } from "@/app/home/[slug]/types";
+
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
