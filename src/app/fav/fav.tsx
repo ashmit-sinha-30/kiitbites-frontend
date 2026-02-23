@@ -617,27 +617,27 @@ const FavouriteFoodPageContent: React.FC = () => {
   };
 
   // Add a function to clear cart
-  const clearCart = async () => {
-    if (!user?._id) return;
+  // const clearCart = async () => {
+  //   if (!user?._id) return;
 
-    try {
-      await axios.post(
-        `${BACKEND_URL}/cart/clear/${user._id}`,
-        {},
-        getAuthConfig()
-      );
-      setCartItems([]);
-      setCurrentVendorId(null);
-      toast.success("Cart cleared successfully");
-    } catch {
-      toast.error("Failed to clear cart");
-    }
-  };
+  //   try {
+  //     await axios.post(
+  //       `${BACKEND_URL}/cart/clear/${user._id}`,
+  //       {},
+  //       getAuthConfig()
+  //     );
+  //     setCartItems([]);
+  //     setCurrentVendorId(null);
+  //     toast.success("Cart cleared successfully");
+  //   } catch {
+  //     toast.error("Failed to clear cart");
+  //   }
+  // };
 
   // Add a function to check if cart is empty
-  const isCartEmpty = () => {
-    return cartItems.length === 0;
-  };
+  // const isCartEmpty = () => {
+  //   return cartItems.length === 0;
+  // };
 
   return (
     <div className={styles.container}>
@@ -655,14 +655,14 @@ const FavouriteFoodPageContent: React.FC = () => {
       />
       <div className={styles.header}>
         <h1>Your Favorites</h1>
-        {!isCartEmpty() && (
+        {/* {!isCartEmpty() && (
           <button
             className={styles.clearCartButton}
             onClick={clearCart}
           >
             Clear Cart
           </button>
-        )}
+        )} */}
       </div>
 
       <div className={styles.dropdownContainer} ref={dropdownRef}>
