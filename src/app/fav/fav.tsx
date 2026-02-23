@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import { ChevronRight, ChevronDown, Plus, Minus } from "lucide-react";
+
 import styles from "./styles/FavouriteFoodPage.module.scss";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FaHeart, FaRegHeart } from "react-icons/fa";
-import PageLoading from "../components/layout/PageLoading/PageLoading";
+import { FaChevronDown } from "react-icons/fa";
+import DishListItem from "@/app/components/food/DishListItem/DishListItemV2";
+import { FoodItem as HomeFoodItem } from "@/app/home/[slug]/types";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -167,6 +168,26 @@ const FavouriteFoodPageContent: React.FC = () => {
 
     fetchFavorites();
   }, [user?._id, selectedCollege, router]);
+
+  const convertItemToHomeFoodItem = (item: FoodItem): HomeFoodItem => {
+    return {
+      id: item._id,
+      title: item.name,
+      image: item.image,
+      category: item.kind,
+      type: item.type,
+      isSpecial: item.isSpecial,
+      price: item.price,
+      vendorId: item.vendorId,
+      collegeId: item.uniId,
+      collegeName: colleges.find(c => c._id === item.uniId)?.fullName || "",
+      // For favorites, we might not have all details like isVeg or description here
+      // but DishListItemV2 can handle defaults
+      isVeg: true,
+      description: "",
+      isAvailable: 'Y' // Assuming favorites are generally available or handled by stock badge
+    };
+  };
 
   const handleToggleFavorite = async (food: FoodItem) => {
     const userId = user?._id;
@@ -645,44 +666,31 @@ const FavouriteFoodPageContent: React.FC = () => {
       </div>
 
       <div className={styles.dropdownContainer} ref={dropdownRef}>
-        <button
-          className={styles.dropdownButton}
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          aria-expanded={isDropdownOpen}
-        >
-          <span>
-            {selectedCollege ? selectedCollege.fullName : "Select your college"}
-          </span>
-          <ChevronDown
-            size={20}
-            style={{
-              transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease",
-            }}
+        <div className={styles.collegeField}>
+          <input
+            name="college"
+            value={selectedCollege ? selectedCollege.fullName : ""}
+            readOnly
+            placeholder="Select your college"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           />
-        </button>
-
-        {isDropdownOpen && (
-          <div className={styles.dropdownMenu}>
-            <button
-              className={styles.dropdownItem}
-              onClick={() => handleCollegeSelect(null)}
-            >
-              <span>All Colleges</span>
-              <ChevronRight size={16} />
-            </button>
+          <FaChevronDown
+            className={`${styles.dropdownIcon} ${isDropdownOpen ? styles.open : ''}`}
+          />
+          <ul className={`${styles.collegeList} ${isDropdownOpen ? styles.show : ''}`}>
+            <li onClick={() => handleCollegeSelect(null)}>
+              All Colleges
+            </li>
             {colleges.map((college) => (
-              <button
+              <li
                 key={college._id}
-                className={styles.dropdownItem}
                 onClick={() => handleCollegeSelect(college)}
               >
-                <span>{college.fullName}</span>
-                <ChevronRight size={16} />
-              </button>
+                {college.fullName}
+              </li>
             ))}
-          </div>
-        )}
+          </ul>
+        </div>
       </div>
 
       <div className={styles.contentSection}>
@@ -694,7 +702,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         </div>
 
         {loading ? (
-          <PageLoading message="Loading your favourites…" />
+          null
         ) : favorites.length === 0 ? (
           <div className={styles.emptyState}>
             <h2>Oops! You have no favorites yet</h2>
@@ -707,72 +715,30 @@ const FavouriteFoodPageContent: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className={styles.foodGrid}>
+          <div className={styles.itemsGrid}>
             {favorites.map((food) => {
               const favKey = `${food._id}-${food.vendorId}`;
               const isFavorited = favoriteIds.includes(favKey);
+
               // Find the cart item with matching itemId and vendorId
-              const matchingCartItem = cartItems.find(item => {
-                const isMatch = item._id === food._id && item.vendorId === food.vendorId;
-                return isMatch;
-              });
+              const matchingCartItem = cartItems.find(item =>
+                item._id === food._id && item.vendorId === food.vendorId
+              );
 
               const quantity = matchingCartItem?.quantity || 0;
-              const isSameVendor = !currentVendorId || currentVendorId === food.vendorId;
-              const isInCart = matchingCartItem !== undefined;
+              const homeFoodItem = convertItemToHomeFoodItem(food);
 
               return (
-                <div key={`${food._id}-${food.vendorId}`} className={styles.foodCard}>
-                  <img
-                    src={food.image}
-                    alt={food.name}
-                    className={styles.foodImage}
-                  />
-                  <div className={styles.clgFav}>
-                    {!selectedCollege && (
-                      <div className={styles.collegeTag}>
-                        {colleges.find((c) => c._id === food.uniId)?.fullName}
-                      </div>
-                    )}
-                    <button onClick={() => handleToggleFavorite(food)} className={styles.favButton}>
-                      {isFavorited ? (
-                        <FaHeart color="#4ea199" />
-                      ) : (
-                        <FaRegHeart color="#4ea199" />
-                      )}
-                    </button>
-                  </div>
-                  <h3 className={styles.foodName}>{food.name}</h3>
-                  <p className={styles.vendorName}>
-                    {food.vendorName || getVendorName(food.vendorId)}
-                  </p>
-                  <p className={styles.foodPrice}>₹{food.price}</p>
-                  {isInCart && isSameVendor ? (
-                    <div className={styles.quantityControls}>
-                      <button
-                        className={styles.quantityButton}
-                        onClick={() => handleDecreaseQuantity(food)}
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <span className={styles.quantity}>{quantity}</span>
-                      <button
-                        className={styles.quantityButton}
-                        onClick={() => handleIncreaseQuantity(food)}
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className={styles.addToCartButton}
-                      onClick={() => handleAddToCart(food)}
-                      disabled={!isSameVendor}
-                    >
-                      {!isSameVendor ? "Different Vendor" : "Add to Cart"}
-                    </button>
-                  )}
-                </div>
+                <DishListItem
+                  key={favKey}
+                  item={homeFoodItem}
+                  quantity={quantity}
+                  isFavorite={isFavorited}
+                  onAdd={() => handleAddToCart(food)}
+                  onIncrease={() => handleIncreaseQuantity(food)}
+                  onDecrease={() => handleDecreaseQuantity(food)}
+                  onToggleFavorite={() => handleToggleFavorite(food)}
+                />
               );
             })}
           </div>
@@ -786,7 +752,7 @@ const FavouriteFoodPage: React.FC = () => {
   return (
     <Suspense
       fallback={
-        <PageLoading message="Loading your favourites…" />
+        null
       }
     >
       <FavouriteFoodPageContent />

@@ -8,6 +8,7 @@ export interface FoodItem {
   subtype?: string;
   isSpecial: string;
   collegeId?: string;
+  collegeName?: string;
   price: number;
   vendorId?: string | null;
   quantity?: number;

@@ -56,6 +56,9 @@ const DishListItem: React.FC<DishListItemProps> = ({
                         style={{ objectFit: 'cover' }}
                     />
                 </div>
+                {item.collegeName && (
+                    <span className={styles.collegeNameBadge}>{item.collegeName}</span>
+                )}
             </div>
 
             <div className={styles.content}>

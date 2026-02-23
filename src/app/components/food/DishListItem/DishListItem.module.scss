@@ -129,6 +129,20 @@
   }
 }
 
+.collegeNameBadge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4ea199, #6fc3bd);
+  color: white;
+  white-space: nowrap;
+  margin-top: 0.5rem;
+  text-align: center;
+  width: fit-content;
+  box-shadow: 0 2px 4px rgba(78, 161, 153, 0.2);
+}
+
 .favoriteBtn {
   background: none;
   border: none;
