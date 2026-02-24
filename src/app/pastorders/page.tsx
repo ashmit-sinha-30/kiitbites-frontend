@@ -1,13 +1,12 @@
 "use client";
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { FaChevronDown, FaStar } from "react-icons/fa";
 import styles from "./styles/pastorder.module.scss";
 import axios from "axios";
 import ReviewForm from "./components/ReviewForm";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import PageLoading from "../components/layout/PageLoading/PageLoading";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -41,6 +40,7 @@ interface PastOrder {
     };
   };
   items: OrderItem[];
+  isReviewed?: boolean;
 }
 
 interface College {
@@ -54,6 +54,24 @@ interface User {
   name: string;
 }
 
+// Get auth token
+const getAuthToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("token");
+  }
+  return null;
+};
+
+// Configure axios with auth header
+const getAuthConfig = () => {
+  const token = getAuthToken();
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+};
+
 const PastOrdersPageContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -66,79 +84,63 @@ const PastOrdersPageContent: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [allowedReview, setAllowedReview] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const hasInitialized = useRef(false);
 
-  // Get auth token
-  const getAuthToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
-    }
-    return null;
-  };
-
-  // Configure axios with auth header
-  const getAuthConfig = () => {
-    const token = getAuthToken();
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-  };
-
-  // Fetch user details
+  // Consolidate initial data fetching and use a ref guard to strictly run once
   useEffect(() => {
-    const fetchUserDetails = async () => {
-      try {
-        const token = getAuthToken();
-        if (!token) {
-          router.push("/login");
-          return;
-        }
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
 
-        const response = await axios.get(
-          `${BACKEND_URL}/api/user/auth/user`,
-          getAuthConfig()
-        );
-        setUser(response.data);
+    const initializePage = async () => {
+      const token = getAuthToken();
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      try {
+        // Fetch user and colleges in parallel
+        const [userRes, collegesRes] = await Promise.all([
+          axios.get(`${BACKEND_URL}/api/user/auth/user`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${BACKEND_URL}/api/user/auth/list`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        ]);
+
+        setUser(userRes.data);
+        setColleges(collegesRes.data);
+
+        // Check for review assignments
         try {
-          const uniId = response.data?.uniID || response.data?.college?._id;
-          if (uniId) {
-            const assignRes = await axios.get(`${BACKEND_URL}/api/university/universities/${uniId}/assignments`);
+          const uniId = userRes.data?.uniID || userRes.data?.college?._id;
+          if (uniId && token) {
+            const assignRes = await axios.get(`${BACKEND_URL}/api/university/universities/${uniId}/assignments`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
             const services = assignRes.data?.data?.services || [];
-            const isAllowed = services.some((s: { name: string }) => String(s.name).toLowerCase().includes('review'));
+            const isAllowed = services.some((s: { name: string }) =>
+              String(s.name || '').toLowerCase().includes('review')
+            );
             setAllowedReview(!!isAllowed);
+          } else {
+            setAllowedReview(false);
           }
-        } catch {
+        } catch (innerError) {
+          console.warn("Could not check review permissions - backend might be unavailable:", innerError);
           setAllowedReview(false);
         }
       } catch (error) {
-        console.error("Error fetching user details:", error);
+        console.error("Initialization error:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           router.push("/login");
         }
       }
     };
-    fetchUserDetails();
-  }, [router, getAuthConfig]);
 
-  // Fetch colleges list
-  useEffect(() => {
-    const fetchColleges = async () => {
-      try {
-        const response = await axios.get(
-          `${BACKEND_URL}/api/user/auth/list`,
-          getAuthConfig()
-        );
-        setColleges(response.data);
-      } catch (error) {
-        console.error("Error fetching colleges:", error);
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          router.push("/login");
-        }
-      }
-    };
-    fetchColleges();
-  }, [router, getAuthConfig]);
+    initializePage();
+  }, [router]);
 
   // Fetch past orders based on selected college
   useEffect(() => {
@@ -165,23 +167,24 @@ const PastOrdersPageContent: React.FC = () => {
     };
 
     fetchPastOrders();
-  }, [user?._id, selectedCollege, router, getAuthConfig]);
+  }, [user?._id, selectedCollege]); // Removed router from dependencies
 
-  // Handle URL query parameter on initial load
+  // Handle URL query parameter on initial load or change
   useEffect(() => {
+    if (colleges.length === 0) return;
+
     const collegeId = searchParams.get("college");
-    if (collegeId && colleges.length > 0) {
-      const college = colleges.find((c) => c._id === collegeId);
-      if (college) {
-        setSelectedCollege(college);
+    if (collegeId) {
+      if (selectedCollege?._id !== collegeId) {
+        const college = colleges.find((c) => c._id === collegeId);
+        if (college) {
+          setSelectedCollege(college);
+        }
       }
-    } else {
+    } else if (selectedCollege) {
       setSelectedCollege(null);
-      const params = new URLSearchParams(window.location.search);
-      params.delete("college");
-      window.history.pushState(null, "", `?${params.toString()}`);
     }
-  }, [searchParams, colleges]);
+  }, [searchParams, colleges, selectedCollege?._id]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -258,44 +261,31 @@ const PastOrdersPageContent: React.FC = () => {
       </div>
 
       <div className={styles.dropdownContainer} ref={dropdownRef}>
-        <button
-          className={styles.dropdownButton}
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          aria-expanded={isDropdownOpen}
-        >
-          <span>
-            {selectedCollege ? selectedCollege.fullName : "Select your college"}
-          </span>
-          <ChevronDown
-            size={20}
-            style={{
-              transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease",
-            }}
+        <div className={styles.collegeField}>
+          <input
+            name="college"
+            value={selectedCollege ? selectedCollege.fullName : ""}
+            readOnly
+            placeholder="Select your college"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           />
-        </button>
-
-        {isDropdownOpen && (
-          <div className={styles.dropdownMenu}>
-            <button
-              className={styles.dropdownItem}
-              onClick={() => handleCollegeSelect(null)}
-            >
-              <span>All Colleges</span>
-              <ChevronRight size={16} />
-            </button>
+          <FaChevronDown
+            className={`${styles.dropdownIcon} ${isDropdownOpen ? styles.open : ''}`}
+          />
+          <ul className={`${styles.collegeList} ${isDropdownOpen ? styles.show : ''}`}>
+            <li onClick={() => handleCollegeSelect(null)}>
+              All Colleges
+            </li>
             {colleges.map((college) => (
-              <button
+              <li
                 key={college._id}
-                className={styles.dropdownItem}
                 onClick={() => handleCollegeSelect(college)}
               >
-                <span>{college.fullName}</span>
-                <ChevronRight size={16} />
-              </button>
+                {college.fullName}
+              </li>
             ))}
-          </div>
-        )}
+          </ul>
+        </div>
       </div>
 
       <div className={styles.contentSection}>
@@ -307,7 +297,7 @@ const PastOrdersPageContent: React.FC = () => {
         </div>
 
         {loading ? (
-          <PageLoading message="Loading your past orders…" />
+          null
         ) : pastOrders.length === 0 ? (
           <div className={styles.emptyState}>
             <h2>No past orders found</h2>
@@ -325,12 +315,28 @@ const PastOrdersPageContent: React.FC = () => {
               console.log('Order vendor data:', order.vendorId);
               return (
                 <div key={order._id} className={styles.orderCard}>
-                  <div className={styles.orderHeader}>
-                    <div className={styles.orderInfo}>
-                      <h3 className={styles.orderId}>Order #{order.orderNumber}</h3>
-                      <p className={styles.orderDate}>{formatDate(order.createdAt)}</p>
+                  <div className={styles.cardLeft}>
+                    <div className={styles.orderHeader}>
+                      <div className={styles.orderInfo}>
+                        <h3 className={styles.orderId}>Order #{order.orderNumber}</h3>
+                        <p className={styles.orderDate}>{formatDate(order.createdAt)}</p>
+                      </div>
+                      <div className={styles.badgeRow}>
+                        <span
+                          className={styles.orderStatus}
+                          style={{ backgroundColor: getStatusColor(order.status) }}
+                        >
+                          {order.status}
+                        </span>
+                        <span className={styles.orderType}>
+                          {order.orderType}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={styles.vendorSource}>
                       {order.vendorId && (
-                        <div className={styles.orderSource}>
+                        <>
                           <p className={styles.vendorName}>
                             <strong>Vendor:</strong> {order.vendorId.fullName || "Unknown Vendor"}
                           </p>
@@ -339,23 +345,10 @@ const PastOrdersPageContent: React.FC = () => {
                               <strong>College:</strong> {order.vendorId.college.fullName || "Unknown College"}
                             </p>
                           )}
-                        </div>
+                        </>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <span
-                        className={styles.orderStatus}
-                        style={{ backgroundColor: getStatusColor(order.status) }}
-                      >
-                        {order.status}
-                      </span>
-                      <span className={styles.orderType}>
-                        {order.orderType}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className={styles.orderDetails}>
                     <div className={styles.collectorInfo}>
                       <h4 className={styles.collectorName}>{order.collectorName}</h4>
                       <p className={styles.collectorPhone}>{order.collectorPhone}</p>
@@ -363,7 +356,9 @@ const PastOrdersPageContent: React.FC = () => {
                         <p className={styles.address}>{order.address}</p>
                       )}
                     </div>
+                  </div>
 
+                  <div className={styles.cardRight}>
                     <div className={styles.itemsList}>
                       {order.items.map((item, index) => (
                         <div key={index} className={styles.itemCard}>
@@ -380,15 +375,34 @@ const PastOrdersPageContent: React.FC = () => {
                       ))}
                     </div>
 
-                    <div className={styles.orderTotal}>
-                      <p className={styles.totalAmount}>
-                        Total: ₹{order.total}
-                      </p>
+                    <div className={styles.orderFooter}>
+                      <div className={styles.orderTotal}>
+                        <p className={styles.totalAmount}>
+                          Total: ₹{order.total}
+                        </p>
+                      </div>
                     </div>
-                    {allowedReview && (
-                      <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  </div>
+
+                  {allowedReview && (
+                    <div className={styles.reviewSection}>
+                      {order.isReviewed ? (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          color: '#4ea199',
+                          fontWeight: 600,
+                          padding: '12px',
+                          backgroundColor: '#f0fdfa',
+                          borderRadius: '8px',
+                          border: '1px solid #ccfbf1',
+                          width: '100%'
+                        }}>
+                          <FaStar /> Order Reviewed
+                        </div>
+                      ) : (
                         <ReviewForm
-                          orderNumber={order.orderNumber}
                           disabled={submitting === order._id}
                           onSubmit={async (rating, comment) => {
                             try {
@@ -399,16 +413,23 @@ const PastOrdersPageContent: React.FC = () => {
                                 { headers: { Authorization: `Bearer ${token}` } }
                               );
                               toast.success('Review submitted');
-                            } catch {
-                              toast.error('Failed to submit review');
+                              // Optimistically update review status
+                              setPastOrders(prev => prev.map(o =>
+                                o._id === order._id ? { ...o, isReviewed: true } : o
+                              ));
+                            } catch (err) {
+                              const msg = axios.isAxiosError(err) && err.response?.data?.message
+                                ? err.response.data.message
+                                : 'Failed to submit review';
+                              toast.error(msg);
                             } finally {
                               setSubmitting(null);
                             }
                           }}
                         />
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -423,7 +444,7 @@ const PastOrdersPage: React.FC = () => {
   return (
     <Suspense
       fallback={
-        <PageLoading message="Loading your past orders…" />
+        null
       }
     >
       <PastOrdersPageContent />
