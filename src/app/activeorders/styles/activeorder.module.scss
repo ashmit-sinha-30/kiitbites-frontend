@@ -438,15 +438,10 @@
 }
 
 .itemQuantity {
-  background: linear-gradient(135deg, #4ea199, #6fc3bd);
-  color: white;
-  font-size: 0.85rem;
+  color: #1e293b;
+  font-size: 0.95rem;
   font-weight: 700;
-  padding: 0.25rem 0.6rem;
-  border-radius: 6px;
-  min-width: 28px;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(78, 161, 153, 0.2);
+  margin-left: 0.5rem;
 }
 
 .emptyState {

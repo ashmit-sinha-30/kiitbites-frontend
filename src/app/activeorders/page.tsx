@@ -358,7 +358,7 @@ const ActiveOrdersPageContent: React.FC = () => {
                             </p>
                           </div>
                           <span className={styles.itemQuantity}>
-                            {item.quantity}
+                            x{item.quantity}
                           </span>
                         </div>
                       ))}
