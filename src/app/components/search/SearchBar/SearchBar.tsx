@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FaSearch, FaArrowLeft } from "react-icons/fa";
+import { FaSearch, FaArrowLeft, FaChevronDown } from "react-icons/fa";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DishListItemV2 from "../../food/DishListItem/DishListItemV2";
@@ -109,6 +109,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [query, setQuery] = useState<string>("");
   const [universities, setUniversities] = useState<University[]>([]);
   const [selectedUniversity, setSelectedUniversity] = useState<string>("");
+  const [showUniDropdown, setShowUniDropdown] = useState<boolean>(false);
+  const uniDropdownRef = useRef<HTMLDivElement>(null);
   const [popularFoods, setPopularFoods] = useState<FoodItem[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [suggestedItems, setSuggestedItems] = useState<SearchResult[]>([]);
@@ -161,8 +163,18 @@ const SearchBar: React.FC<SearchBarProps> = ({
     checkAuth();
     // Add event listener for storage changes
     window.addEventListener('storage', checkAuth);
+
+    // Add click outside handler for custom dropdown
+    const handleClickOutside = (event: MouseEvent) => {
+      if (uniDropdownRef.current && !uniDropdownRef.current.contains(event.target as Node)) {
+        setShowUniDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+
     return () => {
       window.removeEventListener('storage', checkAuth);
+      document.removeEventListener('mousedown', handleClickOutside);
       if (searchTimeout.current) {
         clearTimeout(searchTimeout.current);
       }
@@ -556,9 +568,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
     }).catch(err => console.error("Failed to track search:", err));
   };
 
-  const handleUniversityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedUniversity(e.target.value);
-  };
 
   const handleVendorClick = (vendorId: string) => {
     const url = query
@@ -782,25 +791,45 @@ const SearchBar: React.FC<SearchBarProps> = ({
               <FaArrowLeft />
             </button>
             {!hideUniversityDropdown && (
-              <div className={`${styles.selectBar} ${query !== "" ? styles.selectBarHidden : ""}`}>
-                {selectedUniversity ? (
-                  <select
-                    value={selectedUniversity}
-                    onChange={handleUniversityChange}
-                    className={styles.dropdown}
+              <div
+                className={`${styles.selectBar} ${query !== "" ? styles.selectBarHidden : ""}`}
+                ref={uniDropdownRef}
+              >
+                <div className={styles.customDropdown}>
+                  <input
+                    value={
+                      selectedUniversity
+                        ? universities.find((uni) => uni._id === selectedUniversity)?.fullName || "Select College"
+                        : "Select College"
+                    }
+                    readOnly
+                    placeholder="Select College"
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        setShowUniDropdown(!showUniDropdown);
+                      }
+                    }}
+                    className={`${styles.dropdownInput} ${!isAuthenticated ? styles.disabled : ''}`}
                     disabled={!isAuthenticated}
-                  >
+                  />
+                  <FaChevronDown
+                    className={`${styles.dropdownIcon} ${showUniDropdown ? styles.open : ''}`}
+                  />
+                  <ul className={`${styles.dropdownList} ${showUniDropdown ? styles.show : ''}`}>
                     {universities.map((uni) => (
-                      <option key={uni._id} value={uni._id}>
+                      <li
+                        key={uni._id}
+                        onClick={() => {
+                          setSelectedUniversity(uni._id);
+                          setShowUniDropdown(false);
+                        }}
+                        className={selectedUniversity === uni._id ? styles.selected : ''}
+                      >
                         {uni.fullName}
-                      </option>
+                      </li>
                     ))}
-                  </select>
-                ) : (
-                  <select disabled className={styles.dropdown}>
-                    <option>Loading Universities...</option>
-                  </select>
-                )}
+                  </ul>
+                </div>
               </div>
             )}
 
