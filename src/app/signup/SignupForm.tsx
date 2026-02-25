@@ -266,6 +266,7 @@ export default function SignupForm() {
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
+        <div className={styles.msg}>Create your account</div>
         <div className={styles.box}>
           <h1>Sign Up</h1>
           <form>
