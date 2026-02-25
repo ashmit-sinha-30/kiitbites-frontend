@@ -8,11 +8,13 @@ export interface FoodItem {
   subtype?: string;
   isSpecial: string;
   collegeId?: string;
+  collegeName?: string;
   price: number;
   vendorId?: string | null;
   quantity?: number;
   isAvailable?: string;
   isVeg?: boolean;
+  source?: string;
 }
 
 export interface FavoriteItem {
@@ -53,7 +55,10 @@ export interface Vendor {
 
 export interface College {
   _id: string;
-  name: string;
+  fullName: string;
+  retailImage?: string;
+  produceImage?: string;
+  categoryImages?: { name: string; image: string }[];
 }
 
 export interface ApiFavoritesResponse {
@@ -72,4 +77,21 @@ export interface ApiItem {
   category?: string;
   price: number;
   vendorId?: string;
-} 
+}
+
+export interface CollegeVendor {
+  _id: string;
+  fullName: string;
+  image?: string;
+  coverImage?: string;
+  retailInventory: {
+    itemId: string;
+    quantity: number;
+    isAvailable?: string; // Some retail items might use this too?
+  }[];
+  produceInventory: {
+    itemId: string;
+    isAvailable: string;
+  }[];
+  isAvailable?: string; // Vendor global availability
+}

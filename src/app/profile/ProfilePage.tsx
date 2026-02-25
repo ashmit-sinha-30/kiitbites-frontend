@@ -5,6 +5,7 @@ import {
   User,
   Mail,
   // Bell,
+  HandPlatter,
   ShoppingCart,
   Book,
   HelpCircle,
@@ -142,6 +143,12 @@ const UserProfile = () => {
           <Link href="/pastorders" className={styles.menuItem}>
             <Book className={styles.iconPurple} size={20} />
             <span>Previous Orders</span>
+            <ChevronRight className={styles.chevron} size={16} />
+          </Link>
+
+          <Link href="/activeorders" className={styles.menuItem}>
+            <HandPlatter className={styles.iconPurple} size={20} />
+            <span>Active Orders</span>
             <ChevronRight className={styles.chevron} size={16} />
           </Link>
 

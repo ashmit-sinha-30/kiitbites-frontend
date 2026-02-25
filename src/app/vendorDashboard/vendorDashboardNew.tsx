@@ -25,6 +25,7 @@ import StatCard from "./components/StatCard";
 import InventoryTable from "./components/InventoryTable";
 import DateFilter from "./components/DateFilter";
 import DownloadButton from "./components/DownloadButton";
+import { VendorProfile } from "./components/VendorProfile";
 import { Order, InventoryReport, transformApiReport } from "./types";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
@@ -75,7 +76,7 @@ export default function VendorDashboardPage() {
   const handleOrderStatusChange = (orderId: string, newStatus: string, orderData?: Order) => {
     console.log(`Dashboard: Order status change - ID: ${orderId}, Status: ${newStatus}, Type: ${orderData?.orderType}`);
     setOrderStatusChanges(prev => [...prev, { orderId, newStatus, orderData }]);
-    
+
     // Clear the change after a short delay to prevent memory leaks
     setTimeout(() => {
       setOrderStatusChanges(prev => prev.filter(change => change.orderId !== orderId));
@@ -86,7 +87,7 @@ export default function VendorDashboardPage() {
     // Always land on dashboard for this page
     localStorage.removeItem("activeSegment");
     setActiveSegment("dashboard");
-     
+
   }, []);
 
   useEffect(() => {
@@ -139,7 +140,7 @@ export default function VendorDashboardPage() {
           // Get vendor assignments (services)
           const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/vendor/${vendorIdFromUser}/assignments`);
           const assignJson = await assignRes.json();
-          
+
           if (assignJson.success) {
             setServices(assignJson.data.services);
           }
@@ -186,13 +187,13 @@ export default function VendorDashboardPage() {
         const currentServices = servicesRef.current;
         const currentService = currentServices.find((s) => s._id === currentActiveSegment);
         const name = currentService?.name?.toLowerCase() || "";
-        const isOnPendingOrders = currentActiveSegment === "pending-orders" || 
+        const isOnPendingOrders = currentActiveSegment === "pending-orders" ||
           name.includes("pending order") || name.includes("pending orders");
-        
+
         if (isOnPendingOrders) {
           return;
         }
-        
+
         lastAlertedOrderIdRef.current = data.orderId || null;
         setPendingOrderAlert({
           orderId: data.orderId,
@@ -248,9 +249,9 @@ export default function VendorDashboardPage() {
             const currentServices = servicesRef.current;
             const currentService = currentServices.find((s) => s._id === currentActiveSegment);
             const name = currentService?.name?.toLowerCase() || "";
-            const isOnPendingOrders = currentActiveSegment === "pending-orders" || 
+            const isOnPendingOrders = currentActiveSegment === "pending-orders" ||
               name.includes("pending order") || name.includes("pending orders");
-            
+
             if (!isOnPendingOrders) {
               lastAlertedOrderIdRef.current = latest.orderId;
               setPendingOrderAlert({
@@ -290,16 +291,17 @@ export default function VendorDashboardPage() {
     const hasPendingOrdersService = filteredServices.some(
       (s) => s.name?.toLowerCase().includes("pending order")
     );
-    
-    const serviceSegments = filteredServices.map((s) => ({ 
-      key: s._id, 
-      label: s.name, 
+
+    const serviceSegments = filteredServices.map((s) => ({
+      key: s._id,
+      label: s.name,
       icon: <></>,
       featureKey: `service.${s.feature.name.toLowerCase().replace(/\s+/g, '_')}.${s.name.toLowerCase().replace(/\s+/g, '_')}`
     }));
-    
+
     const baseSegments = [
       { key: "dashboard", label: "Dashboard", icon: <></>, featureKey: "service.dashboard" },
+      { key: "profile", label: "Profile", icon: <></> },
     ];
 
     if (!hasPendingOrdersService) {
@@ -348,29 +350,29 @@ export default function VendorDashboardPage() {
   // Fetch inventory report
   const fetchReport = useCallback(async (date: string) => {
     if (!vendorId) return;
-    
+
     setLoadingReport(true);
     setErrorReport(null);
     try {
       const url = `${ENV_CONFIG.BACKEND.URL}/inventoryreport/vendor/${vendorId}?date=${date}`;
       console.log("🔍 Fetching inventory report from:", url);
-      
+
       const res = await fetch(url);
       const json = await res.json();
-      
+
       console.log("📊 API Response:", json);
-      
+
       if (!json.success) {
         console.log("❌ API response success is false:", json);
         setReport(null);
         setErrorReport("No report found for the selected date.");
         return;
       }
-      
+
       console.log("✅ API response success is true, transforming data:", json.data);
       const transformedReport = transformApiReport(json.data);
       console.log("📋 Transformed report:", transformedReport);
-      
+
       setReport(transformedReport);
     } catch (err: unknown) {
       console.error("❌ Fetch error:", err);
@@ -469,11 +471,15 @@ export default function VendorDashboardPage() {
         {(() => {
           const currentService = services.find((s) => s._id === activeSegment);
           const name = currentService?.name?.toLowerCase() || "";
-          
+
           if (activeSegment === "dashboard") {
             return <VendorDashboard vendorName={vendorName} vendorId={vendorId || ""} />;
           }
-          
+
+          if (activeSegment === "profile") {
+            return <VendorProfile vendorId={vendorId || ""} />;
+          }
+
           // Handle inventory-reports segment
           if (activeSegment === "inventory-reports") {
             return (
@@ -552,9 +558,9 @@ export default function VendorDashboardPage() {
           if (activeSegment === "pending-orders") {
             return renderPendingOrderRequests();
           }
-          
+
           if (!name) return null;
-          
+
           if (name === "invoice" || name.includes("invoice")) {
             return <Invoices vendorId={vendorId || ""} />;
           }
@@ -685,9 +691,9 @@ export default function VendorDashboardPage() {
                   <h1>Active Orders</h1>
                   <p>Manage your incoming orders in real-time</p>
                 </div>
-                <OrderList 
+                <OrderList
                   vendorId={vendorId || ""}
-                  onLoaded={handleOnLoaded} 
+                  onLoaded={handleOnLoaded}
                   onOrderStatusChange={handleOrderStatusChange}
                   orderStatusChanges={orderStatusChanges}
                 />
@@ -701,9 +707,9 @@ export default function VendorDashboardPage() {
                   <h1>Delivery Orders</h1>
                   <p>Manage orders that are out for delivery</p>
                 </div>
-                <DeliveryOrdersList 
+                <DeliveryOrdersList
                   vendorId={vendorId || ""}
-                  onLoaded={handleOnLoaded} 
+                  onLoaded={handleOnLoaded}
                   onOrderStatusChange={handleOrderStatusChange}
                   orderStatusChanges={orderStatusChanges}
                 />
@@ -794,10 +800,10 @@ export default function VendorDashboardPage() {
               </>
             );
           }
-          
+
           return null;
         })()}
-      
+
       </main>
     </div>
   );

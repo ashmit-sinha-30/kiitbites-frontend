@@ -16,7 +16,8 @@ import UniGrievances from "./components/UniGrievances";
 import UniversityRecipes from "./components/UniversityRecipes";
 import MenuSorting from "./components/MenuSorting";
 import styles from "./styles/InventoryReport.module.scss";
-import { ENV_CONFIG } from "@/config/environment";
+import { ENV_CONFIG } from "../../config/environment";
+import UniProfile from "./components/UniProfile";
 
 export default function UniDashboardPage() {
   const router = useRouter();
@@ -39,16 +40,26 @@ export default function UniDashboardPage() {
   // Auto-select Uni Dashboard when services are loaded
   useEffect(() => {
     if (services.length > 0) {
-      const uniDashboardService = services.find(s => 
-        s.name.toLowerCase() === "uni dashboard" || 
+      const uniDashboardService = services.find(s =>
+        s.name.toLowerCase() === "uni dashboard" ||
         s.name.toLowerCase().includes("uni dashboard") ||
         s.name.toLowerCase() === "dashboard"
       );
-      
+
       if (uniDashboardService) {
         // If current active segment is "dashboard" or doesn't match any service, set to uni dashboard
+        // BUT: explicit check to allow "profile" and "logout" to persist
+        if (activeSegment === "profile" || activeSegment === "logout") return;
+
         const currentService = services.find(s => s._id === activeSegment);
-        if (!currentService || activeSegment === "dashboard") {
+        // Only redirect if we are on the default "dashboard" placeholder or an invalid ID
+        if (!currentService && activeSegment !== uniDashboardService._id) {
+          // Double check if it's one of the hardcoded sidebar items
+          const isHardcoded = ["profile", "logout"].includes(activeSegment);
+          if (!isHardcoded) {
+            setActiveSegment(uniDashboardService._id);
+          }
+        } else if (activeSegment === "dashboard") {
           setActiveSegment(uniDashboardService._id);
         }
       }
@@ -58,14 +69,14 @@ export default function UniDashboardPage() {
   // Reset to Uni Dashboard when coming back from vendor page
   useEffect(() => {
     const fromVendor = searchParams.get('fromVendor');
-    
+
     if (fromVendor === 'true' && services.length > 0) {
-      const uniDashboardService = services.find(s => 
-        s.name.toLowerCase() === "uni dashboard" || 
+      const uniDashboardService = services.find(s =>
+        s.name.toLowerCase() === "uni dashboard" ||
         s.name.toLowerCase().includes("uni dashboard") ||
         s.name.toLowerCase() === "dashboard"
       );
-      
+
       if (uniDashboardService) {
         setActiveSegment(uniDashboardService._id);
         // Clean up the URL parameter
@@ -98,10 +109,10 @@ export default function UniDashboardPage() {
           const uniId = user._id || user.id;
           setUniversityId(uniId);
           setUniversityName(user.fullName || "University");
-          
+
           // Store uniId in localStorage
           localStorage.setItem("uniId", uniId);
-          
+
           const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
           const assignJson = await assignRes.json();
           if (assignJson.success) {
@@ -128,6 +139,7 @@ export default function UniDashboardPage() {
     const serviceSegments = services.map((s) => ({ key: s._id, label: s.name, icon: <></> }));
     return [
       ...serviceSegments,
+      { key: "profile", label: "Manage Profile", icon: <></> },
       { key: "logout", label: "Logout", icon: <></> },
     ];
   }, [services]);
@@ -152,6 +164,14 @@ export default function UniDashboardPage() {
           <MenuSorting universityId={universityId || ""} vendorId={vendorIdParam || undefined} />
         ) : (
           (() => {
+            if (activeSegment === "profile") {
+              return (
+                <div style={{ padding: '2rem' }}>
+                  <UniProfile />
+                </div>
+              );
+            }
+
             // Service-specific content mapping
             const currentService = services.find((s) => s._id === activeSegment);
             const name = currentService?.name?.toLowerCase() || "";
@@ -226,4 +246,4 @@ export default function UniDashboardPage() {
       </main>
     </div>
   );
-} 
+}

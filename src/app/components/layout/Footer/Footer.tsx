@@ -16,7 +16,7 @@ const Footer: React.FC = () => {
               Connecting campus communities with their favorite food vendors.
             </p>
             <div className="flex space-x-4">
-              <a
+              {/* <a
                 href="#"
                 aria-label="Facebook"
                 className="text-gray-300 hover:text-white transition-colors"
@@ -34,7 +34,7 @@ const Footer: React.FC = () => {
                 >
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
                 </svg>
-              </a>
+              </a> */}
               <a
                 href="https://x.com/KAMPYN_HQ"
                 aria-label="X (formerly Twitter)"
@@ -74,7 +74,7 @@ const Footer: React.FC = () => {
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                 </svg>
               </a>
-              <a
+              {/* <a
                 href="#"
                 aria-label="LinkedIn"
                 className="text-gray-300 hover:text-white transition-colors"
@@ -94,7 +94,7 @@ const Footer: React.FC = () => {
                   <rect x="2" y="9" width="4" height="12" />
                   <circle cx="4" cy="4" r="2" />
                 </svg>
-              </a>
+              </a> */}
             </div>
           </div>
 
@@ -213,7 +213,7 @@ const Footer: React.FC = () => {
               <h4 className="text-sm font-semibold mb-2 text-gray-300">
                 Download Our App
               </h4>
-              <div className="flex space-x-2">
+              {/* <div className="flex space-x-2">
                 <a
                   href="#"
                   className="border border-gray-500 rounded px-3 py-1 text-xs flex items-center hover:bg-bitesbay-accent transition-colors"
@@ -257,7 +257,7 @@ const Footer: React.FC = () => {
                   </svg>
                   Play Store
                 </a>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -266,6 +266,9 @@ const Footer: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-400 mb-4 md:mb-0">
               &copy; {new Date().getFullYear()} KAMPYN. All rights reserved.
+            </p>
+            <p className="text-sm text-gray-400 mb-4 md:mb-0">
+              An official EXSOLVIA product.
             </p>
             <div className="flex space-x-4">
               <a

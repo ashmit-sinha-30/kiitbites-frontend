@@ -1,6 +1,6 @@
- "use client";
+"use client";
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import styles from "./styles/activeorder.module.scss";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -53,6 +53,24 @@ interface User {
   name: string;
 }
 
+// Get auth token
+const getAuthToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("token");
+  }
+  return null;
+};
+
+// Configure axios with auth header
+const getAuthConfig = () => {
+  const token = getAuthToken();
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+};
+
 const ActiveOrdersPageContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -63,24 +81,6 @@ const ActiveOrdersPageContent: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Get auth token
-  const getAuthToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
-    }
-    return null;
-  };
-
-  // Configure axios with auth header
-  const getAuthConfig = () => {
-    const token = getAuthToken();
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-  };
 
   // Fetch user details
   useEffect(() => {
@@ -98,9 +98,10 @@ const ActiveOrdersPageContent: React.FC = () => {
         );
         setUser(response.data);
       } catch (error) {
-        console.error("Error fetching user details:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           router.push("/login");
+        } else {
+          console.error("Error fetching user details:", error);
         }
       }
     };
@@ -117,9 +118,10 @@ const ActiveOrdersPageContent: React.FC = () => {
         );
         setColleges(response.data);
       } catch (error) {
-        console.error("Error fetching colleges:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           router.push("/login");
+        } else {
+          console.error("Error fetching colleges:", error);
         }
       }
     };
@@ -141,9 +143,10 @@ const ActiveOrdersPageContent: React.FC = () => {
         console.log('Active orders response:', response.data);
         setActiveOrders(response.data.orders || []);
       } catch (error) {
-        console.error("Error fetching active orders:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           router.push("/login");
+        } else {
+          console.error("Error fetching active orders:", error);
         }
       } finally {
         setLoading(false);
@@ -246,44 +249,32 @@ const ActiveOrdersPageContent: React.FC = () => {
       </div>
 
       <div className={styles.dropdownContainer} ref={dropdownRef}>
-        <button
-          className={styles.dropdownButton}
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          aria-expanded={isDropdownOpen}
-        >
-          <span>
-            {selectedCollege ? selectedCollege.fullName : "Select your college"}
-          </span>
-          <ChevronDown
-            size={20}
-            style={{
-              transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease",
-            }}
+        <div className={styles.collegeField}>
+          <input
+            name="college"
+            value={selectedCollege ? selectedCollege.fullName : ""}
+            readOnly
+            placeholder="Select your college"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           />
-        </button>
-
-        {isDropdownOpen && (
-          <div className={styles.dropdownMenu}>
-            <button
-              className={styles.dropdownItem}
-              onClick={() => handleCollegeSelect(null)}
-            >
-              <span>All Colleges</span>
-              <ChevronRight size={16} />
-            </button>
+          <ChevronDown
+            className={`${styles.dropdownIcon} ${isDropdownOpen ? styles.open : ''}`}
+            size={20}
+          />
+          <ul className={`${styles.collegeList} ${isDropdownOpen ? styles.show : ''}`}>
+            <li onClick={() => handleCollegeSelect(null)}>
+              All Colleges
+            </li>
             {colleges.map((college) => (
-              <button
+              <li
                 key={college._id}
-                className={styles.dropdownItem}
                 onClick={() => handleCollegeSelect(college)}
               >
-                <span>{college.fullName}</span>
-                <ChevronRight size={16} />
-              </button>
+                {college.fullName}
+              </li>
             ))}
-          </div>
-        )}
+          </ul>
+        </div>
       </div>
 
       <div className={styles.contentSection}>
@@ -300,7 +291,7 @@ const ActiveOrdersPageContent: React.FC = () => {
           <div className={styles.emptyState}>
             <h2>No active orders found</h2>
             <p>You don&apos;t have any active orders at the moment. Start ordering to see your active orders here!</p>
-            <button 
+            <button
               className={styles.homeButton}
               onClick={() => router.push('/')}
             >
@@ -313,12 +304,28 @@ const ActiveOrdersPageContent: React.FC = () => {
               console.log('Order vendor data:', order.vendorId);
               return (
                 <div key={order._id} className={styles.orderCard}>
-                  <div className={styles.orderHeader}>
-                    <div className={styles.orderInfo}>
-                      <h3 className={styles.orderId}>Order #{order.orderNumber}</h3>
-                      <p className={styles.orderDate}>{formatDate(order.createdAt)}</p>
+                  <div className={styles.cardLeft}>
+                    <div className={styles.orderHeader}>
+                      <div className={styles.orderInfo}>
+                        <h3 className={styles.orderId}>Order #{order.orderNumber}</h3>
+                        <p className={styles.orderDate}>{formatDate(order.createdAt)}</p>
+                      </div>
+                      <div className={styles.badgeRow}>
+                        <span
+                          className={styles.orderStatus}
+                          style={{ backgroundColor: getStatusColor(order.status) }}
+                        >
+                          {order.status}
+                        </span>
+                        <span className={styles.orderType}>
+                          {order.orderType}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={styles.vendorSource}>
                       {order.vendorId && (
-                        <div className={styles.orderSource}>
+                        <>
                           <p className={styles.vendorName}>
                             <strong>Vendor:</strong> {order.vendorId.fullName || "Unknown Vendor"}
                           </p>
@@ -327,23 +334,10 @@ const ActiveOrdersPageContent: React.FC = () => {
                               <strong>College:</strong> {order.vendorId.college.fullName || "Unknown College"}
                             </p>
                           )}
-                        </div>
+                        </>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <span 
-                        className={styles.orderStatus}
-                        style={{ backgroundColor: getStatusColor(order.status) }}
-                      >
-                        {order.status}
-                      </span>
-                      <span className={styles.orderType}>
-                        {order.orderType}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className={styles.orderDetails}>
                     <div className={styles.collectorInfo}>
                       <h4 className={styles.collectorName}>{order.collectorName}</h4>
                       <p className={styles.collectorPhone}>{order.collectorPhone}</p>
@@ -351,7 +345,9 @@ const ActiveOrdersPageContent: React.FC = () => {
                         <p className={styles.address}>{order.address}</p>
                       )}
                     </div>
+                  </div>
 
+                  <div className={styles.cardRight}>
                     <div className={styles.itemsList}>
                       {order.items.map((item, index) => (
                         <div key={index} className={styles.itemCard}>
@@ -362,16 +358,18 @@ const ActiveOrdersPageContent: React.FC = () => {
                             </p>
                           </div>
                           <span className={styles.itemQuantity}>
-                            {item.quantity}
+                            x{item.quantity}
                           </span>
                         </div>
                       ))}
                     </div>
 
-                    <div className={styles.orderTotal}>
-                      <p className={styles.totalAmount}>
-                        Total: ₹{order.total}
-                      </p>
+                    <div className={styles.orderFooter}>
+                      <div className={styles.orderTotal}>
+                        <p className={styles.totalAmount}>
+                          Total: ₹{order.total}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

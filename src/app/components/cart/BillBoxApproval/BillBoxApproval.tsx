@@ -28,27 +28,27 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
       setLoading(true);
       try {
         console.log("🔄 Fetching charges and delivery settings for userId:", userId);
-        
+
         // Get user's cart to find vendorId
         const cartResponse = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart/${userId}`,
           { withCredentials: true }
         );
-        
+
         console.log("📦 Cart response:", cartResponse.data);
-        
+
         if (cartResponse.data.vendorId) {
           const vendorId = cartResponse.data.vendorId;
-          
+
           // Fetch vendor delivery settings
           try {
             const deliverySettingsResponse = await axios.get(
               `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/vendor/${vendorId}/delivery-settings`,
               { withCredentials: true }
             );
-            
+
             console.log("🚚 Delivery settings response:", deliverySettingsResponse.data);
-            
+
             if (deliverySettingsResponse.data.success) {
               setVendorDeliverySettings(deliverySettingsResponse.data.data);
             }
@@ -56,24 +56,24 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
             console.error("❌ Failed to fetch delivery settings:", error);
             setVendorDeliverySettings({ offersDelivery: true, deliveryPreparationTime: 30 });
           }
-          
+
           // Get vendor to find university
           const vendorResponse = await axios.get(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}`,
             { withCredentials: true }
           );
-          
+
           console.log("🏪 Vendor response:", vendorResponse.data);
-          
+
           if (vendorResponse.data.uniID) {
             // Get university charges
             const chargesResponse = await axios.get(
               `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${vendorResponse.data.uniID}`,
               { withCredentials: true }
             );
-            
+
             console.log("💰 Charges response:", chargesResponse.data);
-            
+
             setCharges({
               packingCharge: chargesResponse.data.packingCharge,
               deliveryCharge: chargesResponse.data.deliveryCharge,
@@ -113,9 +113,9 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
   const packingCharge = charges.packingCharge ?? 5;
   const deliveryCharge = charges.deliveryCharge ?? 50;
   const platformFee = charges.platformFee ?? 2;
-  
+
   const itemTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const packaging = orderType !== "dinein" 
+  const packaging = orderType !== "dinein"
     ? packableItems.reduce((sum, i) => sum + packingCharge * i.quantity, 0)
     : 0;
   const delivery = orderType === "delivery" ? deliveryCharge : 0;
@@ -185,7 +185,7 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
       {/* Estimated Preparation Time at the top */}
       {vendorDeliverySettings && (
         <div className={styles.preparationTime} style={{ marginBottom: '0.5rem' }}>
-          <span>Estimated preparation time</span> 
+          <span>Estimated preparation time</span>
           <span>{vendorDeliverySettings.deliveryPreparationTime} minutes</span>
         </div>
       )}
@@ -207,8 +207,8 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
               {t === "takeaway"
                 ? "Takeaway"
                 : t === "delivery"
-                ? "Delivery"
-                : "Dine In"}
+                  ? "Delivery"
+                  : "Dine In"}
             </button>
           ))}
       </div>
@@ -224,8 +224,15 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
         className={styles.input}
         placeholder="Phone"
         type="tel"
+        maxLength={10}
+        pattern="[0-9]{10}"
         value={phone}
-        onChange={(e) => setPhone(e.target.value)}
+        onChange={(e) => {
+          const val = e.target.value.replace(/\D/g, "");
+          if (val.length <= 10) {
+            setPhone(val);
+          }
+        }}
         required
       />
 
@@ -241,51 +248,51 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
 
       <div className={styles.bill}>
         <div className={styles.items}>
-        {items.map((i) => (
-          <div key={i._id} className={styles.line}>
-            <span>
-              {i.name} ×{i.quantity}
-            </span>
-            <span>₹{i.price * i.quantity}</span>
-          </div>
-        ))}
-        </div>
-        
-      <div className={styles.totalPack}>
-        {orderType !== "dinein" && packableItems.length > 0 && (
-          <>
-            {packableItems.map((item) => (
-              <div key={item._id} className={styles.extra}>
-                <span>Packaging - {item.name}</span>
-                <span>₹{packingCharge * item.quantity}</span>
-              </div>
-            ))}
-            <div className={styles.extra}>
-              <span>Total Packaging ({packableItems.length} item{packableItems.length > 1 ? 's' : ''})</span>
-              <span>₹{packaging}</span>
+          {items.map((i) => (
+            <div key={i._id} className={styles.line}>
+              <span>
+                {i.name} ×{i.quantity}
+              </span>
+              <span>₹{i.price * i.quantity}</span>
             </div>
-          </>
-        )}
-        
-        {orderType === "delivery" && (
+          ))}
+        </div>
+
+        <div className={styles.totalPack}>
+          {orderType !== "dinein" && packableItems.length > 0 && (
+            <>
+              {packableItems.map((item) => (
+                <div key={item._id} className={styles.extra}>
+                  <span>Packaging - {item.name}</span>
+                  <span>₹{packingCharge * item.quantity}</span>
+                </div>
+              ))}
+              <div className={styles.extra}>
+                <span>Total Packaging ({packableItems.length} item{packableItems.length > 1 ? 's' : ''})</span>
+                <span>₹{packaging}</span>
+              </div>
+            </>
+          )}
+
+          {orderType === "delivery" && (
+            <div className={styles.extra}>
+              <span>Delivery Charge</span>
+              <span>₹{delivery}</span>
+            </div>
+          )}
+
           <div className={styles.extra}>
-            <span>Delivery Charge</span>
-            <span>₹{delivery}</span>
+            <span>Platform Fee</span>
+            <span>₹{platformFee}</span>
           </div>
-        )}
 
-        <div className={styles.extra}>
-          <span>Platform Fee</span>
-          <span>₹{platformFee}</span>
+          <div className={styles.divider} />
+
+          <div className={styles.total}>
+            <strong>Total</strong>
+            <strong>₹{grandTotal}</strong>
+          </div>
         </div>
-
-        <div className={styles.divider} />
-
-        <div className={styles.total}>
-          <strong>Total</strong>
-          <strong>₹{grandTotal}</strong>
-        </div>
-      </div>
       </div>
 
       <button type="submit" className={styles.button}>

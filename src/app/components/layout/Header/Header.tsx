@@ -6,13 +6,13 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { IoMdSearch } from "react-icons/io";
-import { IoHelp, IoPersonOutline } from "react-icons/io5";
+import { IoPersonOutline } from "react-icons/io5";
 import { PiShoppingCartSimpleBold } from "react-icons/pi";
 import { FaBars } from "react-icons/fa";
 import { RxCross2 } from "react-icons/rx";
 import { LuArrowUpRight } from "react-icons/lu";
 import { FaUserCircle } from "react-icons/fa";
-import { 
+import {
   HiOutlineUser,
   HiOutlineArrowRightOnRectangle
 } from "react-icons/hi2";
@@ -203,13 +203,13 @@ const Header: React.FC<HeaderProps> = ({
     // Allow Ctrl+Click (or Cmd+Click on Mac) to open in new tab
     // Next.js Link handles this automatically, but we need to avoid closing dropdown
     const isModifierClick = e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1;
-    
+
     if (isModifierClick) {
       // Let the browser and Next.js Link handle modifier clicks naturally
       // Don't close dropdown, don't prevent default
       return;
     }
-    
+
     // Only close dropdown on regular left clicks
     setShowDropdown(false);
   }, []);
@@ -260,15 +260,14 @@ const Header: React.FC<HeaderProps> = ({
                 <div className={styles.menuBox}>
                   <Link
                     href="/search"
-                    className={`${styles.navItem} ${
-                      pathname === "/search" ? styles.activeNavItem : ""
-                    }`}
+                    className={`${styles.navItem} ${pathname === "/search" ? styles.activeNavItem : ""
+                      }`}
                     onClick={handleLinkClick}
                   >
                     <IoMdSearch size={24} />
                     <span>Search</span>
                   </Link>
-                  <Link
+                  {/* <Link
                     href="/help"
                     className={`${styles.navItem} ${
                       pathname === "/help" ? styles.activeNavItem : ""
@@ -277,14 +276,13 @@ const Header: React.FC<HeaderProps> = ({
                   >
                     <IoHelp size={24} />
                     <span>Help</span>
-                  </Link>
+                  </Link> */}
                   <Link
                     href={userFullName ? "/profile" : "/login"}
-                    className={`${styles.navItem} ${
-                      pathname === "/profile" || pathname === "/login"
+                    className={`${styles.navItem} ${pathname === "/profile" || pathname === "/login"
                         ? styles.activeNavItem
                         : ""
-                    }`}
+                      }`}
                     onClick={handleLinkClick}
                   >
                     <IoPersonOutline size={24} />
@@ -292,9 +290,8 @@ const Header: React.FC<HeaderProps> = ({
                   </Link>
                   <Link
                     href="/cart"
-                    className={`${styles.navItem} ${styles.cartItem} ${
-                      pathname === "/cart" ? styles.activeNavItem : ""
-                    }`}
+                    className={`${styles.navItem} ${styles.cartItem} ${pathname === "/cart" ? styles.activeNavItem : ""
+                      }`}
                     onClick={handleCartClick}
                   >
                     <div className={styles.cartIconWrapper}>
@@ -314,14 +311,13 @@ const Header: React.FC<HeaderProps> = ({
             <div className={styles.menuBox}>
               <Link
                 href="/search"
-                className={`${styles.navItem} ${
-                  pathname === "/search" ? styles.activeNavItem : ""
-                }`}
+                className={`${styles.navItem} ${pathname === "/search" ? styles.activeNavItem : ""
+                  }`}
               >
                 <IoMdSearch size={24} />
                 <span>Search</span>
               </Link>
-              <Link
+              {/* <Link
                 href="/help"
                 className={`${styles.navItem} ${
                   pathname === "/help" ? styles.activeNavItem : ""
@@ -329,23 +325,21 @@ const Header: React.FC<HeaderProps> = ({
               >
                 <IoHelp size={24} />
                 <span>Help</span>
-              </Link>
+              </Link> */}
               <Link
                 href={userFullName ? "/profile" : "/login"}
-                className={`${styles.navItem} ${
-                  pathname === "/profile" || pathname === "/login"
+                className={`${styles.navItem} ${pathname === "/profile" || pathname === "/login"
                     ? styles.activeNavItem
                     : ""
-                }`}
+                  }`}
               >
                 <IoPersonOutline size={24} />
                 <span>{userFullName || "Login"}</span>
               </Link>
               <Link
                 href="/cart"
-                className={`${styles.navItem} ${styles.cartItem} ${
-                  pathname === "/cart" ? styles.activeNavItem : ""
-                }`}
+                className={`${styles.navItem} ${styles.cartItem} ${pathname === "/cart" ? styles.activeNavItem : ""
+                  }`}
                 onClick={handleCartClick}
               >
                 <div className={styles.cartIconWrapper}>

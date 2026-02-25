@@ -1,14 +1,22 @@
 'use client';
 
-
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import dynamic from 'next/dynamic';
 import styles from './styles/vendorLogin.module.scss';
 import { getBackendUrl } from '@/utils/backendCheck';
+
+// Lazy load ToastContainer to reduce initial bundle size
+const ToastContainer = dynamic(
+  () => import("react-toastify").then((mod) => mod.ToastContainer),
+  { ssr: false }
+);
+
+// Import toast function separately (lightweight)
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const VendorLoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -19,12 +27,9 @@ const VendorLoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,79 +89,68 @@ const VendorLoginPage: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.box}>
-        <h1>Login</h1>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            name="identifier"
-            placeholder="Email or Phone"
-            value={formData.identifier}
-            onChange={handleChange}
-            required
-            style={{ color: "black" }}
-          />
-          <div className={styles.passwordField}>
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              style={{ color: "black" }}
-            />
-            <span
-              className={styles.eyeIcon}
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <FaEye /> : <FaEyeSlash />}
-            </span>
-          </div>
-          <div className={styles.forgotPassword}>
-            <Link href="/vendor-forgot-password">Forgot Password?</Link>
-          </div>
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-        {/* <div className={styles.divider}>
-          <span>OR</span>
+      <div className={styles.authWrapper}>
+        <div className={styles.box}>
+          <h1>Vendor Login</h1>
+          <form onSubmit={handleSubmit}>
+            <div className={styles.fieldGroup}>
+              <label htmlFor="identifier">Your email or phone</label>
+              <input
+                id="identifier"
+                type="text"
+                name="identifier"
+                placeholder="Enter your email or phone"
+                value={formData.identifier}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className={styles.passwordField}>
+              <label htmlFor="password">Enter password</label>
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+              />
+              <span
+                className={styles.eyeIcon}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEye /> : <FaEyeSlash />}
+              </span>
+            </div>
+            <div className={styles.forgotPassword}>
+              <Link href="/vendor-forgot-password">Forgot Password?</Link>
+            </div>
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+              {!isLoading && <span className={styles.buttonArrow}>→</span>}
+            </button>
+          </form>
         </div>
-        <div
-          style={{
-            backgroundColor: "#1e90fc",
-            color: "black",
-            padding: "12px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "1em",
-            textAlign: "center",
-            margin: "10px 0",
-          }}
-          className={styles.googleSignUp}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.backgroundColor = "#01796f")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.backgroundColor = "#1e90fc")
-          }
-        >
-          <GoogleLogin />
-        </div> */}
+
+        <div className={styles.infoPanel}>
+          <div className={styles.badge}>Welcome back</div>
+          <h2 className={styles.heading}>
+            Login to{" "}
+            <span className={styles.highlight}>your vendor dashboard</span>
+          </h2>
+          <p className={styles.subtext}>
+            Access your vendor account, manage your menu, track orders, and grow your campus business in just a few taps.
+          </p>
+          <div className={styles.infoList}>
+            <p className={styles.infoItem}>• Manage your menu and items</p>
+            <p className={styles.infoItem}>• Track active and past orders</p>
+            <p className={styles.infoItem}>• View analytics and insights</p>
+          </div>
+        </div>
       </div>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
+
+      <ToastContainer />
     </div>
   );
 };

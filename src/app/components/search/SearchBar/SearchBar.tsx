@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaArrowLeft, FaChevronDown } from "react-icons/fa";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import DishCard from "../../food/DishCard/DishCard";
+import DishListItemV2 from "../../food/DishListItem/DishListItemV2";
+import { Store, X, CheckCircle2 } from "lucide-react";
 import styles from "./SearchBar.module.scss";
 import { useSearchCart } from '../../context/SearchCartContext';
-import SearchQuantityControls from '../../search/SearchQuantityControls/SearchQuantityControls';
+import { FoodItem as SharedFoodItem } from "@/app/home/[slug]/types";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -69,6 +70,7 @@ export interface SearchResult {
   isVendor?: boolean;
   kind: string;
   quantity: number;
+  source?: string;
 }
 
 interface SearchResponse {
@@ -96,7 +98,7 @@ interface Vendor {
   };
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ 
+const SearchBar: React.FC<SearchBarProps> = ({
   hideUniversityDropdown = false,
   placeholder = "Search for food or vendors...",
   vendorId,
@@ -107,11 +109,42 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [query, setQuery] = useState<string>("");
   const [universities, setUniversities] = useState<University[]>([]);
   const [selectedUniversity, setSelectedUniversity] = useState<string>("");
+  const [showUniDropdown, setShowUniDropdown] = useState<boolean>(false);
+  const uniDropdownRef = useRef<HTMLDivElement>(null);
   const [popularFoods, setPopularFoods] = useState<FoodItem[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [suggestedItems, setSuggestedItems] = useState<SearchResult[]>([]);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [availableVendors, setAvailableVendors] = useState<Vendor[]>([]);
+  // const [selectedUniversityInternal, setSelectedUniversityInternal] = useState<string>("");
+
+  // Normalize name for matching
+  const normalizeName = (name: string) =>
+    name
+      ?.toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "";
+
+  const handleBack = () => {
+    if (vendorId) {
+      // Use the local query if the user has typed something, 
+      // otherwise fall back to the search param from the URL
+      const backQuery = query || searchParams.get("search") || "";
+      router.push(`/search?search=${encodeURIComponent(backQuery)}`);
+      return;
+    }
+
+    if (isAuthenticated && (selectedUniversity || universityId)) {
+      const targetUniId = selectedUniversity || universityId;
+      const uni = universities.find(u => u._id === targetUniId);
+      if (uni) {
+        const slug = normalizeName(uni.fullName);
+        router.push(`/home/${slug}?cid=${uni._id}`);
+        return;
+      }
+    }
+    router.push("/");
+  };
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
@@ -119,6 +152,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const { searchCartItems, addToSearchCart } = useSearchCart();
   const [selectedItem, setSelectedItem] = useState<SearchResult | null>(null);
   const lastSearchedQuery = useRef<string>("");
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -129,7 +163,22 @@ const SearchBar: React.FC<SearchBarProps> = ({
     checkAuth();
     // Add event listener for storage changes
     window.addEventListener('storage', checkAuth);
-    return () => window.removeEventListener('storage', checkAuth);
+
+    // Add click outside handler for custom dropdown
+    const handleClickOutside = (event: MouseEvent) => {
+      if (uniDropdownRef.current && !uniDropdownRef.current.contains(event.target as Node)) {
+        setShowUniDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -139,8 +188,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
   }, [universityId]);
 
   useEffect(() => {
-    setQuery(searchParams.get("search") || "");
-  }, [searchParams]);
+    // Sync query from URL - only if NOT on vendor page
+    // This provides a "clear view" initially when entering a vendor
+    if (!vendorId) {
+      const q = searchParams.get("search") || "";
+      setQuery(q);
+    }
+  }, [searchParams, vendorId]); // Stable dependency count
 
   // Search foods and vendors
   const fetchSearchResults = useCallback(async (searchText: string) => {
@@ -148,7 +202,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     if (vendorId) {
       try {
         const response = await fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}`);
-        
+
         if (!response.ok) {
           console.error("Vendor search failed:", response.status);
           setSearchResults([]);
@@ -167,7 +221,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           if (onSearchResults) onSearchResults([]);
           return;
         }
-        
+
         if (!data.success) {
           console.error("Vendor data fetch failed:", data.message);
           setSearchResults([]);
@@ -217,35 +271,35 @@ const SearchBar: React.FC<SearchBarProps> = ({
             }));
           setSearchResults(results);
           setSuggestedItems([]);
-                  // Ensure items have the correct structure for vendor page
-        const vendorItems = allVendorItems
-          .filter(item => item.itemId && item.itemId !== '') // Filter out items without valid itemId
-          .map(item => ({
+          // Ensure items have the correct structure for vendor page
+          const vendorItems = allVendorItems
+            .filter(item => item.itemId && item.itemId !== '') // Filter out items without valid itemId
+            .map(item => ({
+              itemId: item.itemId,
+              name: item.name,
+              type: item.type,
+              price: item.price,
+              image: item.image,
+              quantity: item.quantity,
+              isAvailable: item.isAvailable
+              // vendorId intentionally omitted
+            }));
+          console.log('DEBUG: Filtered vendor items:', vendorItems.map(item => ({
             itemId: item.itemId,
             name: item.name,
-            type: item.type,
-            price: item.price,
-            image: item.image,
-            quantity: item.quantity,
-            isAvailable: item.isAvailable
-            // vendorId intentionally omitted
-          }));
-        console.log('DEBUG: Filtered vendor items:', vendorItems.map(item => ({
-          itemId: item.itemId,
-          name: item.name,
-          type: item.type
-        })));
-        if (onSearchResults) onSearchResults(vendorItems);
+            type: item.type
+          })));
+          if (onSearchResults) onSearchResults(vendorItems);
           return;
         }
 
         const searchLower = searchText.toLowerCase();
-        const exactMatches = allVendorItems.filter(item => 
+        const exactMatches = allVendorItems.filter(item =>
           item.name.toLowerCase().includes(searchLower)
         );
 
         const matchedTypes = new Set(exactMatches.map(item => item.type));
-        const suggestions = allVendorItems.filter(item => 
+        const suggestions = allVendorItems.filter(item =>
           matchedTypes.has(item.type) && !exactMatches.some(match => match.itemId === item.itemId)
         );
 
@@ -284,7 +338,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             vendorId: vendorId
           }));
         setSuggestedItems(suggestedResults);
-        
+
         console.log('DEBUG: Passing to vendor page:', exactMatches.map(item => ({
           itemId: item.itemId,
           name: item.name,
@@ -367,18 +421,20 @@ const SearchBar: React.FC<SearchBarProps> = ({
   // Trigger search when query is set from URL params (e.g., on page refresh)
   useEffect(() => {
     const searchQuery = searchParams.get("search") || "";
-    
+
     // Skip if this is the same query we just searched (prevents duplicate searches)
     if (searchQuery === lastSearchedQuery.current) {
       return;
     }
-    
+
     if (searchQuery.trim()) {
-      // For vendor pages, search immediately
+      // For vendor pages, we DON'T trigger search automatically from URL params
+      // unless the user has actually typed something (which is handled by handleInputChange)
+      // This ensures they see the full menu initially
       if (vendorId) {
-        lastSearchedQuery.current = searchQuery;
-        fetchSearchResults(searchQuery);
-      } 
+        // Just clear results to be safe, or do nothing
+        return;
+      }
       // For normal search, wait until university is selected
       else if (selectedUniversity || hideUniversityDropdown) {
         lastSearchedQuery.current = searchQuery;
@@ -391,7 +447,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
       setSuggestedItems([]);
       if (onSearchResults) onSearchResults([]);
     }
-  }, [searchParams, selectedUniversity, vendorId, hideUniversityDropdown, fetchSearchResults, onSearchResults]);
+  }, [
+    searchParams,
+    selectedUniversity,
+    vendorId,
+    hideUniversityDropdown,
+    fetchSearchResults,
+    onSearchResults
+  ]);
 
   // Load universities and user data
   useEffect(() => {
@@ -402,7 +465,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         const res = await fetch(`${BACKEND_URL}/api/user/auth/list`);
         const data = await res.json();
         setUniversities(data);
-        
+
         // If user is not authenticated, select the first college
         if (!isAuthenticated && data.length > 0) {
           setSelectedUniversity(data[0]._id);
@@ -422,7 +485,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         const res = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-    
+
         const user = await res.json();
         if (user?.uniID) {
           setSelectedUniversity(user.uniID);
@@ -444,26 +507,26 @@ const SearchBar: React.FC<SearchBarProps> = ({
   // Load popular foods
   useEffect(() => {
     if (!selectedUniversity || hideUniversityDropdown) return;
-  
+
     const fetchPopularFoods = async () => {
       try {
         const [retailRes, produceRes] = await Promise.all([
           fetch(`${BACKEND_URL}/api/item/retail/uni/${selectedUniversity}`),
           fetch(`${BACKEND_URL}/api/item/produce/uni/${selectedUniversity}`),
         ]);
-  
+
         const [retailData, produceData] = await Promise.all([
           retailRes.json(),
           produceRes.json(),
         ]);
-  
+
         const combined = [...retailData.items, ...produceData.items];
         setPopularFoods(combined.slice(0, 24));
       } catch (error) {
         console.error("Error fetching popular foods:", error);
       }
     };
-  
+
     fetchPopularFoods();
   }, [selectedUniversity, hideUniversityDropdown]);
 
@@ -472,28 +535,45 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setQuery(value);
     lastSearchedQuery.current = value;
     router.push(`?search=${value}`, undefined);
-    fetchSearchResults(value);
+
+    // Debounce search
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    searchTimeout.current = setTimeout(() => {
+      fetchSearchResults(value);
+    }, 300); // 300ms debounce
   };
 
   const handleSelectSuggestion = async (foodName: string) => {
+    // 1. Update UI state immediately
     setQuery(foodName);
     lastSearchedQuery.current = foodName;
+
+    // 2. Clear any pending debounced searches
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    // 3. Trigger search and navigation
     router.push(`?search=${foodName}`, undefined);
     fetchSearchResults(foodName);
 
-    await fetch(`${BACKEND_URL}/api/increase-search`, {
+    // Track analytics in background without blocking UI
+    fetch(`${BACKEND_URL}/api/increase-search`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ foodName }),
-    });
+    }).catch(err => console.error("Failed to track search:", err));
   };
 
-  const handleUniversityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedUniversity(e.target.value);
-  };
 
   const handleVendorClick = (vendorId: string) => {
-    router.push(`/vendor/${vendorId}`);
+    const url = query
+      ? `/vendor/${vendorId}?search=${encodeURIComponent(query)}`
+      : `/vendor/${vendorId}`;
+    router.push(url);
   };
 
   const handleAddToCart = async (item: SearchResult) => {
@@ -542,7 +622,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       return;
     }
 
-    // If not in vendor mode, show vendor selection modal
+    // If not in vendor mode, show vendor selection modal or check existing cart vendor
     try {
       // Fetch vendors for the selected item
       const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id || item._id || item.itemId}`);
@@ -550,12 +630,54 @@ const SearchBar: React.FC<SearchBarProps> = ({
         toast.error('Failed to fetch vendors for this item');
         return;
       }
-      const vendors = await response.json();
-      setAvailableVendors(vendors);
+      const fetchedVendors: Vendor[] = await response.json();
+
+      // Check if cart has items from another vendor
+      const confirmedVendorId = searchCartItems.length > 0 ? searchCartItems[0].vendorId : null;
+
+      if (confirmedVendorId) {
+        const vendor = fetchedVendors.find(v => v._id === confirmedVendorId);
+        if (vendor) {
+          // Item available in current vendor -> Add directly
+          const token = localStorage.getItem("token");
+          if (!token) {
+            toast.error('Please login to add items to cart');
+            return;
+          }
+          const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!userRes.ok) {
+            toast.error('Failed to get user info');
+            return;
+          }
+          const user = await userRes.json();
+          await addToSearchCart(user._id, item, confirmedVendorId);
+          return;
+        } else {
+          // Item NOT available in current vendor -> Show error "Item not available in {vendorName}"
+          try {
+            const vRes = await fetch(`${BACKEND_URL}/api/vendor/${confirmedVendorId}`);
+            if (vRes.ok) {
+              const vData = await vRes.json();
+              toast.error(`Item not available in ${vData.fullName || vData.name || 'your current vendor'}`);
+            } else {
+              toast.error('Item not available in your current vendor');
+            }
+          } catch {
+            toast.error('Item not available in your current vendor');
+          }
+          return;
+        }
+      }
+
+      // No confirmed vendor -> Show selection modal
+      setAvailableVendors(fetchedVendors);
+      setSelectedVendor(null); // Ensure no auto-selection
       setShowVendorModal(true);
     } catch (error) {
-      console.error('Error fetching vendors:', error);
-      toast.error('Failed to fetch vendors');
+      console.error('Error in handleAddToCart:', error);
+      toast.error('Failed to process request');
     }
   };
 
@@ -584,7 +706,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         return;
       }
       const user = await response.json();
-      
+
       if (!user._id) {
         toast.error('Invalid user data');
         return;
@@ -641,12 +763,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setSuggestedItems([]);
     router.push("?", undefined);
     if (onSearchResults) onSearchResults([]);
-  
+
     if (clearSearch) {
       clearSearch(); // ✅ Call custom clear handler from parent (like VendorPage)
     }
   };
-  
+
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -665,26 +787,49 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <div className={styles.mainContainer}>
         <div className={styles.container}>
           <div className={styles.header}>
+            <button className={styles.backButton} onClick={handleBack} aria-label="Go back">
+              <FaArrowLeft />
+            </button>
             {!hideUniversityDropdown && (
-              <div className={`${styles.selectBar} ${query !== "" ? styles.selectBarHidden : ""}`}>
-                {selectedUniversity ? (
-                  <select
-                    value={selectedUniversity}
-                    onChange={handleUniversityChange}
-                    className={styles.dropdown}
+              <div
+                className={`${styles.selectBar} ${query !== "" ? styles.selectBarHidden : ""}`}
+                ref={uniDropdownRef}
+              >
+                <div className={styles.customDropdown}>
+                  <input
+                    value={
+                      selectedUniversity
+                        ? universities.find((uni) => uni._id === selectedUniversity)?.fullName || "Select College"
+                        : "Select College"
+                    }
+                    readOnly
+                    placeholder="Select College"
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        setShowUniDropdown(!showUniDropdown);
+                      }
+                    }}
+                    className={`${styles.dropdownInput} ${!isAuthenticated ? styles.disabled : ''}`}
                     disabled={!isAuthenticated}
-                  >
+                  />
+                  <FaChevronDown
+                    className={`${styles.dropdownIcon} ${showUniDropdown ? styles.open : ''}`}
+                  />
+                  <ul className={`${styles.dropdownList} ${showUniDropdown ? styles.show : ''}`}>
                     {universities.map((uni) => (
-                      <option key={uni._id} value={uni._id}>
+                      <li
+                        key={uni._id}
+                        onClick={() => {
+                          setSelectedUniversity(uni._id);
+                          setShowUniDropdown(false);
+                        }}
+                        className={selectedUniversity === uni._id ? styles.selected : ''}
+                      >
                         {uni.fullName}
-                      </option>
+                      </li>
                     ))}
-                  </select>
-                ) : (
-                  <select disabled className={styles.dropdown}>
-                    <option>Loading Universities...</option>
-                  </select>
-                )}
+                  </ul>
+                </div>
               </div>
             )}
 
@@ -699,7 +844,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                   className={styles.searchInput}
                 />
                 {query && (
-                  <button 
+                  <button
                     className={styles.clearButton}
                     onClick={handleClearSearch}
                     aria-label="Clear search"
@@ -713,18 +858,37 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
           {query === "" && !hideUniversityDropdown ? (
             <div className={styles.popularChoices}>
-              <h2 className="text-xl font-bold mb-2">Popular Choices</h2>
+              <h2 className="text-xl font-bold mb-6">Popular Choices</h2>
               <div className={styles.popularGrid}>
-                {Array.isArray(popularFoods) && popularFoods.map((food) => (
-                  <div key={food._id} className={styles.foodCard} onClick={() => handleSelectSuggestion(food.name)}>
-                    <DishCard
-                      dishName={food.name}
-                      price={food.price}
-                      image={food.image}
-                      variant="search-result"
-                    />
-                  </div>
-                ))}
+                {Array.isArray(popularFoods) && popularFoods.map((food) => {
+                  // Map FoodItem to DishListItemV2 expected format
+                  const itemForList: SharedFoodItem = {
+                    id: food._id,
+                    title: food.name,
+                    price: food.price,
+                    image: food.image,
+                    description: "",
+                    isVeg: true,
+                    type: food.type as 'retail' | 'produce',
+                    category: food.type,
+                    isSpecial: food.isSpecial,
+                    isAvailable: food.isSpecial === 'true' ? 'Y' : 'Y',
+                    quantity: 10
+                  };
+
+                  return (
+                    <div key={food._id} onClick={() => handleSelectSuggestion(food.name)}>
+                      <DishListItemV2
+                        item={itemForList}
+                        quantity={0}
+                        showActions={false}
+                        onAdd={() => handleSelectSuggestion(food.name)}
+                        onIncrease={() => { }}
+                        onDecrease={() => { }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -733,56 +897,50 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 <div className={styles.resultsGrid}>
                   {searchResults.map((item) => {
                     const quantity = getCartItemQuantity(item._id || item.id);
-                    const cartItem = searchCartItems.find(
-                      (cartItem) => cartItem.id === (item._id || item.id)
-                    );
+
+                    if (item.isVendor) {
+                      return (
+                        <div key={item._id || item.id} className={styles.vendorCard}>
+                          <h3 className="font-semibold">{item.name}</h3>
+                          <button
+                            className={styles.checkMenuButton}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleVendorClick(item._id!);
+                            }}
+                          >
+                            Check Menu
+                          </button>
+                        </div>
+
+                      );
+                    }
+
+                    // Map SearchResult to SharedFoodItem
+                    const itemForList: SharedFoodItem = {
+                      id: item._id || item.id,
+                      title: item.name,
+                      price: item.price || 0,
+                      image: item.image || '/images/coffee.jpeg',
+                      description: "",
+                      isVeg: true,
+                      type: item.type as 'retail' | 'produce' || 'retail',
+                      category: item.category || item.type || 'retail',
+                      isSpecial: item.isSpecial ? 'true' : 'false',
+                      isAvailable: 'Y',
+                      quantity: 10,
+                      source: item.source
+                    };
 
                     return (
-                      <div 
-                        key={item._id} 
-                        className={styles.resultCard}
-                        onClick={() => item.isVendor && item._id ? handleVendorClick(item._id!) : null}
-                      >
-                        {item.isVendor ? (
-                          <div className={styles.vendorCard}>
-                            <h3 className="font-semibold">{item.name}</h3>
-                            <button
-                              className={styles.checkMenuButton}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleVendorClick(item._id!);
-                              }}
-                            >
-                              Check Menu
-                            </button>
-                          </div>
-                        ) : (
-                          <div className={styles.foodCard}>
-                            <DishCard
-                              dishName={item.name}
-                              price={item.price || 0}
-                              image={item.image || '/images/coffee.jpeg'}
-                              variant="search-result"
-                            />
-                          {(item.type || item.subtype) && (
-                            <p className={styles.itemType}>
-                              {item.type}{item.subtype ? ` • ${item.subtype}` : ''}
-                            </p>
-                          )}
-                            {isAuthenticated && (
-                              <SearchQuantityControls
-                                item={{
-                                  id: item._id || item.id,
-                                  name: item.name,
-                                  type: item.type,
-                                  vendorId: cartItem?.vendorId
-                                }}
-                                quantity={quantity}
-                                onAddToCart={() => handleAddToCart(item)}
-                              />
-                            )}
-                          </div>
-                        )}
+                      <div key={item._id || item.id}>
+                        <DishListItemV2
+                          item={itemForList}
+                          quantity={quantity}
+                          onAdd={() => handleAddToCart(item)}
+                          onIncrease={() => handleAddToCart(item)}
+                          onDecrease={() => { }} // SearchCartContext needs decrease support or handle via SearchQuantityControls if kept
+                        />
                       </div>
                     );
                   })}
@@ -791,22 +949,37 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
               {suggestedItems.length > 0 && (
                 <div className={styles.suggestedItems}>
-                  <h2 className="text-xl font-bold mb-4">You may also like</h2>
+                  <h2 className="text-xl font-bold">You may also like</h2>
                   <div className={styles.resultsGrid}>
-                    {suggestedItems.map((item) => (
-                      <div 
-                        key={item._id} 
-                        className={styles.resultCard}
-                        onClick={() => handleSelectSuggestion(item.name)}
-                      >
-                        <DishCard
-                          dishName={item.name}
-                          price={item.price || 0}
-                          image={item.image || '/images/coffee.jpeg'}
-                          variant="search-result"
-                        />
-                      </div>
-                    ))}
+                    {suggestedItems.map((item) => {
+                      const itemForList: SharedFoodItem = {
+                        id: item._id || item.id,
+                        title: item.name,
+                        price: item.price || 0,
+                        image: item.image || '/images/coffee.jpeg',
+                        description: "",
+                        isVeg: true,
+                        type: item.type as 'retail' | 'produce' || 'retail',
+                        category: item.category || item.type || 'retail',
+                        isSpecial: item.isSpecial ? 'true' : 'false',
+                        isAvailable: 'Y',
+                        quantity: 10,
+                        source: item.source
+                      };
+
+                      return (
+                        <div key={item._id || item.id} onClick={() => handleSelectSuggestion(item.name)}>
+                          <DishListItemV2
+                            item={itemForList}
+                            quantity={0}
+                            showActions={false}
+                            onAdd={() => handleSelectSuggestion(item.name)}
+                            onIncrease={() => { }}
+                            onDecrease={() => { }}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -821,47 +994,74 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </div>
       </div>
 
-        {showVendorModal && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-              <h2 className="text-xl font-bold mb-4">Select Vendor</h2>
-              {availableVendors.length === 0 ? (
-                <div className="text-center py-4">Loading vendors...</div>
-              ) : (
-                <div className={styles.vendorList}>
-                  {availableVendors.map((vendor) => (
-                    <div
-                      key={vendor._id}
-                      className={`${styles.vendorItem} ${
-                        selectedVendor?._id === vendor._id ? styles.selected : ""
-                      }`}
-                      onClick={() => handleVendorSelect(vendor)}
-                    >
-                      <h3 className="font-semibold">{vendor.name}</h3>
-                      <p className="text-gray-600">₹{vendor.price}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className={styles.modalButtons}>
-                <button 
-                  className={`${styles.cancelButton} px-4 py-2 border rounded-md mr-2`} 
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={`${styles.confirmButton} px-4 py-2 bg-blue-500 text-white rounded-md ${
-                    !selectedVendor ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  onClick={handleVendorConfirm}
-                  disabled={!selectedVendor}
-                >
-                  Confirm
-                </button>
+      {showVendorModal && (
+        <div className={styles.modalOverlay} onClick={handleCancel}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.vendorModalHeader}>
+              <div className={styles.vendorModalTitleWrapper}>
+                <Store className={styles.vendorModalIcon} size={28} />
+                <h2 className={styles.vendorModalTitle}>Select Vendor</h2>
               </div>
+              <button
+                className={styles.vendorModalCloseButton}
+                onClick={handleCancel}
+                aria-label="Close modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {availableVendors.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading vendors...</p>
+              </div>
+            ) : (
+              <div className={styles.vendorList}>
+                {availableVendors.map((vendor) => (
+                  <div
+                    key={vendor._id}
+                    className={`${styles.vendorCard} ${selectedVendor?._id === vendor._id ? styles.vendorCardSelected : ""
+                      }`}
+                    onClick={() => handleVendorSelect(vendor)}
+                  >
+                    <div className={styles.vendorCardContent}>
+                      <div className={styles.vendorCardInfo}>
+                        <div className={styles.vendorCardIconWrapper}>
+                          <Store className={styles.vendorCardIcon} size={24} />
+                        </div>
+                        <div className={styles.vendorCardDetails}>
+                          <h3 className={styles.vendorCardName}>{vendor.name}</h3>
+                          <div className={styles.vendorCardPriceWrapper}>
+                            <span className={styles.vendorCardPriceLabel}>Price:</span>
+                            <span className={styles.vendorCardPrice}>₹{vendor.price}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {selectedVendor?._id === vendor._id && (
+                        <div className={styles.vendorCardCheck}>
+                          <CheckCircle2 size={24} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className={styles.modalButtons}>
+              <button className={styles.cancelButton} onClick={handleCancel}>
+                Cancel
+              </button>
+              <button
+                className={styles.confirmButton}
+                onClick={handleVendorConfirm}
+                disabled={!selectedVendor}
+              >
+                Confirm Selection
+              </button>
             </div>
           </div>
+        </div>
       )}
     </Suspense>
   );

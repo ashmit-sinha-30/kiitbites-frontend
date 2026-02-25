@@ -27,37 +27,37 @@ const HelpMessage: React.FC<FormProps> = ({
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.fieldGroup}>
                 <label htmlFor="name">Your name</label>
-                <input
+          <input
                   id="name"
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
                   placeholder="Enter your name"
-                  className={styles.input}
-                />
+            className={styles.input}
+          />
               </div>
 
               <div className={styles.fieldGroup}>
                 <label htmlFor="email">Your email</label>
-                <input
+          <input
                   id="email"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
                   placeholder="Enter your email"
-                  className={styles.input}
-                />
+            className={styles.input}
+          />
               </div>
 
               <div className={styles.fieldGroup}>
                 <label htmlFor="message">Message</label>
-                <textarea
+          <textarea
                   id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
+            name="message"
+            value={formData.message}
+            onChange={handleChange}
                   placeholder="How can we help?"
                   className={`${styles.input} ${styles.textarea}`}
                 />
@@ -83,9 +83,9 @@ const HelpMessage: React.FC<FormProps> = ({
                 </span>
                 <span>Submit</span>
               </button>
-            </form>
-          </div>
-        </div>
+        </form>
+      </div>
+    </div>
 
         {/* Right: Info panel */}
         <div className={styles.infoPanel}>

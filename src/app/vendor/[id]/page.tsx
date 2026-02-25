@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import DishCard from "@/app/components/food/DishCard/DishCard";
+import Image from "next/image";
+import { useParams } from "next/navigation";
+import DishListItem from "@/app/components/food/DishListItem/DishListItemV2";
 import SearchBar from "@/app/components/search/SearchBar/SearchBar";
 import styles from "./styles/VendorPage.module.scss";
-import { FaRegHeart } from "react-icons/fa";
-import { FaHeart } from "react-icons/fa";
 import { addToCart, increaseQuantity, decreaseQuantity } from "./utils/cartUtils";
 import { toast } from "react-toastify";
+import { FoodItem } from "@/app/home/[slug]/types";
+
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -30,6 +31,8 @@ interface VendorItem {
 interface VendorData {
   success: boolean;
   foodCourtName: string;
+  image?: string;
+  coverImage?: string;
   data: {
     retailItems: VendorItem[];
     produceItems: VendorItem[];
@@ -59,19 +62,35 @@ interface Favourite {
 
 const VendorPage = () => {
   const { id } = useParams();
+
+  // Helper to map VendorItem to FoodItem for DishListItemV2
+  const mapToFoodItem = (item: VendorItem) => ({
+    id: item.itemId,
+    title: item.name,
+    description: item.description,
+    image: item.image || '/images/placeholder_food.jpg',
+    category: item.category || 'retail',
+    type: item.type || 'retail',
+    subtype: item.subtype,
+    isSpecial: 'N', // Default
+    price: item.price,
+    vendorId: item.vendorId || (id as string),
+    quantity: item.quantity,
+    isAvailable: item.isAvailable,
+    isVeg: item.isVeg
+  });
   console.log('[DEBUG] useParams id:', id, 'type:', typeof id);
-  const router = useRouter();
   const [vendorData, setVendorData] = useState<VendorData | null>(null);
   const [universityId, setUniversityId] = useState<string>("");
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchResults, setSearchResults] = useState<VendorItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  
+
   // Sort order state
   const [typeOrder, setTypeOrder] = useState<Array<{ category: string; type: string; sortIndex: number }>>([]);
   const [subtypeOrder, setSubtypeOrder] = useState<Array<{ category: string; type: string; subtype: string; sortIndex: number }>>([]);
-  
+
   // Filter states
   const [vegFilter, setVegFilter] = useState<"all" | "veg" | "non-veg">("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "retail" | "produce">("all");
@@ -113,22 +132,22 @@ const VendorPage = () => {
             ...item,
             category: "produce" as const
           }));
-          
+
           // Fetch sort order (vendor-specific first, then university-wide)
           if (vendorData.uniID) {
             setUniversityId(vendorData.uniID);
-            
+
             try {
               // Try vendor-specific sort order first
               let sortRes = await fetch(
                 `${BACKEND_URL}/api/menu-sort/order?uniId=${vendorData.uniID}&vendorId=${id}`
               );
               let sortData = null;
-              
+
               if (sortRes.ok) {
                 sortData = await sortRes.json();
               }
-              
+
               // If vendor-specific doesn't exist or failed, try university-wide
               if (!sortData || !sortData.success) {
                 sortRes = await fetch(
@@ -138,7 +157,7 @@ const VendorPage = () => {
                   sortData = await sortRes.json();
                 }
               }
-              
+
               if (sortData && sortData.success && sortData.data) {
                 // Store type and subtype order for later use
                 if (sortData.data.typeOrder) {
@@ -147,14 +166,14 @@ const VendorPage = () => {
                 if (sortData.data.subtypeOrder) {
                   setSubtypeOrder(sortData.data.subtypeOrder);
                 }
-                
+
                 // Apply item sort order
                 if (sortData.data.itemOrder) {
                   const sortMap = new Map<string, number>();
                   sortData.data.itemOrder.forEach((item: { itemId: string; sortIndex: number }) => {
                     sortMap.set(item.itemId, item.sortIndex);
                   });
-                  
+
                   // Apply sort order to retail items
                   if (sortMap.size > 0) {
                     retailItems = retailItems.sort((a: VendorItem, b: VendorItem) => {
@@ -167,7 +186,7 @@ const VendorPage = () => {
                       if (bIndex !== undefined) return 1;
                       return a.name.localeCompare(b.name);
                     });
-                    
+
                     // Apply sort order to produce items
                     produceItems = produceItems.sort((a: VendorItem, b: VendorItem) => {
                       const aIndex = sortMap.get(a.itemId);
@@ -195,7 +214,7 @@ const VendorPage = () => {
               // Continue without sort order if it fails
             }
           }
-          
+
           setVendorData({
             ...vendorData,
             data: {
@@ -228,14 +247,17 @@ const VendorPage = () => {
     fetchData();
   }, [id]);
 
-  const toggleFavourite = async (item: VendorItem) => {
+  const toggleFavourite = async (item: VendorItem | FoodItem) => {
     if (!userData) {
       toast.error("Please login to favourite items");
       return;
     }
-    const kind = item.category === "retail" ? "Retail" : "Produce";
+    const itemId = "itemId" in item ? item.itemId : item.id;
+    const category = item.category;
+    const kind = category === "retail" ? "Retail" : "Produce";
+
     try {
-      const res = await fetch(`${BACKEND_URL}/fav/${userData._id}/${item.itemId}/${kind}/${getRealVendorId(item)}`, {
+      const res = await fetch(`${BACKEND_URL}/fav/${userData._id}/${itemId}/${kind}/${getRealVendorId(item as VendorItem)}`, {
         method: "PATCH",
       });
       const data = await res.json();
@@ -262,7 +284,7 @@ const VendorPage = () => {
       toast.error("Error updating favourites");
     }
   };
-  
+
 
   const allItems = [
     ...(vendorData?.data.retailItems || []),
@@ -272,14 +294,14 @@ const VendorPage = () => {
   // Create type order map (needed for sorting) - only include types that exist in vendor items
   const typeOrderMap = new Map<string, number>();
   const vendorTypeSet = new Set<string>();
-  
+
   // First, collect all types that actually exist in the vendor's items
   allItems.forEach(item => {
     if (item.type) {
       vendorTypeSet.add(`${item.category || "retail"}-${item.type}`);
     }
   });
-  
+
   // Only add types to the map if they exist in the vendor's items
   typeOrder.forEach((item) => {
     const key = `${item.category}-${item.type}`;
@@ -291,14 +313,14 @@ const VendorPage = () => {
   // Create subtype order map (needed for sorting) - only include subtypes that exist in vendor items
   const subtypeOrderMap = new Map<string, number>();
   const vendorSubtypeSet = new Set<string>();
-  
+
   // First, collect all subtypes that actually exist in the vendor's items
   allItems.forEach(item => {
     if (item.type && item.subtype) {
       vendorSubtypeSet.add(`${item.category || "retail"}-${item.type}-${item.subtype}`);
     }
   });
-  
+
   // Only add subtypes to the map if they exist in the vendor's items
   subtypeOrder.forEach((item) => {
     const key = `${item.category}-${item.type}-${item.subtype}`;
@@ -321,13 +343,13 @@ const VendorPage = () => {
     const typeBItems = allItems.filter(item => item.type === b);
     const categoryA = typeAItems[0]?.category || "retail";
     const categoryB = typeBItems[0]?.category || "retail";
-    
+
     // Get sort indices (only if type exists in vendor items)
     const aKey = `${categoryA}-${a}`;
     const bKey = `${categoryB}-${b}`;
     const aIndex = typeOrderMap.get(aKey);
     const bIndex = typeOrderMap.get(bKey);
-    
+
     if (aIndex !== undefined && bIndex !== undefined) {
       return aIndex - bIndex;
     }
@@ -340,48 +362,48 @@ const VendorPage = () => {
   // Only show subtypes that actually exist in the vendor's items for that type
   const uniqueSubtypes = selectedType
     ? Array.from(
-        new Set(
-          allItems
-            .filter(item => item.type === selectedType && item.subtype)
-            .map(item => item.subtype)
-            .filter((subtype): subtype is string => Boolean(subtype))
-        )
-      ).sort((a, b) => {
-        // Try to get category for the selected type
-        const typeItems = allItems.filter(item => item.type === selectedType);
-        const category = typeItems[0]?.category || "retail";
-        
-        // Get sort indices (only if subtype exists in vendor items)
-        const aKey = `${category}-${selectedType}-${a}`;
-        const bKey = `${category}-${selectedType}-${b}`;
-        const aIndex = subtypeOrderMap.get(aKey);
-        const bIndex = subtypeOrderMap.get(bKey);
-        
-        if (aIndex !== undefined && bIndex !== undefined) {
-          return aIndex - bIndex;
-        }
-        if (aIndex !== undefined) return -1;
-        if (bIndex !== undefined) return 1;
-        return a.localeCompare(b);
-      })
+      new Set(
+        allItems
+          .filter(item => item.type === selectedType && item.subtype)
+          .map(item => item.subtype)
+          .filter((subtype): subtype is string => Boolean(subtype))
+      )
+    ).sort((a, b) => {
+      // Try to get category for the selected type
+      const typeItems = allItems.filter(item => item.type === selectedType);
+      const category = typeItems[0]?.category || "retail";
+
+      // Get sort indices (only if subtype exists in vendor items)
+      const aKey = `${category}-${selectedType}-${a}`;
+      const bKey = `${category}-${selectedType}-${b}`;
+      const aIndex = subtypeOrderMap.get(aKey);
+      const bIndex = subtypeOrderMap.get(bKey);
+
+      if (aIndex !== undefined && bIndex !== undefined) {
+        return aIndex - bIndex;
+      }
+      if (aIndex !== undefined) return -1;
+      if (bIndex !== undefined) return 1;
+      return a.localeCompare(b);
+    })
     : [];
 
   // Comprehensive filtering logic
   const filteredItems = searchResults.length > 0 ? searchResults : allItems.filter(item => {
     // Veg/Non-veg filter
-    const matchesVeg = vegFilter === "all" || 
+    const matchesVeg = vegFilter === "all" ||
       (vegFilter === "veg" && item.isVeg !== false) ||
       (vegFilter === "non-veg" && item.isVeg === false);
-    
+
     // Category filter (retail/produce)
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-    
+
     // Type filter
     const matchesType = !selectedType || item.type === selectedType;
-    
+
     // Subtype filter (only applies when a type is selected)
     const matchesSubtype = !selectedType || !selectedSubtype || item.subtype === selectedSubtype;
-    
+
     return matchesVeg && matchesCategory && matchesType && matchesSubtype;
   });
 
@@ -390,7 +412,7 @@ const VendorPage = () => {
   const groupedItems = isSearching ? {} : filteredItems.reduce((acc, item) => {
     const type = item.type || "Uncategorized";
     const subtype = item.subtype || "Other";
-    
+
     if (!acc[type]) {
       acc[type] = {};
     }
@@ -398,7 +420,7 @@ const VendorPage = () => {
       acc[type][subtype] = [];
     }
     acc[type][subtype].push(item);
-    
+
     return acc;
   }, {} as Record<string, Record<string, VendorItem[]>>);
 
@@ -417,13 +439,13 @@ const VendorPage = () => {
       const typeBItems = Object.values(groupedItems[b]).flat();
       const categoryA = typeAItems[0]?.category || "retail";
       const categoryB = typeBItems[0]?.category || "retail";
-      
+
       // Try to get sort index for both types (only if they exist in vendor items)
       const aKey = `${categoryA}-${a}`;
       const bKey = `${categoryB}-${b}`;
       const aIndex = typeOrderMap.get(aKey);
       const bIndex = typeOrderMap.get(bKey);
-      
+
       if (aIndex !== undefined && bIndex !== undefined) {
         return aIndex - bIndex;
       }
@@ -439,7 +461,7 @@ const VendorPage = () => {
       const subtypes = groupedItems[type];
       const typeItems = Object.values(subtypes).flat();
       const category = typeItems[0]?.category || "retail";
-      
+
       // Filter subtypes to only include those that have items, then sort
       const sortedSubtypes = Object.keys(subtypes)
         .filter(subtype => {
@@ -450,13 +472,13 @@ const VendorPage = () => {
           // Put "Other" at the end
           if (a === "Other") return 1;
           if (b === "Other") return -1;
-          
+
           // Only use sort order if subtype exists in vendor items
           const aKey = `${category}-${type}-${a}`;
           const bKey = `${category}-${type}-${b}`;
           const aIndex = subtypeOrderMap.get(aKey);
           const bIndex = subtypeOrderMap.get(bKey);
-          
+
           if (aIndex !== undefined && bIndex !== undefined) {
             return aIndex - bIndex;
           }
@@ -464,7 +486,7 @@ const VendorPage = () => {
           if (bIndex !== undefined) return 1;
           return a.localeCompare(b);
         });
-      
+
       // Rebuild subtypes object in sorted order and ensure items are sorted
       const sortedSubtypeObj: Record<string, VendorItem[]> = {};
       sortedSubtypes.forEach(subtype => {
@@ -474,7 +496,7 @@ const VendorPage = () => {
       groupedItems[type] = sortedSubtypeObj;
     });
   }
-  
+
   // Ensure items within filtered items maintain their sort order
   // Items are already sorted when fetched, but after filtering they should maintain relative order
   // Since we're using the already-sorted vendorData, the order should be preserved
@@ -493,24 +515,36 @@ const VendorPage = () => {
     return cartItem?.quantity || 0;
   };
 
-  const handleAddToCart = async (item: VendorItem) => {
+  const handleAddToCart = async (item: VendorItem | FoodItem) => {
     if (!userData) {
       toast.error("Please login to add items to cart");
       return;
     }
 
+    const itemId = "itemId" in item ? item.itemId : item.id;
+    const itemCategory = item.category || 'retail';
+
     console.log('DEBUG: Adding item to cart:', {
-      itemId: item.itemId,
-      name: item.name,
-      category: item.category,
+      itemId: itemId,
+      name: ("name" in item ? item.name : item.title),
+      category: itemCategory,
       vendorId: id
     });
 
-    const quantity = getItemQuantity(item.itemId, item.category);
+    const quantity = getItemQuantity(itemId, itemCategory);
+
+    // Create a normalized item for cart utils
+    const normalizedItem = {
+      ...item,
+      itemId: itemId,
+      category: itemCategory,
+      name: ("name" in item ? item.name : item.title)
+    };
+
     if (quantity === 0) {
-      await addToCart(userData._id, item, id as string);
+      await addToCart(userData._id, normalizedItem as unknown as VendorItem, id as string);
     } else {
-      await increaseQuantity(userData._id, item, id as string);
+      await increaseQuantity(userData._id, normalizedItem as unknown as VendorItem, id as string);
     }
 
     // Refresh user data to update cart
@@ -528,9 +562,20 @@ const VendorPage = () => {
     }
   };
 
-  const handleDecreaseQuantity = async (item: VendorItem) => {
+  const handleDecreaseQuantity = async (item: VendorItem | FoodItem) => {
     if (!userData) return;
-    await decreaseQuantity(userData._id, item, id as string);
+
+    const itemId = "itemId" in item ? item.itemId : item.id;
+    const itemCategory = item.category || 'retail';
+
+    const normalizedItem = {
+      ...item,
+      itemId: itemId,
+      category: itemCategory,
+      name: ("name" in item ? item.name : item.title)
+    };
+
+    await decreaseQuantity(userData._id, normalizedItem as unknown as VendorItem, id as string);
 
     // Refresh user data to update cart
     const token = localStorage.getItem("token");
@@ -547,21 +592,6 @@ const VendorPage = () => {
     }
   };
 
-  const handleItemClick = async (item: VendorItem) => {
-    try {
-      // Log the search in the backend
-      await fetch(`${BACKEND_URL}/api/increase-search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ foodName: item.name }),
-      });
-
-      // Navigate to the item details page
-      router.push(`/item/${item.itemId}`);
-    } catch (error) {
-      console.error("Error handling item click:", error);
-    }
-  };
 
   const handleSearch = (results: VendorItem[]) => {
     console.log('DEBUG: Vendor page received search results:', results.map(item => ({
@@ -584,29 +614,57 @@ const VendorPage = () => {
 
   return (
     <div className={styles.container}>
+      {/* Cover Image Banner */}
+      {vendorData?.coverImage && (
+        <div
+          className={styles.coverImageBanner}
+          style={{ backgroundImage: `url(${vendorData.coverImage})` }}
+        >
+          <div className={styles.coverOverlay} />
+        </div>
+      )}
+
       <div className={styles.header}>
-        <h1 className={styles.vendorName}>{vendorData?.foodCourtName}</h1>
+        <div className={styles.vendorHeaderContent} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {vendorData?.image && (
+            <Image
+              src={vendorData.image}
+              alt={vendorData.foodCourtName}
+              width={60}
+              height={60}
+              className={styles.vendorProfileImage}
+              style={{
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid white',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+            />
+          )}
+          <h1 className={styles.vendorName}>{vendorData?.foodCourtName}</h1>
+        </div>
         <div className={styles.searchContainer}>
           <div className={styles.searchBar}>
-            <SearchBar 
-              hideUniversityDropdown={true} 
-              placeholder="Search food items..." 
+            <SearchBar
+              hideUniversityDropdown={true}
+              placeholder="Search food items..."
               vendorId={id as string}
               universityId={universityId}
               clearSearch={handleClearSearch}
               onSearchResults={handleSearch}
             />
           </div>
-          {/* {isSearching && (
-            <button 
-              className={styles.clearSearchButton}
-              onClick={handleClearSearch}
-            >
-              Clear Search
-            </button>
-          )} */}
         </div>
       </div>
+
+      {isSearching && (
+        <button
+          className={styles.clearSearchButton}
+          onClick={handleClearSearch}
+        >
+          Clear Search
+        </button>
+      )}
 
       {!isSearching && (
         <div className={styles.filtersContainer}>
@@ -724,82 +782,18 @@ const VendorPage = () => {
             {filteredItems.map(item => {
               const quantity = getItemQuantity(item.itemId, item.category);
               const isFav = isItemFavourited(item);
+              const foodItem = mapToFoodItem(item);
               return (
-                <div 
-                  key={item.itemId} 
-                  className={styles.itemCard}
-                >
-                  <div className={styles.itemCardContent} onClick={() => handleItemClick(item)}>
-                    <DishCard
-                      dishName={item.name}
-                      price={item.price}
-                      image={item.image || '/images/coffee.jpeg'}
-                      variant="list"
-                    />
-                    <div className={styles.itemDetails}>
-                      {(item.type || item.subtype) && (
-                        <p className={styles.itemMeta}>
-                          {item.type}
-                          {item.subtype ? ` • ${item.subtype}` : ''}
-                        </p>
-                      )}
-                      <p className={styles.itemVeg} style={{ 
-                        color: (item.isVeg !== false) ? '#22c55e' : '#ef4444',
-                      }}>
-                        {(item.isVeg !== false) ? '🟢 Veg' : '🔴 Non-Veg'}
-                      </p>
-                      <p className={styles.itemDescription}>
-                        {item.description || '\u00A0'}
-                      </p>
-                      <div className={styles.belowdish}>
-                        <div>
-                          {item.quantity !== undefined && (
-                            <p className={styles.quantity}>Available: {item.quantity}</p>
-                          )}
-                        </div>
-                        {userData && (
-                          <button 
-                            className={styles.heart} 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavourite(item);
-                            }}
-                          >
-                            {isFav ? <FaHeart color="#4ea199" /> : <FaRegHeart color="#4ea199" />}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {userData && (
-                    <div className={styles.cartControls}>
-                      {quantity > 0 ? (
-                        <>
-                          <button 
-                            className={styles.quantityButton}
-                            onClick={() => handleDecreaseQuantity(item)}
-                          >
-                            -
-                          </button>
-                          <span className={styles.quantity}>{quantity}</span>
-                          <button 
-                            className={styles.quantityButton}
-                            onClick={() => handleAddToCart(item)}
-                          >
-                            +
-                          </button>
-                        </>
-                      ) : (
-                        <button 
-                          className={styles.addToCartButton}
-                          onClick={() => handleAddToCart(item)}
-                        >
-                          Add to Cart
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <DishListItem
+                  key={item.itemId}
+                  item={foodItem}
+                  quantity={quantity}
+                  isFavorite={isFav}
+                  onAdd={handleAddToCart}
+                  onIncrease={handleAddToCart}
+                  onDecrease={handleDecreaseQuantity}
+                  onToggleFavorite={toggleFavourite}
+                />
               );
             })}
           </div>
@@ -820,76 +814,18 @@ const VendorPage = () => {
                         const quantity = getItemQuantity(item.itemId, item.category);
                         const isFav = isItemFavourited(item);
                         console.log('[DEBUG] UI itemId:', item.itemId, 'UI vendorId:', getRealVendorId(item), 'isFav:', isFav);
+                        const foodItem = mapToFoodItem(item);
                         return (
-                          <div 
-                            key={item.itemId} 
-                            className={styles.itemCard}
-                          >
-                            <div className={styles.itemCardContent} onClick={() => handleItemClick(item)}>
-                              <DishCard
-                                dishName={item.name}
-                                price={item.price}
-                                image={item.image || '/images/coffee.jpeg'}
-                                variant="list"
-                              />
-                              <div className={styles.itemDetails}>
-                                <p className={styles.itemVeg} style={{ 
-                                  color: (item.isVeg !== false) ? '#22c55e' : '#ef4444',
-                                }}>
-                                  {(item.isVeg !== false) ? '🟢 Veg' : '🔴 Non-Veg'}
-                                </p>
-                                <p className={styles.itemDescription}>
-                                  {item.description || '\u00A0'}
-                                </p>
-                                <div className={styles.belowdish}>
-                                  <div>
-                                    {item.quantity !== undefined && (
-                                      <p className={styles.quantity}>Available: {item.quantity}</p>
-                                    )}
-                                  </div>
-                                  {userData && (
-                                    <button 
-                                      className={styles.heart} 
-                                      onClick={(e) => {
-                                        e.stopPropagation(); // Prevents navigating to item detail
-                                        toggleFavourite(item);
-                                      }}
-                                    >
-                                      {isFav ? <FaHeart color="#4ea199" /> : <FaRegHeart color="#4ea199" />}
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            {userData && (
-                              <div className={styles.cartControls}>
-                                {quantity > 0 ? (
-                                  <>
-                                    <button 
-                                      className={styles.quantityButton}
-                                      onClick={() => handleDecreaseQuantity(item)}
-                                    >
-                                      -
-                                    </button>
-                                    <span className={styles.quantity}>{quantity}</span>
-                                    <button 
-                                      className={styles.quantityButton}
-                                      onClick={() => handleAddToCart(item)}
-                                    >
-                                      +
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button 
-                                    className={styles.addToCartButton}
-                                    onClick={() => handleAddToCart(item)}
-                                  >
-                                    Add to Cart
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          <DishListItem
+                            key={item.itemId}
+                            item={foodItem}
+                            quantity={quantity}
+                            isFavorite={isFav}
+                            onAdd={handleAddToCart}
+                            onIncrease={handleAddToCart}
+                            onDecrease={handleDecreaseQuantity}
+                            onToggleFavorite={toggleFavourite}
+                          />
                         );
                       })}
                     </div>
@@ -900,7 +836,7 @@ const VendorPage = () => {
           })
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

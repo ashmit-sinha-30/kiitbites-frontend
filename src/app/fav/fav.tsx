@@ -1,13 +1,14 @@
- "use client";
+"use client";
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import { ChevronRight, ChevronDown, Plus, Minus } from "lucide-react";
+
 import styles from "./styles/FavouriteFoodPage.module.scss";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FaHeart, FaRegHeart } from "react-icons/fa";
-import PageLoading from "../components/layout/PageLoading/PageLoading";
+import { FaChevronDown } from "react-icons/fa";
+import DishListItem from "@/app/components/food/DishListItem/DishListItemV2";
+import { FoodItem as HomeFoodItem } from "@/app/home/[slug]/types";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -168,22 +169,42 @@ const FavouriteFoodPageContent: React.FC = () => {
     fetchFavorites();
   }, [user?._id, selectedCollege, router]);
 
+  const convertItemToHomeFoodItem = (item: FoodItem): HomeFoodItem => {
+    return {
+      id: item._id,
+      title: item.name,
+      image: item.image,
+      category: item.kind,
+      type: item.type,
+      isSpecial: item.isSpecial,
+      price: item.price,
+      vendorId: item.vendorId,
+      collegeId: item.uniId,
+      collegeName: colleges.find(c => c._id === item.uniId)?.fullName || "",
+      // For favorites, we might not have all details like isVeg or description here
+      // but DishListItemV2 can handle defaults
+      isVeg: true,
+      description: "",
+      isAvailable: 'Y' // Assuming favorites are generally available or handled by stock badge
+    };
+  };
+
   const handleToggleFavorite = async (food: FoodItem) => {
     const userId = user?._id;
     if (!userId) return;
-  
+
     const kind = food.kind;
     const itemId = food._id;
     const vendorId = food.vendorId;
     const favKey = `${itemId}-${vendorId}`;
     const isAlreadyFav = favoriteIds.includes(favKey);
-  
+
     try {
       // Optimistically update the UI
       setFavoriteIds((prev) =>
         isAlreadyFav ? prev.filter((id) => id !== favKey) : [...prev, favKey]
       );
-  
+
       // Make PATCH request
       const res = await fetch(
         `${BACKEND_URL}/fav/${userId}/${itemId}/${kind}/${vendorId}`,
@@ -194,11 +215,11 @@ const FavouriteFoodPageContent: React.FC = () => {
           },
         }
       );
-  
+
       if (!res.ok) {
         throw new Error("Failed to update favorite");
       }
-  
+
       toast.success(
         isAlreadyFav ? "Removed from favorites" : "Added to favorites"
       );
@@ -211,7 +232,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       );
     }
   };
-  
+
 
   // Fetch vendors list
   useEffect(() => {
@@ -283,9 +304,9 @@ const FavouriteFoodPageContent: React.FC = () => {
           vendorId: item.vendorId || response.data.vendorId, // Prefer vendorId from item, fallback to response
           vendorName: item.vendorName || response.data.vendorName // Prefer vendorName from item, fallback to response
         }));
-        
+
         setCartItems(formattedCartItems);
-        
+
         // Set current vendor ID if there are items in cart
         if (formattedCartItems.length > 0) {
           setCurrentVendorId(formattedCartItems[0].vendorId);
@@ -354,36 +375,36 @@ const FavouriteFoodPageContent: React.FC = () => {
       // Determine if item is retail or produce based on kind field
       const isRetail = kind === "Retail";
       const isProduce = kind === "Produce";
-      
+
       const response = await fetch(`${BACKEND_URL}/api/item/vendors/${itemId}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-      
+
       if (!response.ok) {
         return false;
       }
-      
+
       const vendors = await response.json() as Vendor[];
-      
+
       const vendor = vendors.find((v) => v._id === vendorId);
-      
+
       if (!vendor || !vendor.inventoryValue) {
         return false;
       }
-      
+
       // For retail items, check quantity
       if (isRetail) {
         const quantity = vendor.inventoryValue.quantity;
         const isAvailable = typeof quantity === 'number' && quantity > 0;
         return isAvailable;
-      } 
+      }
       // For produce items, check isAvailable flag
       else if (isProduce) {
         const isAvailable = vendor.inventoryValue.isAvailable === 'Y';
         return isAvailable;
       }
-      
+
       return false;
     } catch {
       return false;
@@ -405,26 +426,26 @@ const FavouriteFoodPageContent: React.FC = () => {
 
       // Check vendor availability before proceeding
       const isVendorAvailable = await checkVendorAvailability(foodItem.vendorId, foodItem._id, foodItem.kind);
-      
+
       if (!isVendorAvailable) {
         toast.error("This item is currently unavailable from the vendor. Please try again later.");
         return;
       }
 
       // Check if item is already in cart
-      const existingItem = cartItems.find(item => 
-        item._id === foodItem._id && 
+      const existingItem = cartItems.find(item =>
+        item._id === foodItem._id &&
         item.vendorId === foodItem.vendorId
       );
-      
+
       if (existingItem) {
         // If item exists, increase quantity
         await axios.post(
           `${BACKEND_URL}/cart/add-one/${user._id}`,
-          { 
-            itemId: foodItem._id, 
+          {
+            itemId: foodItem._id,
             kind: foodItem.kind,
-            vendorId: foodItem.vendorId 
+            vendorId: foodItem.vendorId
           },
           getAuthConfig()
         );
@@ -432,11 +453,11 @@ const FavouriteFoodPageContent: React.FC = () => {
         // If item doesn't exist, add new item
         await axios.post(
           `${BACKEND_URL}/cart/add/${user._id}`,
-          { 
-            itemId: foodItem._id, 
-            kind: foodItem.kind, 
+          {
+            itemId: foodItem._id,
+            kind: foodItem.kind,
             quantity: 1,
-            vendorId: foodItem.vendorId 
+            vendorId: foodItem.vendorId
           },
           getAuthConfig()
         );
@@ -448,7 +469,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         getAuthConfig()
       );
       const cartData = response.data.cart || [];
-      
+
       // Update cart items with correct vendor information
       const formattedCartItems = cartData.map((item: CartResponseItem) => ({
         _id: item.itemId,
@@ -457,9 +478,9 @@ const FavouriteFoodPageContent: React.FC = () => {
         vendorId: foodItem.vendorId,
         vendorName: foodItem.vendorName || getVendorName(foodItem.vendorId)
       }));
-      
+
       setCartItems(formattedCartItems);
-      
+
       // Set current vendor if not set
       if (!currentVendorId) {
         setCurrentVendorId(foodItem.vendorId);
@@ -495,10 +516,10 @@ const FavouriteFoodPageContent: React.FC = () => {
 
       await axios.post(
         `${BACKEND_URL}/cart/add-one/${user._id}`,
-        { 
-          itemId: foodItem._id, 
+        {
+          itemId: foodItem._id,
           kind: foodItem.kind,
-          vendorId: foodItem.vendorId 
+          vendorId: foodItem.vendorId
         },
         getAuthConfig()
       );
@@ -509,7 +530,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         getAuthConfig()
       );
       const cartData = response.data.cart || [];
-      
+
       // Update cart items with correct vendor information
       const formattedCartItems = cartData.map((item: CartResponseItem) => ({
         _id: item.itemId,
@@ -518,7 +539,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         vendorId: foodItem.vendorId,
         vendorName: foodItem.vendorName || getVendorName(foodItem.vendorId)
       }));
-      
+
       setCartItems(formattedCartItems);
       toast.success(`Increased quantity of ${foodItem.name}`);
     } catch (error) {
@@ -543,10 +564,10 @@ const FavouriteFoodPageContent: React.FC = () => {
     try {
       await axios.post(
         `${BACKEND_URL}/cart/remove-one/${user._id}`,
-        { 
-          itemId: foodItem._id, 
+        {
+          itemId: foodItem._id,
           kind: foodItem.kind,
-          vendorId: foodItem.vendorId 
+          vendorId: foodItem.vendorId
         },
         getAuthConfig()
       );
@@ -557,7 +578,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         getAuthConfig()
       );
       const cartData = response.data.cart || [];
-      
+
       // Update cart items with correct vendor information
       const formattedCartItems = cartData.map((item: CartResponseItem) => ({
         _id: item.itemId,
@@ -566,9 +587,9 @@ const FavouriteFoodPageContent: React.FC = () => {
         vendorId: foodItem.vendorId, // Use the vendor ID from the food item
         vendorName: foodItem.vendorName || getVendorName(foodItem.vendorId) // Use the vendor name from the food item or look it up
       }));
-      
+
       setCartItems(formattedCartItems);
-      
+
       // If cart becomes empty, reset current vendor
       if (formattedCartItems.length === 0) {
         setCurrentVendorId(null);
@@ -596,27 +617,27 @@ const FavouriteFoodPageContent: React.FC = () => {
   };
 
   // Add a function to clear cart
-  const clearCart = async () => {
-    if (!user?._id) return;
+  // const clearCart = async () => {
+  //   if (!user?._id) return;
 
-    try {
-      await axios.post(
-        `${BACKEND_URL}/cart/clear/${user._id}`,
-        {},
-        getAuthConfig()
-      );
-      setCartItems([]);
-      setCurrentVendorId(null);
-      toast.success("Cart cleared successfully");
-    } catch {
-      toast.error("Failed to clear cart");
-    }
-  };
+  //   try {
+  //     await axios.post(
+  //       `${BACKEND_URL}/cart/clear/${user._id}`,
+  //       {},
+  //       getAuthConfig()
+  //     );
+  //     setCartItems([]);
+  //     setCurrentVendorId(null);
+  //     toast.success("Cart cleared successfully");
+  //   } catch {
+  //     toast.error("Failed to clear cart");
+  //   }
+  // };
 
   // Add a function to check if cart is empty
-  const isCartEmpty = () => {
-    return cartItems.length === 0;
-  };
+  // const isCartEmpty = () => {
+  //   return cartItems.length === 0;
+  // };
 
   return (
     <div className={styles.container}>
@@ -634,55 +655,42 @@ const FavouriteFoodPageContent: React.FC = () => {
       />
       <div className={styles.header}>
         <h1>Your Favorites</h1>
-        {!isCartEmpty() && (
+        {/* {!isCartEmpty() && (
           <button
             className={styles.clearCartButton}
             onClick={clearCart}
           >
             Clear Cart
           </button>
-        )}
+        )} */}
       </div>
 
       <div className={styles.dropdownContainer} ref={dropdownRef}>
-        <button
-          className={styles.dropdownButton}
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          aria-expanded={isDropdownOpen}
-        >
-          <span>
-            {selectedCollege ? selectedCollege.fullName : "Select your college"}
-          </span>
-          <ChevronDown
-            size={20}
-            style={{
-              transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease",
-            }}
+        <div className={styles.collegeField}>
+          <input
+            name="college"
+            value={selectedCollege ? selectedCollege.fullName : ""}
+            readOnly
+            placeholder="Select your college"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           />
-        </button>
-
-        {isDropdownOpen && (
-          <div className={styles.dropdownMenu}>
-            <button
-              className={styles.dropdownItem}
-              onClick={() => handleCollegeSelect(null)}
-            >
-              <span>All Colleges</span>
-              <ChevronRight size={16} />
-            </button>
+          <FaChevronDown
+            className={`${styles.dropdownIcon} ${isDropdownOpen ? styles.open : ''}`}
+          />
+          <ul className={`${styles.collegeList} ${isDropdownOpen ? styles.show : ''}`}>
+            <li onClick={() => handleCollegeSelect(null)}>
+              All Colleges
+            </li>
             {colleges.map((college) => (
-              <button
+              <li
                 key={college._id}
-                className={styles.dropdownItem}
                 onClick={() => handleCollegeSelect(college)}
               >
-                <span>{college.fullName}</span>
-                <ChevronRight size={16} />
-              </button>
+                {college.fullName}
+              </li>
             ))}
-          </div>
-        )}
+          </ul>
+        </div>
       </div>
 
       <div className={styles.contentSection}>
@@ -694,12 +702,12 @@ const FavouriteFoodPageContent: React.FC = () => {
         </div>
 
         {loading ? (
-          <PageLoading message="Loading your favourites…" />
+          null
         ) : favorites.length === 0 ? (
           <div className={styles.emptyState}>
             <h2>Oops! You have no favorites yet</h2>
             <p>Start adding your favorite items to see them here!</p>
-            <button 
+            <button
               className={styles.homeButton}
               onClick={() => router.push('/')}
             >
@@ -707,72 +715,30 @@ const FavouriteFoodPageContent: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className={styles.foodGrid}>
+          <div className={styles.itemsGrid}>
             {favorites.map((food) => {
               const favKey = `${food._id}-${food.vendorId}`;
               const isFavorited = favoriteIds.includes(favKey);
+
               // Find the cart item with matching itemId and vendorId
-              const matchingCartItem = cartItems.find(item => {
-                const isMatch = item._id === food._id && item.vendorId === food.vendorId;
-                return isMatch;
-              });
+              const matchingCartItem = cartItems.find(item =>
+                item._id === food._id && item.vendorId === food.vendorId
+              );
 
               const quantity = matchingCartItem?.quantity || 0;
-              const isSameVendor = !currentVendorId || currentVendorId === food.vendorId;
-              const isInCart = matchingCartItem !== undefined;
-              
+              const homeFoodItem = convertItemToHomeFoodItem(food);
+
               return (
-                <div key={`${food._id}-${food.vendorId}`} className={styles.foodCard}>
-                  <img
-                    src={food.image}
-                    alt={food.name}
-                    className={styles.foodImage}
-                  />
-                  <div className={styles.clgFav}>
-                    {!selectedCollege && (
-                      <div className={styles.collegeTag}>
-                        {colleges.find((c) => c._id === food.uniId)?.fullName}
-                      </div>
-                    )}
-                    <button onClick={() => handleToggleFavorite(food)} className={styles.favButton}>
-                      {isFavorited ? (
-                        <FaHeart color="#4ea199"/>
-                      ) : (
-                        <FaRegHeart color="#4ea199"/>
-                      )}
-                    </button> 
-                  </div>
-                  <h3 className={styles.foodName}>{food.name}</h3>
-                  <p className={styles.vendorName}>
-                    {food.vendorName || getVendorName(food.vendorId)}
-                  </p>
-                  <p className={styles.foodPrice}>₹{food.price}</p>
-                  {isInCart && isSameVendor ? (
-                    <div className={styles.quantityControls}>
-                      <button
-                        className={styles.quantityButton}
-                        onClick={() => handleDecreaseQuantity(food)}
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <span className={styles.quantity}>{quantity}</span>
-                      <button
-                        className={styles.quantityButton}
-                        onClick={() => handleIncreaseQuantity(food)}
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className={styles.addToCartButton}
-                      onClick={() => handleAddToCart(food)}
-                      disabled={!isSameVendor}
-                    >
-                      {!isSameVendor ? "Different Vendor" : "Add to Cart"}
-                    </button>
-                  )}
-                </div>
+                <DishListItem
+                  key={favKey}
+                  item={homeFoodItem}
+                  quantity={quantity}
+                  isFavorite={isFavorited}
+                  onAdd={() => handleAddToCart(food)}
+                  onIncrease={() => handleIncreaseQuantity(food)}
+                  onDecrease={() => handleDecreaseQuantity(food)}
+                  onToggleFavorite={() => handleToggleFavorite(food)}
+                />
               );
             })}
           </div>
@@ -786,7 +752,7 @@ const FavouriteFoodPage: React.FC = () => {
   return (
     <Suspense
       fallback={
-        <PageLoading message="Loading your favourites…" />
+        null
       }
     >
       <FavouriteFoodPageContent />

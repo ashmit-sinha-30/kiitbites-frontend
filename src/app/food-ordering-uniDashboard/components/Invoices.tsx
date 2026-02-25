@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ENV_CONFIG } from "@/config/environment";
-import styles from "./Invoices.module.scss";
+import styles from "../styles/Invoices.module.scss";
 
 interface InvoiceRow {
   _id: string;

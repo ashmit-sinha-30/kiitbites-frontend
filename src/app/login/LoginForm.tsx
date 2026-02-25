@@ -29,7 +29,6 @@ export default function LoginForm() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true);
   const router = useRouter();
 
   const BACKEND_URL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -105,7 +104,7 @@ export default function LoginForm() {
       }
 
       notify("Login successful!", "success");
-      
+
       // Get user data to determine university slug for redirect
       try {
         const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
@@ -115,18 +114,18 @@ export default function LoginForm() {
             Authorization: `Bearer ${data.token}`,
           },
         });
-        
+
         if (userResponse.ok) {
           const userData = await userResponse.json();
           const uniId = userData?.uniID || userData?.college?._id;
-          
+
           if (uniId) {
             // Fetch college data to get the slug
             const collegeResponse = await fetch(`${BACKEND_URL}/api/user/auth/list`);
             if (collegeResponse.ok) {
               const colleges = await collegeResponse.json();
               const userCollege = colleges.find((college: { _id: string; fullName: string }) => college._id === uniId);
-              
+
               if (userCollege) {
                 // Generate slug from college name
                 const generateSlug = (name: string): string => {
@@ -136,7 +135,8 @@ export default function LoginForm() {
                     .replace(/^-+|-+$/g, "");
                 };
                 const collegeSlug = generateSlug(userCollege.fullName);
-                setTimeout(() => router.push(`/home/${collegeSlug}`), 2000);
+                // Redirect with college ID (cid) parameter
+                setTimeout(() => router.push(`/home/${collegeSlug}?cid=${uniId}`), 2000);
                 return;
               }
             }
@@ -145,7 +145,7 @@ export default function LoginForm() {
       } catch (error) {
         console.error("Error fetching user data for redirect:", error);
       }
-      
+
       // Fallback to generic home page
       setTimeout(() => router.push("/home"), 2000);
       // setTimeout(() => {
@@ -168,8 +168,8 @@ export default function LoginForm() {
         credentials: "include",
         headers: token
           ? {
-              Authorization: `Bearer ${token}`,
-            }
+            Authorization: `Bearer ${token}`,
+          }
           : {},
       });
 
@@ -193,15 +193,6 @@ export default function LoginForm() {
 
   // Refresh session on component mount - deferred to not block initial render
   useEffect(() => {
-    // Simulate slow internet by showing skeleton for 1-2 seconds
-    const minDelay = 800;
-    const maxDelay = 1500;
-    const delay = Math.random() * (maxDelay - minDelay) + minDelay;
-    
-    const loadingTimeout = setTimeout(() => {
-      setIsPageLoading(false);
-    }, delay);
-
     // Defer session check to after initial render (keeps logic identical, just timing)
     const timeoutId = setTimeout(() => {
       checkSession(); // Refresh on page load
@@ -212,35 +203,17 @@ export default function LoginForm() {
     }, 60 * 60 * 1000); // Refresh every 1 hour
 
     return () => {
-      clearTimeout(loadingTimeout);
       clearTimeout(timeoutId);
       clearInterval(interval); // Cleanup on unmount
     };
   }, [checkSession]);
-
-  if (isPageLoading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.box}>
-          <div className={styles.skeletonTitle}></div>
-          <form>
-            <div className={styles.skeletonInput}></div>
-            <div className={styles.skeletonInput}></div>
-            <div className={styles.skeletonLink}></div>
-            <div className={styles.skeletonButton}></div>
-            <div className={styles.skeletonText}></div>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
         <div className={styles.msg}>Welcome Back</div>
         <div className={styles.box}>
-          <h1>Sign In</h1>
+          <h1>Login</h1>
           <form onSubmit={handleSubmit}>
             <div className={styles.fieldGroup}>
               <label htmlFor="identifier">Your email or phone</label>
@@ -290,7 +263,7 @@ export default function LoginForm() {
         <div className={styles.infoPanel}>
           <div className={styles.badge}>Welcome back</div>
           <h2 className={styles.heading}>
-            Sign in to{" "}
+            Login to{" "}
             <span className={styles.highlight}>your campus food hub</span>
           </h2>
           <p className={styles.subtext}>

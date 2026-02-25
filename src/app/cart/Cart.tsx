@@ -15,7 +15,6 @@ import "react-toastify/dist/ReactToastify.css";
 import Script from "next/script";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CART_COUNT_UPDATE_EVENT } from "../hooks/useCartCount";
-import PageLoading from "../components/layout/PageLoading/PageLoading";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
 
 interface ExtraItem {
@@ -87,7 +86,6 @@ export default function Cart() {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const extrasListRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchExtras = async () => {
@@ -131,12 +129,10 @@ export default function Cart() {
             category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
           }));
           setCart(guestCartWithCategory);
-        // Dispatch event to update cart count in navbar
-        window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
+          // Dispatch event to update cart count in navbar
+          window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
         } catch {
           setCart([]);
-        } finally {
-          setLoading(false);
         }
         return;
       }
@@ -211,7 +207,7 @@ export default function Cart() {
             if (vendorServicesRes.data.success && vendorServicesRes.data.data.services) {
               const services = vendorServicesRes.data.data.services || [];
               const hasPendingOrder = services.some(
-                (service: { name?: string }) => 
+                (service: { name?: string }) =>
                   service.name?.toLowerCase().includes("pending order")
               );
               setHasPendingOrderService(hasPendingOrder);
@@ -228,8 +224,6 @@ export default function Cart() {
       } catch {
         localStorage.removeItem("token");
         setUserLoggedIn(false);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -270,7 +264,7 @@ export default function Cart() {
     } else {
       setExtras([]);
     }
-     
+
   }, [cart, userData?._id]);
 
   // Check vendor services when cart vendorId changes
@@ -295,7 +289,7 @@ export default function Cart() {
         if (vendorServicesRes.data.success && vendorServicesRes.data.data.services) {
           const services = vendorServicesRes.data.data.services || [];
           const hasPendingOrder = services.some(
-            (service: { name?: string }) => 
+            (service: { name?: string }) =>
               service.name?.toLowerCase().includes("pending order")
           );
           setHasPendingOrderService(hasPendingOrder);
@@ -311,7 +305,7 @@ export default function Cart() {
 
     checkVendorServices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, userLoggedIn, userData?._id]);  
+  }, [cart, userLoggedIn, userData?._id]);
 
   const reFetchCart = async () => {
     try {
@@ -356,7 +350,7 @@ export default function Cart() {
   // Cancel all pending orders when cart changes (only if vendor has approval service)
   const cancelPendingOrders = async () => {
     if (!userLoggedIn || !userData || !hasPendingOrderService) return;
-    
+
     try {
       // Silently cancel pending orders - don't show toast if none exist
       await axios.post(
@@ -382,7 +376,7 @@ export default function Cart() {
     if (userLoggedIn && userData) {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
-      
+
       axios
         .post(
           `${BACKEND_URL}/cart/add-one/${userData._id}`,
@@ -399,8 +393,7 @@ export default function Cart() {
             toast.warning(`Maximum limit reached for ${thisItem.name}`);
           } else if (errorMsg.includes("Only")) {
             toast.warning(
-              `Only ${errorMsg.split("Only ")[1]} available for ${
-                thisItem.name
+              `Only ${errorMsg.split("Only ")[1]} available for ${thisItem.name
               }`
             );
           } else {
@@ -432,7 +425,7 @@ export default function Cart() {
     if (userLoggedIn && userData) {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
-      
+
       axios
         .post(
           `${BACKEND_URL}/cart/remove-one/${userData._id}`,
@@ -469,7 +462,7 @@ export default function Cart() {
     if (userLoggedIn && userData) {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
-      
+
       axios
         .post(
           `${BACKEND_URL}/cart/remove-item/${userData._id}`,
@@ -536,31 +529,31 @@ export default function Cart() {
       const existingItem = cart.find((i) => i._id === item._id);
       const updatedCart = existingItem
         ? cart.map((i) =>
-            i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
-          )
+          i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
+        )
         : [
-            ...cart,
-            {
+          ...cart,
+          {
+            _id: item._id,
+            userId: "guest",
+            foodcourtId: "guest",
+            itemId: {
               _id: item._id,
-              userId: "guest",
-              foodcourtId: "guest",
-              itemId: {
-                _id: item._id,
-                name: item.name,
-                price: item.price,
-                image: item.image,
-                kind: item.kind || "Retail",
-              },
-              quantity: 1,
-              kind: item.kind || "Retail",
               name: item.name,
               price: item.price,
               image: item.image,
-              vendorName: "guest",
-              vendorId: "guest",
-              category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
+              kind: item.kind || "Retail",
             },
-          ];
+            quantity: 1,
+            kind: item.kind || "Retail",
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            vendorName: "guest",
+            vendorId: "guest",
+            category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
+          },
+        ];
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.success(`${item.name} added to cart!`);
@@ -628,10 +621,6 @@ export default function Cart() {
     };
   }, [filteredExtras]);
 
-  if (loading) {
-    return <PageLoading message="Loading your cart and recommendations…" />;
-  }
-
   return (
     <>
       {/* 1. Load Razorpay after the page is interactive */}
@@ -652,23 +641,23 @@ export default function Cart() {
           pauseOnHover
           theme="light"
         />
-        <div className={styles.cartLeft}>
-          <section className={styles.cartSection}>
-            {cart.length === 0 ? (
-              <div className={styles.emptyCartMessage}>
-                <h2>Oops! Your cart is empty</h2>
-                <p>
-                  Looks like you haven&apos;t added any items to your cart yet.
-                </p>
-                <button
-                  className={styles.homeButton}
-                  onClick={() => router.push("/home")}
-                >
-                  Go to Home
-                </button>
-              </div>
-            ) : (
-              <>
+        {cart.length === 0 ? (
+          <div className={styles.emptyCartMessage}>
+            <h2>Oops! Your cart is empty</h2>
+            <p>
+              Looks like you haven&apos;t added any items to your cart yet.
+            </p>
+            <button
+              className={styles.homeButton}
+              onClick={() => router.push("/home")}
+            >
+              Add Items To Cart
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className={styles.cartLeft}>
+              <section className={styles.cartSection}>
                 <div className={styles.vendorInfo}>
                   <h3>Vendor: {getVendorName(cart[0]?.vendorName)}</h3>
                 </div>
@@ -683,97 +672,90 @@ export default function Cart() {
                     />
                   ))}
                 </div>
-              </>
-            )}
-          </section>
+              </section>
 
-          {cart.length > 0 && (
-            <section className={styles.extrasSection}>
-              <h3>More from {getVendorName(cart[0]?.vendorName)}</h3>
-              <div className={styles.extrasContainer}>
-                {filteredExtras.length > 1 && canScrollLeft && (
-                  <button
-                    className={styles.scrollArrow}
-                    onClick={scrollLeft}
-                    aria-label="Scroll left"
+              <section className={styles.extrasSection}>
+                <h3>More from {getVendorName(cart[0]?.vendorName)}</h3>
+                <div className={styles.extrasContainer}>
+                  {filteredExtras.length > 1 && canScrollLeft && (
+                    <button
+                      className={styles.scrollArrow}
+                      onClick={scrollLeft}
+                      aria-label="Scroll left"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                  )}
+                  <div
+                    ref={extrasListRef}
+                    className={`${styles.extrasList} ${filteredExtras.length === 1 ? styles.singleCard : ""
+                      }`}
                   >
-                    <ChevronLeft size={24} />
-                  </button>
-                )}
-                <div
-                  ref={extrasListRef}
-                  className={`${styles.extrasList} ${
-                    filteredExtras.length === 1 ? styles.singleCard : ""
-                  }`}
-                >
-                  {filteredExtras.length > 0 ? (
-                    filteredExtras.map((item) => {
-                      const cartItem = cart.find(
-                        (cartItem) => cartItem._id === item._id
-                      );
-                      const quantity = cartItem?.quantity || 0;
+                    {filteredExtras.length > 0 ? (
+                      filteredExtras.map((item) => {
+                        const cartItem = cart.find(
+                          (cartItem) => cartItem._id === item._id
+                        );
+                        const quantity = cartItem?.quantity || 0;
 
-                      return (
-                        <ExtrasCard
-                          key={item._id}
-                          item={item}
-                          onAdd={addToCart}
-                          onIncrease={increaseQty}
-                          onDecrease={decreaseQty}
-                          quantity={quantity}
-                        />
-                      );
-                    })
-                  ) : (
-                    <p className={styles.emptyExtras}>No extras available.</p>
+                        return (
+                          <ExtrasCard
+                            key={item._id}
+                            item={item}
+                            onAdd={addToCart}
+                            onIncrease={increaseQty}
+                            onDecrease={decreaseQty}
+                            quantity={quantity}
+                          />
+                        );
+                      })
+                    ) : (
+                      <p className={styles.emptyExtras}>No extras available.</p>
+                    )}
+                  </div>
+                  {filteredExtras.length > 1 && canScrollRight && (
+                    <button
+                      className={styles.scrollArrow}
+                      onClick={scrollRight}
+                      aria-label="Scroll right"
+                    >
+                      <ChevronRight size={24} />
+                    </button>
                   )}
                 </div>
-                {filteredExtras.length > 1 && canScrollRight && (
-                  <button
-                    className={styles.scrollArrow}
-                    onClick={scrollRight}
-                    aria-label="Scroll right"
-                  >
-                    <ChevronRight size={24} />
-                  </button>
+              </section>
+            </div>
+
+            {userData && (
+              <aside className={styles.cartRight}>
+                {/* Conditionally render BillBoxApproval (if vendor has pending order service) or BillBox (regular flow) */}
+                {hasPendingOrderService ? (
+                  <BillBoxApproval
+                    userId={userData._id}
+                    items={cart}
+                    onOrderSubmitted={(orderId) => {
+                      // Order submitted - will show waiting screen
+                      setCurrentOrderId(orderId);
+                      setShowWaitingScreen(true);
+                    }}
+                  />
+                ) : (
+                  <BillBox
+                    userId={userData._id}
+                    items={cart}
+                    onOrder={(orderId) => {
+                      // Clear cart and redirect to payment confirmation page
+                      setCart([]);
+                      window.location.href = `/payment?orderId=${orderId}`;
+                    }}
+                  />
                 )}
-              </div>
-            </section>
-          )}
-        </div>
-
-        <div className={styles.cartPage}>
-          {/* … left‐side items & extras … */}
-
-          {cart.length > 0 && userData && (
-            <aside className={styles.cartRight}>
-              {/* Conditionally render BillBoxApproval (if vendor has pending order service) or BillBox (regular flow) */}
-              {hasPendingOrderService ? (
-                <BillBoxApproval
-                  userId={userData._id}
-                  items={cart}
-                  onOrderSubmitted={(orderId) => {
-                    // Order submitted - will show waiting screen
-                    setCurrentOrderId(orderId);
-                    setShowWaitingScreen(true);
-                  }}
-                />
-              ) : (
-                <BillBox
-                  userId={userData._id}
-                  items={cart}
-                  onOrder={(orderId) => {
-                    // Clear cart and redirect to payment confirmation page
-                    setCart([]);
-                    window.location.href = `/payment?orderId=${orderId}`;
-                  }}
-                />
-              )}
-            </aside>
-          )}
-        </div>
+              </aside>
+            )}
+          </>
+        )}
       </div>
-      
+
       {/* Order waiting screen overlay - only show if using approval workflow */}
       {hasPendingOrderService && showWaitingScreen && currentOrderId && userData && (
         <OrderWaitingScreen

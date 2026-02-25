@@ -52,7 +52,6 @@ export default function SignupForm() {
   >([]);
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true);
   const hasInitialized = useRef(false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -95,7 +94,7 @@ export default function SignupForm() {
             formData.email
           )}&from=signup`
         );
-        
+
         // Show success notification (non-blocking)
         notify(data.message || "OTP sent! Please verify your email.", "success");
       } else {
@@ -140,15 +139,6 @@ export default function SignupForm() {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    // Simulate slow internet by showing skeleton for 1-2 seconds
-    const minDelay = 800;
-    const maxDelay = 1500;
-    const delay = Math.random() * (maxDelay - minDelay) + minDelay;
-    
-    const loadingTimeout = setTimeout(() => {
-      setIsPageLoading(false);
-    }, delay);
-
     // Defer session check to after initial render (keeps logic identical, just timing)
     const timeoutId = setTimeout(() => {
       checkSession(); // Refresh on page load
@@ -159,7 +149,6 @@ export default function SignupForm() {
     }, 60 * 60 * 1000); // Refresh every 1 hour
 
     return () => {
-      clearTimeout(loadingTimeout);
       clearTimeout(timeoutId);
       clearInterval(interval); // Cleanup on unmount
     };
@@ -274,23 +263,6 @@ export default function SignupForm() {
     };
   }, []);
 
-  if (isPageLoading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.box}>
-          <div className={styles.skeletonTitle}></div>
-          <form>
-            <div className={styles.skeletonInput}></div>
-            <div className={styles.skeletonInput}></div>
-            <div className={styles.skeletonInput}></div>
-            <div className={styles.skeletonButton}></div>
-            <div className={styles.skeletonText}></div>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
@@ -298,185 +270,185 @@ export default function SignupForm() {
         <div className={styles.box}>
           <h1>Sign Up</h1>
           <form>
-          {step === 1 && (
-            <>
-              <div className={styles.fieldGroup}>
-                <label htmlFor="fullName">Your name</label>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  type="text"
-                  placeholder="Enter your name"
-                  required
-                />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label htmlFor="email">Your email</label>
-                <input
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  type="email"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label htmlFor="phone">Your phone</label>
-                <input
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  type="tel"
-                  placeholder="Enter your phone number"
-                  pattern="[0-9]{10}"
-                  required
-                />
-              </div>
-            </>
-          )}
+            {step === 1 && (
+              <>
+                <div className={styles.fieldGroup}>
+                  <label htmlFor="fullName">Your name</label>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    type="text"
+                    placeholder="Enter your name"
+                    required
+                  />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label htmlFor="email">Your email</label>
+                  <input
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    type="email"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label htmlFor="phone">Your phone</label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    pattern="[0-9]{10}"
+                    required
+                  />
+                </div>
+              </>
+            )}
 
-          {step === 2 && (
-            <>
-              <div className={styles.passwordField}>
-                <label htmlFor="password">Enter password</label>
-                <input
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  required
-                />
-                <span
-                  className={styles.eyeIcon}
-                  onClick={() => setShowPassword(!showPassword)}
+            {step === 2 && (
+              <>
+                <div className={styles.passwordField}>
+                  <label htmlFor="password">Enter password</label>
+                  <input
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    required
+                  />
+                  <span
+                    className={styles.eyeIcon}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <FaEye /> : <FaEyeSlash />}
+                  </span>
+                </div>
+
+                <div className={styles.passwordField}>
+                  <label htmlFor="confirmPassword">Confirm password</label>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    required
+                  />
+                  <span
+                    className={styles.eyeIcon}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
+                  </span>
+                </div>
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                {/* Gender Selection */}
+                <div className={styles.genderField} ref={genderDropdownRef}>
+                  <input
+                    name="gender"
+                    value={formData.gender}
+                    readOnly
+                    placeholder="Gender"
+                    onClick={() => setShowGenderDropdown(!showGenderDropdown)}
+                  />
+                  <FaChevronDown
+                    className={`${styles.dropdownIcon} ${showGenderDropdown ? styles.open : ''}`}
+                  />
+                  <ul className={`${styles.genderList} ${showGenderDropdown ? styles.show : ''}`}>
+                    {["Male", "Female"].map((genderOption) => (
+                      <li
+                        key={genderOption}
+                        onClick={() => handleGenderSelection(genderOption)}
+                      >
+                        {genderOption}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* College Selection */}
+                <div className={styles.collegeField} ref={collegeDropdownRef}>
+                  <input
+                    name="college"
+                    value={
+                      colleges.find((c) => c._id === formData.uniID)?.fullName ||
+                      ""
+                    }
+                    readOnly
+                    placeholder="Select College"
+                    onClick={() => setShowCollegeDropdown(!showCollegeDropdown)}
+                  />
+                  <FaChevronDown
+                    className={`${styles.dropdownIcon} ${showCollegeDropdown ? styles.open : ''}`}
+                  />
+                  <ul className={`${styles.collegeList} ${showCollegeDropdown ? styles.show : ''}`}>
+                    {colleges.map((college) => (
+                      <li
+                        key={college._id}
+                        onClick={() => handleCollegeSelection(college._id)}
+                      >
+                        {college.fullName}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            <div className={step === 1 ? styles.buttons : styles.buttonsSpaced}>
+              {step > 1 && (
+                <button
+                  type="button"
+                  className={styles.stepButton}
+                  onClick={handleBack}
                 >
-                  {showPassword ? <FaEye /> : <FaEyeSlash />}
-                </span>
-              </div>
-
-              <div className={styles.passwordField}>
-                <label htmlFor="confirmPassword">Confirm password</label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
-                  required
-                />
-                <span
-                  className={styles.eyeIcon}
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
-                </span>
-              </div>
-            </>
-          )}
-
-          {step === 3 && (
-            <>
-              {/* Gender Selection */}
-              <div className={styles.genderField} ref={genderDropdownRef}>
-                <input
-                  name="gender"
-                  value={formData.gender}
-                  readOnly
-                  placeholder="Gender"
-                  onClick={() => setShowGenderDropdown(!showGenderDropdown)}
-                />
-                <FaChevronDown
-                  className={`${styles.dropdownIcon} ${showGenderDropdown ? styles.open : ''}`}
-                />
-                <ul className={`${styles.genderList} ${showGenderDropdown ? styles.show : ''}`}>
-                  {["Male", "Female"].map((genderOption) => (
-                    <li
-                      key={genderOption}
-                      onClick={() => handleGenderSelection(genderOption)}
-                    >
-                      {genderOption}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* College Selection */}
-              <div className={styles.collegeField} ref={collegeDropdownRef}>
-                <input
-                  name="college"
-                  value={
-                    colleges.find((c) => c._id === formData.uniID)?.fullName ||
-                    ""
-                  }
-                  readOnly
-                  placeholder="Select College"
-                  onClick={() => setShowCollegeDropdown(!showCollegeDropdown)}
-                />
-                <FaChevronDown
-                  className={`${styles.dropdownIcon} ${showCollegeDropdown ? styles.open : ''}`}
-                />
-                <ul className={`${styles.collegeList} ${showCollegeDropdown ? styles.show : ''}`}>
-                  {colleges.map((college) => (
-                    <li
-                      key={college._id}
-                      onClick={() => handleCollegeSelection(college._id)}
-                    >
-                      {college.fullName}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          )}
-
-          <div className={step === 1 ? styles.buttons : styles.buttonsSpaced}>
-            {step > 1 && (
+                  <span className={styles.buttonArrow}>←</span>
+                  Back
+                </button>
+              )}
               <button
                 type="button"
                 className={styles.stepButton}
-                onClick={handleBack}
+                onClick={handleNext}
+                disabled={isLoading}
               >
-                <span className={styles.buttonArrow}>←</span>
-                Back
+                {isLoading ? "Signing up..." : step === 3 ? "Submit" : "Next"}
+                {!isLoading && step !== 3 && <span className={styles.buttonArrow}>→</span>}
+                {!isLoading && step === 3 && <span className={styles.buttonArrow}>✈</span>}
               </button>
-            )}
-            <button
-              type="button"
-              className={styles.stepButton}
-              onClick={handleNext}
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing up..." : step === 3 ? "Submit" : "Next"}
-              {!isLoading && step !== 3 && <span className={styles.buttonArrow}>→</span>}
-              {!isLoading && step === 3 && <span className={styles.buttonArrow}>✈</span>}
-            </button>
-          </div>
+            </div>
 
-          {step === 1 && (
-            <>
-              {/* <div className={styles.divider}>
+            {step === 1 && (
+              <>
+                {/* <div className={styles.divider}>
                 <span> OR </span>{" "}
               </div>
               <div className={styles.googleSignUp}>
                 <GoogleSignup />
               </div> */}
 
-              <p className={styles.alreadyAccount}>
-                Already have an account?{" "}
-                <a href="/login" className={styles.loginLink}>
-                  Login
-                </a>
-              </p>
-            </>
-          )}
+                <p className={styles.alreadyAccount}>
+                  Already have an account?{" "}
+                  <a href="/login" className={styles.loginLink}>
+                    Login
+                  </a>
+                </p>
+              </>
+            )}
           </form>
         </div>
 

@@ -660,14 +660,14 @@
 }
 
 .foodPrice {
-  font-size: 1.5rem;
+  font-size: 1.6rem; // Slightly larger for prominence
   font-weight: 700;
   background: linear-gradient(135deg, #4ea199, #6fc3bd);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-fill-color: transparent;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0; // Removed margin
   flex-shrink: 0;
   letter-spacing: -0.02em;
 }
@@ -687,6 +687,10 @@
   flex-shrink: 0;
   width: 100%;
   box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 }
 
 .quantityControls {
@@ -694,7 +698,6 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 0.75rem;
 }
 
 .quantityButton {
@@ -950,7 +953,7 @@
   animation: fadeIn 0.3s ease-out;
 }
 
-.vendorModal {
+.modal {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
   padding: 0;
@@ -1056,54 +1059,162 @@
   }
 }
 
+// Vendor Grid Styles
+.vendorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+  padding: 0.5rem;
+}
+
 .vendorCard {
-  padding: 1.5rem;
-  border: 2px solid rgba(226, 232, 240, 0.8);
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 2px solid #e2e8f0; // Neutral border
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: #cbd5e1; // Neutral hover border
+  }
+
+  &Selected {
+    border-color: #4ea199;
+    background: rgba(78, 161, 153, 0.08);
+    box-shadow: 
+      0 0 0 4px rgba(78, 161, 153, 0.15),
+      0 10px 15px -3px rgba(78, 161, 153, 0.2);
+    transform: scale(1.02);
+
+    &:hover {
+      transform: translateY(-5px) scale(1.02);
+      border-color: #3d8a82;
+    }
+  }
+}
+
+.vendorImagePlaceholder {
+  width: 100%;
+  height: 180px; // Match Explore Food Options height
+  position: relative;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vendorImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+
+  .vendorCard:hover & {
+    transform: scale(1.05);
+  }
+}
+
+.vendorInfo {
+  padding: 1.5rem; // Add padding to content area
+  text-align: left;
+  background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 30%, #f0f9ff 60%, #f8fafc 100%);;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.vendorName {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.unavailableBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: #fee2e2;
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+.checkMenuBtn {
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 50%, #01796f 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 
+    0 4px 6px -1px rgba(78, 161, 153, 0.3),
+    0 2px 4px -1px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  margin-top: auto;
 
   &::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #4ea199, #6fc3bd);
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
   }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.95);
-    border-color: rgba(78, 161, 153, 0.4);
-    transform: translateY(-4px);
+    background: linear-gradient(135deg, #01796f 0%, #4ea199 50%, #6fc3bd 100%);
+    transform: translateY(-2px);
     box-shadow: 
-      0 10px 20px -5px rgba(78, 161, 153, 0.2),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05);
-
+      0 8px 12px -2px rgba(78, 161, 153, 0.4),
+      0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    
     &::before {
-      opacity: 1;
+      left: 100%;
     }
   }
 
-  &.vendorCardSelected {
-    border-color: #4ea199;
-    background: linear-gradient(135deg, rgba(78, 161, 153, 0.1), rgba(111, 195, 189, 0.1));
-    box-shadow: 
-      0 8px 16px -4px rgba(78, 161, 153, 0.3),
-      0 0 0 2px rgba(78, 161, 153, 0.2);
-
-    &::before {
-      opacity: 1;
-    }
+  &:active {
+    transform: translateY(0);
   }
 }
+
+// Keeping existing .vendorCard for compatibility if used elsewhere, 
+// but the above definition overlaps. 
+// Since the file had .vendorCard defined later, I will rename the OLD one or ensuring this one takes precedence.
+// The replace target starts at line 1059 which IS the old .vendorCard. 
+// So I am REPLACING the old .vendorCard with this new structure which matches the TSX.
+
 
 .vendorCardContent {
   display: flex;
@@ -1123,17 +1234,17 @@
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(78, 161, 153, 0.15), rgba(111, 195, 189, 0.15));
+  background: #f1f5f9; // Neutral background
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 2px solid rgba(78, 161, 153, 0.2);
+  border: 2px solid #e2e8f0; // Neutral border
   transition: all 0.3s ease;
 
   .vendorCard:hover & {
-    background: linear-gradient(135deg, rgba(78, 161, 153, 0.25), rgba(111, 195, 189, 0.25));
-    border-color: rgba(78, 161, 153, 0.4);
+    background: #e2e8f0;
+    border-color: #cbd5e1;
     transform: scale(1.05);
   }
 
@@ -1144,7 +1255,7 @@
 }
 
 .vendorCardIcon {
-  color: #4ea199;
+  color: #64748b; // Neutral icon color
   transition: all 0.3s ease;
 
   .vendorCardSelected & {
@@ -1198,7 +1309,8 @@
 .vendorCardCheck {
   color: #4ea199;
   flex-shrink: 0;
-  animation: scaleIn 0.3s ease-out;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 2px 4px rgba(78, 161, 153, 0.2));
 }
 
 @keyframes scaleIn {
@@ -1640,4 +1752,529 @@
       height: 20px;
     }
   }
+}
+
+// --- New Progressive Disclosure Styles ---
+
+.sectionContainer {
+  margin-bottom: 3rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sectionTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  position: relative;
+  display: inline-block;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 40px;
+    height: 4px;
+    background: #4ea199;
+    border-radius: 2px;
+  }
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+
+  .sectionTitle {
+    margin: 0;
+    font-size: 1.75rem;
+    color: #1e293b;
+  }
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #64748b;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+}
+
+// Vendor Grid Styles - Removed duplicate legacy styles 
+
+// Category Toggles (Retail vs Produce)
+.categoryToggleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  max-width: 600px;
+}
+
+.categoryToggleCard {
+  background: white;
+  padding: 0; // Remove padding for full bleed
+  border-radius: 20px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0; // Remove gap, use padding in content
+  overflow: hidden; // Ensure image stays inside radius
+
+  .iconWrapper {
+    margin-top: 2rem; // Add margin if icon is used
+    width: 64px;
+    height: 64px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    transition: all 0.3s;
+  }
+
+  span {
+    padding: 1rem; // Add padding for text
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  .categoryImageWrapper {
+    width: 100%;
+    height: 180px;
+    position: relative;
+    border-top-left-radius: 20px; // Match card radius
+    border-top-right-radius: 20px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    overflow: hidden;
+    margin-bottom: 0;
+    box-shadow: none; // remove separate shadow
+    
+    img {
+      transition: transform 0.5s ease;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  // Removed overlay as it might obscure contained image or look weird with white space
+  // .categoryOverlay { ... }
+
+  .categoryLabel {
+    position: absolute;
+    left: 1rem;
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    z-index: 2;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+
+    .iconWrapper {
+      background: #e0f2fe;
+      color: #0ea5e9;
+    }
+    
+    .categoryImageWrapper img {
+      transform: scale(1.1);
+    }
+    
+    .categoryLabel {
+      color: #fff;
+    }
+  }
+
+  &.active {
+    border-color: #4ea199;
+    background: #f0fdf9;
+
+    .iconWrapper {
+      background: #4ea199;
+      color: white;
+    }
+
+    span {
+      color: #1e293b;
+    }
+    
+    .categoryLabel {
+      color: #0f766e;
+    }
+  }
+}
+
+.vendorImage {
+  border-radius: 12px; // Match placeholder
+}
+
+// Kind Grid (Categories)
+.kindsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+.kindCard {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: all 0.3s;
+
+  &:hover {
+    transform: scale(1.03);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    
+    .kindImageWrapper img {
+        transform: scale(1.1);
+    }
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 12px;
+  }
+}
+
+.kindImageWrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+
+  img {
+    transition: transform 0.5s ease;
+  }
+}
+
+.kindOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+}
+
+.kindTitle {
+  position: absolute;
+  top: 0.5rem;
+  left: 1rem;
+  width: auto;
+  padding: 0;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: left;
+  z-index: 2;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    left: 0.75rem;
+    top: 0.4rem;
+  }
+}
+
+// Item Grid
+.itemsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr));
+  gap: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.itemWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+}
+
+.quickAddBtn {
+  width: 100%;
+  padding: 0.8rem;
+  background: #4ea199;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #3d8a82;
+  }
+}
+
+.headerTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  // This now mainly manages the filter row positioning
+}
+
+.filterContainer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.filterBtn {
+  background: white;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 0.5rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    color: #4ea199;
+    border-color: #4ea199;
+    background: rgba(78, 161, 153, 0.05);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #4ea199, #6fc3bd);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 6px -1px rgba(78, 161, 153, 0.3);
+  }
+}
+
+.filterDivider {
+  width: 1px;
+  height: 24px;
+  background: #cbd5e1;
+  margin: 0 0.5rem;
+}
+
+.subtypeDropdownContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.subtypeLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4ea199;
+  white-space: nowrap;
+}
+
+.customDropdown {
+  position: relative;
+  min-width: 160px;
+}
+
+.dropdownToggle {
+  background: white;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    border-color: #4ea199;
+    background-color: rgba(78, 161, 153, 0.05);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    border-color: #4ea199;
+    box-shadow: 0 0 0 3px rgba(78, 161, 153, 0.15);
+  }
+}
+
+.dropdownIcon {
+  color: #4ea199;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+.dropdownList {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: #FBE4E3; // Using the signup page's specific background color
+  border: 2px solid rgba(251, 228, 227, 0.8);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  margin: 0;
+  padding: 0.5rem 0;
+  list-style: none;
+  opacity: 0;
+  transform: translateY(-10px);
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 250px;
+  overflow-y: auto;
+
+  /* Custom Scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(78, 161, 153, 0.2);
+    border-radius: 10px;
+  }
+
+  &.show {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+}
+
+.dropdownItem {
+  padding: 0.7rem 1rem;
+  margin: 0 0.5rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.6);
+    color: #01796f;
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  &.selected {
+    background: rgba(78, 161, 153, 0.15);
+    color: #1e293b;
+    font-weight: 700;
+    
+    &::after {
+      content: '✓';
+      font-size: 0.8rem;
+    }
+  }
+
+  &:active {
+    transform: translateX(2px);
+  }
+}
+
+.showMoreContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+
+.showMoreBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 2rem;
+  background: white;
+  border: 1px solid rgba(78, 161, 153, 0.3);
+  border-radius: 99px;
+  color: #4ea199;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    background: linear-gradient(135deg, #4ea199, #6fc3bd);
+    color: white;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px -2px rgba(78, 161, 153, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.favoritesSectionTransparent {
+  margin-bottom: 3rem;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  backdrop-filter: none;
+  padding: 0;
 }

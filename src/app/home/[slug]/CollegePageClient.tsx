@@ -1,25 +1,30 @@
 "use client";
 
-import { useSearchParams, usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, AlertCircle, GraduationCap } from "lucide-react";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { Store, ArrowLeft, ChevronDown } from "lucide-react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./styles/global.css";
 import styles from "./styles/CollegePage.module.scss";
-import homeStyles from "../../home/styles/Home.module.scss";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import FavoritesSection from "./components/FavoritesSection";
-import SpecialOffersSection from "./components/SpecialOffersSection";
-import CategorySection from "./components/CategorySection";
-import { CartProvider } from "./context/CartContext";
+import { CartProvider, useCart } from "./context/CartContext";
 import {
   FoodItem,
   FavoriteItem,
   College,
   ApiFavoritesResponse,
+  Vendor as VendorType,
+  CollegeVendor,
 } from "./types";
+import Image from "next/image";
+import DishListItem from "@/app/components/food/DishListItem/DishListItemV2";
+
+import { toast } from "react-toastify";
+import VendorModal from "./components/VendorModal";
+import FavoritesSection from "./components/FavoritesSection";
+import { VendorSkeleton, CategorySkeleton } from "@/app/components/skeleton/SkeletonLoader/SkeletonLoader";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
@@ -29,34 +34,25 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 const normalizeName = (name: string) =>
   name
     ?.toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-") || "";
+    .replace(/[^a-z0-9]+/g, "-") // Replace any non-alphanumeric characters with hyphens
+    .replace(/^-+|-+$/g, "") || ""; // Remove leading and trailing hyphens
 
-const CustomPrevArrow = (props: { onClick?: () => void }) => (
-  <button
-    onClick={props.onClick}
-    className={`${styles.carouselButton} ${styles.prevButton}`}
-  >
-    <ChevronLeft size={20} />
-  </button>
-);
-
-const CustomNextArrow = (props: { onClick?: () => void }) => (
-  <button
-    onClick={props.onClick}
-    className={`${styles.carouselButton} ${styles.nextButton}`}
-  >
-    <ChevronRight size={20} />
-  </button>
-);
-
-const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
+const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdProp: string | null }) => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
   console.log('Original slug:', slug);
   console.log('Slug type:', typeof slug);
   console.log('Slug length:', slug.length);
+
+  // Use passed userId
+  const [userId, setUserId] = useState<string | null>(userIdProp);
+
+  // Sync prop userId to state if needed, or just use prop.
+  // Existing logic uses userId state. Let's sync it.
+  useEffect(() => {
+    if (userIdProp !== undefined) setUserId(userIdProp);
+  }, [userIdProp]);
 
   const formatCollegeName = (name: string) => {
     if (!name) return '';
@@ -81,15 +77,52 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
   const collegeName = formatCollegeName(getCollegeNameFromPath());
 
   const [uniId, setUniId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
   const [userFullName, setUserFullName] = useState<string>("");
   const [items, setItems] = useState<{ [key: string]: FoodItem[] }>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [userFavorites, setUserFavorites] = useState<FavoriteItem[]>([]);
-  const [vendorSpecialItems, setVendorSpecialItems] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<{ retail: string[]; produce: string[] }>({ retail: [], produce: [] });
-  const [categorySubtypes, setCategorySubtypes] = useState<{ [key: string]: string[] }>({});
+  // const [categorySubtypes, setCategorySubtypes] = useState<{ [key: string]: string[] }>({});
+
+  const [vendors, setVendors] = useState<CollegeVendor[]>([]);
+  // New State for Progressive Disclosure
+  const [collegeImages, setCollegeImages] = useState<{
+    retail?: string;
+    produce?: string;
+    categories?: { name: string; image: string }[]
+  }>({});
+  const [selectedCategory, setSelectedCategory] = useState<'retail' | 'produce' | null>(null);
+  const [selectedKind, setSelectedKind] = useState<string | null>(null); // e.g., 'Pizza', 'Fruits'
+  const [dietaryFilter, setDietaryFilter] = useState<'all' | 'veg' | 'non-veg'>('all');
+  const [subtypeFilter, setSubtypeFilter] = useState<string>('all');
+
+  // Vendor Modal State
+  const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+  const [selectedItemForModal, setSelectedItemForModal] = useState<FoodItem | null>(null);
+  const [modalSelectedVendor, setModalSelectedVendor] = useState<VendorType | null>(null);
+  const [confirmedVendorId, setConfirmedVendorId] = useState<string | null>(null);
+  const [showSubtypeDropdown, setShowSubtypeDropdown] = useState(false);
+  const subtypeDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Cart Context
+  const { cartItems, addItemToCart, increaseItemQuantity, decreaseItemQuantity } = useCart();
+
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      // Assuming single vendor policy, take the vendor from the first item
+      setConfirmedVendorId(cartItems[0].vendorId);
+    } else {
+      setConfirmedVendorId(null);
+    }
+  }, [cartItems]);
+
+  // State to hold valid vendors for the modal
+  const [itemVendors, setItemVendors] = useState<VendorType[]>([]);
+  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
+
+  // Loading states for sections
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
+  const [isLoadingVendors, setIsLoadingVendors] = useState(true);
+  const [isLoadingItems, setIsLoadingItems] = useState(true);
 
   const currentRequest = useRef<number>(0);
 
@@ -100,10 +133,20 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     window.history.replaceState({}, "", newUrl);
   }, []);
 
+  // Click outside handler for subtype dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (subtypeDropdownRef.current && !subtypeDropdownRef.current.contains(event.target as Node)) {
+        setShowSubtypeDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Get college list and match collegeName to get actual college id
   const fetchCollegesAndSetUniId = useCallback(async (collegeSlug: string) => {
     try {
-      setLoading(true);
       const response = await fetch(`${BACKEND_URL}/api/user/auth/list`, {
         credentials: "include",
       });
@@ -115,28 +158,29 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
 
       // Find the college that matches the normalized slug
       const matchedCollege = colleges.find((college) => {
-        const normalizedCollegeName = normalizeName(college.name);
+        const normalizedCollegeName = normalizeName(college.fullName);
         return normalizedCollegeName === normalizedSlug;
       });
 
       if (matchedCollege) {
         setUniId(matchedCollege._id);
+        setCollegeImages({
+          retail: matchedCollege.retailImage,
+          produce: matchedCollege.produceImage,
+          categories: matchedCollege.categoryImages
+        });
         localStorage.setItem("currentCollegeId", matchedCollege._id);
         updateUrlWithCollegeId(matchedCollege._id);
-        setLoading(false);
         return true;
       } else {
-        // Only set error if we've actually tried to load the data
+        // College not found - just log it
         if (colleges.length > 0) {
-          setError(`College not found: ${collegeSlug}`);
+          console.warn(`College not found: ${collegeSlug}`);
         }
-        setLoading(false);
         return false;
       }
     } catch (err) {
       console.error("Error fetching colleges:", err);
-      setError("Failed to load college information");
-      setLoading(false);
       return false;
     }
   }, [updateUrlWithCollegeId]);
@@ -162,11 +206,16 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
             const found = colleges.find((c) => c._id.startsWith(cid));
             if (found && isMounted) {
               setUniId(found._id);
+              setCollegeImages({
+                retail: found.retailImage,
+                produce: found.produceImage,
+                categories: found.categoryImages
+              });
               localStorage.setItem("currentCollegeId", found._id);
               updateUrlWithCollegeId(found._id);
               return;
             }
-          } catch {}
+          } catch { }
         } else {
           if (isMounted) {
             setUniId(cid);
@@ -195,12 +244,58 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     };
   }, [slug, cid, fetchCollegesAndSetUniId, updateUrlWithCollegeId]);
 
+  // Fetch full university profile to get latest images
+  useEffect(() => {
+    if (!uniId) return;
+
+    const fetchUniProfile = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/university/${uniId}/profile`);
+        if (response.ok) {
+          const data = await response.json();
+          setCollegeImages({
+            retail: data.retailImage,
+            produce: data.produceImage,
+            categories: data.categoryImages
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching university profile:", error);
+      }
+    };
+
+    fetchUniProfile();
+  }, [uniId]);
+
+  // Helper to find category image with fuzzy matching
+  const findCategoryImage = (categoryName: string) => {
+    if (!collegeImages.categories) return null;
+
+    // Normalize string for comparison (lowercase, trim, remove special chars)
+    const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const target = normalize(categoryName);
+
+    // 1. Exact match
+    const exact = collegeImages.categories.find(c => c.name === categoryName);
+    if (exact) return exact.image;
+
+    // 2. Case-insensitive match
+    const caseInsensitive = collegeImages.categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+    if (caseInsensitive) return caseInsensitive.image;
+
+    // 3. Fuzzy match (normalized)
+    const fuzzy = collegeImages.categories.find(c => normalize(c.name) === target);
+    if (fuzzy) return fuzzy.image;
+
+    return null;
+  };
+
   // Fetch user & favorites
   useEffect(() => {
     const fetchUserAndFavorites = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token || !uniId) return;
+        if (!token) return;
 
         // Fetch user data
         const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
@@ -210,26 +305,49 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
         if (!userResponse.ok) return;
         const userData = await userResponse.json();
         setUserFullName(userData.fullName);
-        setUserId(userData._id);
+        setUserId(userData._id); // Ensure state is synced with fetched user
 
-        // Fetch favorites using the new API endpoint
-        const favoritesResponse = await fetch(
-          `${BACKEND_URL}/fav/${userData._id}/${uniId}`,
-          {
-            credentials: "include",
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        if (!favoritesResponse.ok) return;
-        const favoritesData =
-          (await favoritesResponse.json()) as ApiFavoritesResponse;
-        setUserFavorites(favoritesData.favourites);
+        if (uniId) {
+          // Fetch favorites using the new API endpoint
+          const favoritesResponse = await fetch(
+            `${BACKEND_URL}/fav/${userData._id}/${uniId}`,
+            {
+              credentials: "include",
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          if (!favoritesResponse.ok) return;
+          const favoritesData =
+            (await favoritesResponse.json()) as ApiFavoritesResponse;
+          setUserFavorites(favoritesData.favourites);
+        }
       } catch (err) {
         console.error("Error fetching user or favorites:", err);
         setUserFavorites([]);
+      } finally {
+        setIsLoadingFavorites(false);
       }
     };
     fetchUserAndFavorites();
+  }, [uniId]);
+
+  // Fetch Vendors
+  useEffect(() => {
+    if (!uniId) return;
+    const getVendors = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/vendor/list/uni/${uniId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setVendors(data);
+        }
+      } catch (err) {
+        console.error("Error fetching vendors:", err);
+      } finally {
+        setIsLoadingVendors(false);
+      }
+    };
+    getVendors();
   }, [uniId]);
 
   // Fetch food items for given uniId and categories
@@ -243,94 +361,21 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     const requestId = ++currentRequest.current;
 
     const fetchItems = async () => {
-      setLoading(true);
-      setError(null);
 
       const allItems: { [key: string]: FoodItem[] } = {};
 
       try {
-        // Fetch sort order for university-wide menu
-        let sortOrder: { itemId: string; sortIndex: number }[] = [];
-        let typeOrder: { category: string; type: string; sortIndex: number }[] = [];
-        let subtypeOrder: { category: string; type: string; subtype: string; sortIndex: number }[] = [];
-        try {
-          const sortRes = await fetch(
-            `${BACKEND_URL}/api/menu-sort/order?uniId=${uniId}&vendorId=null`
-          );
-          if (sortRes.ok) {
-            const sortData = await sortRes.json();
-            if (sortData.success && sortData.data) {
-              if (sortData.data.itemOrder) {
-                sortOrder = sortData.data.itemOrder.map((item: { itemId: string; sortIndex: number }) => ({
-                  itemId: item.itemId,
-                  sortIndex: item.sortIndex,
-                }));
-              }
-              if (sortData.data.typeOrder) {
-                typeOrder = sortData.data.typeOrder;
-              }
-              if (sortData.data.subtypeOrder) {
-                subtypeOrder = sortData.data.subtypeOrder;
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Error fetching sort order:", err);
-          // Continue without sort order if it fails
-        }
-
-        // Create sort maps for quick lookup
-        const sortMap = new Map<string, number>();
-        sortOrder.forEach((item) => {
-          sortMap.set(item.itemId, item.sortIndex);
-        });
-
-        const typeOrderMap = new Map<string, number>();
-        typeOrder.forEach((item) => {
-          // item.category is "retail" or "produce", item.type is the item type like "pizza"
-          typeOrderMap.set(`${item.category}-${item.type}`, item.sortIndex);
-        });
-
-        const subtypeOrderMap = new Map<string, number>();
-        subtypeOrder.forEach((item) => {
-          // item.category is "retail" or "produce", item.type is the item type, item.subtype is the subtype
-          subtypeOrderMap.set(`${item.category}-${item.type}-${item.subtype}`, item.sortIndex);
-        });
-
         // Fetch all retail and produce items for the university (like uniDashboard)
         const [retailRes, produceRes] = await Promise.all([
           fetch(`${BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
           fetch(`${BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
         ]);
-        
-        // Check response status before parsing JSON
-        if (!retailRes.ok) {
-          let errorMessage = `Failed to fetch retail items: ${retailRes.status} ${retailRes.statusText}`;
-          try {
-            const errorData = await retailRes.json();
-            errorMessage = errorData.error || errorData.message || errorMessage;
-          } catch {
-            // If JSON parsing fails, use status text
-          }
-          console.warn(`Failed to fetch retail items (${retailRes.status}):`, errorMessage);
-        }
-        
-        if (!produceRes.ok) {
-          let errorMessage = `Failed to fetch produce items: ${produceRes.status} ${produceRes.statusText}`;
-          try {
-            const errorData = await produceRes.json();
-            errorMessage = errorData.error || errorData.message || errorMessage;
-          } catch {
-            // If JSON parsing fails, use status text
-          }
-          console.warn(`Failed to fetch produce items (${produceRes.status}):`, errorMessage);
-        }
-        
+
         // Parse JSON only if response is ok, otherwise use empty data
         const retailData = retailRes.ok ? await retailRes.json() : { items: [] };
         const produceData = produceRes.ok ? await produceRes.json() : { items: [] };
-        
-        let retailItems: FoodItem[] = (retailData.items || []).map((item: Record<string, unknown>) => ({
+
+        const retailItems: FoodItem[] = (retailData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
           title: item.name as string,
           description: item.description as string | undefined,
@@ -345,8 +390,8 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           quantity: item.quantity as number,
           isVeg: item.isVeg !== undefined ? (item.isVeg as boolean) : true,
         }));
-        
-        let produceItems: FoodItem[] = (produceData.items || []).map((item: Record<string, unknown>) => ({
+
+        const produceItems: FoodItem[] = (produceData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
           title: item.name as string,
           description: item.description as string | undefined,
@@ -362,184 +407,48 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
           isVeg: item.isVeg !== undefined ? (item.isVeg as boolean) : true,
         }));
 
-        // Apply sort order if available
-        if (sortMap.size > 0) {
-          retailItems = retailItems.sort((a, b) => {
-            const aIndex = sortMap.get(a.id);
-            const bIndex = sortMap.get(b.id);
-            if (aIndex !== undefined && bIndex !== undefined) {
-              return aIndex - bIndex;
-            }
-            if (aIndex !== undefined) return -1;
-            if (bIndex !== undefined) return 1;
-            return a.title.localeCompare(b.title);
-          });
-          
-          produceItems = produceItems.sort((a, b) => {
-            const aIndex = sortMap.get(a.id);
-            const bIndex = sortMap.get(b.id);
-            if (aIndex !== undefined && bIndex !== undefined) {
-              return aIndex - bIndex;
-            }
-            if (aIndex !== undefined) return -1;
-            if (bIndex !== undefined) return 1;
-            return a.title.localeCompare(b.title);
-          });
-        } else {
-          // If no sort order, sort alphabetically by title
-          retailItems.sort((a, b) => a.title.localeCompare(b.title));
-          produceItems.sort((a, b) => a.title.localeCompare(b.title));
-        }
-        
-        // Track subtypes for each category
-        const subtypesMap: { [key: string]: Set<string> } = {};
-        
+        // Sort items alphabetically by title
+        retailItems.sort((a, b) => a.title.localeCompare(b.title));
+        produceItems.sort((a, b) => a.title.localeCompare(b.title));
+
         // Group by category-type and subtype when subtype exists
-        // Items are already sorted, so they will maintain order when grouped
         [...retailItems, ...produceItems].forEach(item => {
-          if (item.subtype) {
-            // If item has subtype, group by type-category-subtype
-            const key = `${item.type}-${item.category}-${item.subtype}`;
-            if (!allItems[key]) allItems[key] = [];
-            allItems[key].push(item);
-            
-            // Track subtypes for this category
-            const categoryKey = `${item.type}-${item.category}`;
-            if (!subtypesMap[categoryKey]) {
-              subtypesMap[categoryKey] = new Set<string>();
-            }
-            subtypesMap[categoryKey].add(item.subtype);
-          } else {
-            // If no subtype, group by type-category as before
-            const key = `${item.type}-${item.category}`;
-            if (!allItems[key]) allItems[key] = [];
-            allItems[key].push(item);
-          }
+          // Group by type-category
+          const key = `${item.type}-${item.category}`; // e.g. retail-Pizza
+          if (!allItems[key]) allItems[key] = [];
+          allItems[key].push(item);
         });
-        
-        // Convert subtypes map to array format and apply subtype order
-        // Key format: "type-category" where type is "retail"/"produce", category is item type like "pizza"
-        const subtypesMapArrays: { [key: string]: string[] } = {};
-        Object.keys(subtypesMap).forEach(key => {
-          const subtypes = Array.from(subtypesMap[key]);
-          
-          // Extract type and category from key (format: "type-category")
-          // type is "retail" or "produce", category is item type like "pizza"
-          const [itemType, category] = key.split('-');
-          
-          // Apply subtype order if available
-          // subtypeOrder key format: "category-type-subtype" where category is "retail"/"produce"
-          if (subtypeOrderMap.size > 0) {
-            subtypes.sort((a, b) => {
-              // itemType is "retail" or "produce", category is item type like "pizza"
-              const aKey = `${itemType}-${category}-${a}`;
-              const bKey = `${itemType}-${category}-${b}`;
-              const aIndex = subtypeOrderMap.get(aKey);
-              const bIndex = subtypeOrderMap.get(bKey);
-              if (aIndex !== undefined && bIndex !== undefined) {
-                return aIndex - bIndex;
-              }
-              if (aIndex !== undefined) return -1;
-              if (bIndex !== undefined) return 1;
-              return a.localeCompare(b);
-            });
-          } else {
-            // Sort alphabetically if no subtype order
-            subtypes.sort();
-          }
-          
-          subtypesMapArrays[key] = subtypes;
-        });
-        setCategorySubtypes(subtypesMapArrays);
-        
-        // Ensure items within each group maintain sort order
-        // (Items are already sorted before grouping, but let's verify each group is sorted)
-        Object.keys(allItems).forEach(key => {
-          const groupItems = allItems[key];
-          if (sortMap.size > 0) {
-            // Re-sort items in each group to ensure correct order
-            groupItems.sort((a, b) => {
-              const aIndex = sortMap.get(a.id);
-              const bIndex = sortMap.get(b.id);
-              if (aIndex !== undefined && bIndex !== undefined) {
-                return aIndex - bIndex;
-              }
-              if (aIndex !== undefined) return -1;
-              if (bIndex !== undefined) return 1;
-              return a.title.localeCompare(b.title);
-            });
-          }
-        });
-        
-        // Dynamically generate categories from fetched items
-        // Note: In FoodItem, item.category is the item type (like "pizza"), item.type is "retail" or "produce"
+
+        // Generate Categories
         const retailTypes = new Set<string>();
         const produceTypes = new Set<string>();
         retailItems.forEach(item => {
-          if (item.category) retailTypes.add(item.category); // item.category is the type like "pizza"
+          if (item.category) retailTypes.add(item.category);
         });
         produceItems.forEach(item => {
-          if (item.category) produceTypes.add(item.category); // item.category is the type like "pizza"
+          if (item.category) produceTypes.add(item.category);
         });
-        
-        // Apply type order if available
-        const sortedRetailTypes = Array.from(retailTypes);
-        const sortedProduceTypes = Array.from(produceTypes);
-        
-        if (typeOrderMap.size > 0) {
-          sortedRetailTypes.sort((a, b) => {
-            const aKey = `retail-${a}`; // a is the item type like "pizza"
-            const bKey = `retail-${b}`;
-            const aIndex = typeOrderMap.get(aKey);
-            const bIndex = typeOrderMap.get(bKey);
-            if (aIndex !== undefined && bIndex !== undefined) {
-              return aIndex - bIndex;
-            }
-            if (aIndex !== undefined) return -1;
-            if (bIndex !== undefined) return 1;
-            return a.localeCompare(b);
-          });
-          
-          sortedProduceTypes.sort((a, b) => {
-            const aKey = `produce-${a}`; // a is the item type like "pizza"
-            const bKey = `produce-${b}`;
-            const aIndex = typeOrderMap.get(aKey);
-            const bIndex = typeOrderMap.get(bKey);
-            if (aIndex !== undefined && bIndex !== undefined) {
-              return aIndex - bIndex;
-            }
-            if (aIndex !== undefined) return -1;
-            if (bIndex !== undefined) return 1;
-            return a.localeCompare(b);
-          });
-        } else {
-          sortedRetailTypes.sort();
-          sortedProduceTypes.sort();
-        }
-        
+
+        const sortedRetailTypes = Array.from(retailTypes).sort();
+        const sortedProduceTypes = Array.from(produceTypes).sort();
+
         setCategories({
           retail: sortedRetailTypes,
           produce: sortedProduceTypes,
         });
-        
+
         if (requestId === currentRequest.current) {
-          console.log('DEBUG allItems:', allItems);
-          console.log('DEBUG categories:', { retail: Array.from(retailTypes), produce: Array.from(produceTypes) });
           setItems(allItems);
-          setLoading(false);
         }
       } catch (error) {
         console.error('Error fetching items:', error);
         if (requestId === currentRequest.current) {
-          // Don't set error state if it's just a 404 - just log it and show empty menu
-          if (error instanceof Error && error.message.includes('404')) {
-            console.warn("University not found, showing empty menu");
-            setItems({});
-            setCategories({ retail: [], produce: [] });
-          } else {
-            setError('Failed to load items.');
-          }
-          setLoading(false);
+          setItems({});
+          setCategories({ retail: [], produce: [] });
+        }
+      } finally {
+        if (requestId === currentRequest.current) {
+          setIsLoadingItems(false);
         }
       }
     };
@@ -547,380 +456,637 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
     fetchItems();
   }, [uniId]);
 
-  // Fetch vendor inventories and extract specials
-  useEffect(() => {
-    if (!uniId) return;
-    type VendorInventoryEntry = {
-      itemId: string;
-      isSpecial?: string;
-      quantity?: number;
-      isAvailable?: string;
-    };
-    type Vendor = {
-      _id: string;
-      retailInventory?: VendorInventoryEntry[];
-      produceInventory?: VendorInventoryEntry[];
-    };
-    const fetchVendorSpecials = async () => {
-      // Early return if uniId is not available
-      if (!uniId) {
-        console.warn('uniId is not available, skipping vendor specials fetch');
-        setVendorSpecialItems([]);
-        return;
-      }
-
-      try {
-        // Fetch vendors and all items in parallel
-        const [vendorsRes, retailRes, produceRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/api/vendor/list/uni/${uniId}`),
-          fetch(`${BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
-          fetch(`${BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
-        ]);
-        
-        // Check response status before parsing JSON
-        if (!vendorsRes.ok) {
-          let errorMessage = `Failed to fetch vendors: ${vendorsRes.status} ${vendorsRes.statusText}`;
-          try {
-            const errorData = await vendorsRes.json();
-            errorMessage = errorData.error || errorData.message || errorMessage;
-          } catch {
-            // If JSON parsing fails, use status text
-          }
-          
-          // Handle 404 (University not found) gracefully
-          if (vendorsRes.status === 404) {
-            console.warn(`University not found for uniId: ${uniId}. Setting empty vendor specials.`);
-            setVendorSpecialItems([]);
-            return;
-          }
-          
-          // For other errors, log but don't throw - just set empty array
-          console.error(`Failed to fetch vendors (${vendorsRes.status}):`, errorMessage);
-          setVendorSpecialItems([]);
-          return;
-        }
-        
-        if (!retailRes.ok) {
-          let errorMessage = `Failed to fetch retail items: ${retailRes.status} ${retailRes.statusText}`;
-          try {
-            const errorData = await retailRes.json();
-            errorMessage = errorData.error || errorData.message || errorMessage;
-          } catch {
-            // If JSON parsing fails, use status text
-          }
-          
-          // Handle 404 gracefully
-          if (retailRes.status === 404) {
-            console.warn(`Retail items not found for uniId: ${uniId}`);
-            setVendorSpecialItems([]);
-            return;
-          }
-          
-          console.error(`Failed to fetch retail items (${retailRes.status}):`, errorMessage);
-          setVendorSpecialItems([]);
-          return;
-        }
-        
-        if (!produceRes.ok) {
-          let errorMessage = `Failed to fetch produce items: ${produceRes.status} ${produceRes.statusText}`;
-          try {
-            const errorData = await produceRes.json();
-            errorMessage = errorData.error || errorData.message || errorMessage;
-          } catch {
-            // If JSON parsing fails, use status text
-          }
-          
-          // Handle 404 gracefully
-          if (produceRes.status === 404) {
-            console.warn(`Produce items not found for uniId: ${uniId}`);
-            setVendorSpecialItems([]);
-            return;
-          }
-          
-          console.error(`Failed to fetch produce items (${produceRes.status}):`, errorMessage);
-          setVendorSpecialItems([]);
-          return;
-        }
-        
-        const vendors: Vendor[] = await vendorsRes.json();
-        const retailData = await retailRes.json();
-        const produceData = await produceRes.json();
-
-        // Create lookup maps for items
-        const retailItemsMap = new Map<string, Record<string, unknown>>();
-        const produceItemsMap = new Map<string, Record<string, unknown>>();
-        
-        (retailData.items || []).forEach((item: Record<string, unknown>) => {
-          retailItemsMap.set(item._id as string, item);
-        });
-        
-        (produceData.items || []).forEach((item: Record<string, unknown>) => {
-          produceItemsMap.set(item._id as string, item);
-        });
-
-        const specials: FoodItem[] = [];
-        
-        vendors.forEach((vendor) => {
-          // Process retail inventory
-          (vendor.retailInventory || []).forEach((entry) => {
-            if (entry.isSpecial && entry.isSpecial === 'Y') {
-              const itemData = retailItemsMap.get(entry.itemId);
-              if (itemData) {
-                specials.push({
-                  id: entry.itemId,
-                  title: (itemData.name as string) || '',
-                  description: itemData.description as string | undefined,
-                  image: (itemData.image as string) || '',
-                  category: (itemData.type as string) || 'retail',
-                  type: 'retail',
-                  isSpecial: 'Y',
-                  price: (itemData.price as number) || 0,
-                  vendorId: vendor._id,
-                  quantity: entry.quantity || 0,
-                  isVeg: itemData.isVeg !== undefined ? (itemData.isVeg as boolean) : true,
-                });
-              }
-            }
-          });
-          
-          // Process produce inventory
-          (vendor.produceInventory || []).forEach((entry) => {
-            if (entry.isSpecial && entry.isSpecial === 'Y') {
-              const itemData = produceItemsMap.get(entry.itemId);
-              if (itemData) {
-                specials.push({
-                  id: entry.itemId,
-                  title: (itemData.name as string) || '',
-                  description: itemData.description as string | undefined,
-                  image: (itemData.image as string) || '',
-                  category: (itemData.type as string) || 'produce',
-                  type: 'produce',
-                  isSpecial: 'Y',
-                  price: (itemData.price as number) || 0,
-                  vendorId: vendor._id,
-                  isAvailable: entry.isAvailable || 'N',
-                  isVeg: itemData.isVeg !== undefined ? (itemData.isVeg as boolean) : true,
-                });
-              }
-            }
-          });
-        });
-        
-        setVendorSpecialItems(specials);
-        console.log('Special items (isSpecial === "Y"):', specials);
-      } catch (error) {
-        console.error('Error fetching vendor specials:', error);
-        setVendorSpecialItems([]);
-      }
-    };
-    fetchVendorSpecials();
-  }, [uniId]);
-
-  const sliderSettings = {
-    dots: false,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 3,
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 3000,
-    pauseOnHover: true,
-    prevArrow: <CustomPrevArrow />,
-    nextArrow: <CustomNextArrow />,
-    responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: 3 } },
-      { breakpoint: 768, settings: { slidesToShow: 2, arrows: false } },
-      { breakpoint: 480, settings: { slidesToShow: 1, arrows: false } },
-    ],
-  };
-
   const convertFavoriteToFoodItem = (item: FavoriteItem): FoodItem => {
-    // Determine if it's retail or produce based on the kind field or categories
-    // Since we don't have a direct way to know, we'll check if the kind matches any retail type first
-    const isRetail = categories.retail.length > 0 && categories.retail.includes(item.kind);
+    // Attempt to find full item details from the items state for enrichment
+    let fullItem: FoodItem | undefined;
+    for (const key in items) {
+      const found = items[key].find(i => i.id === item._id);
+      if (found) {
+        fullItem = found;
+        break;
+      }
+    }
+
+    const isRetail = item.type === 'retail';
+    const vendor = vendors.find(v => v._id === item.vendorId);
+
+    let isAvailable = 'N';
+    let qty = 0;
+
+    if (vendor) {
+      if (isRetail) {
+        const inv = vendor.retailInventory?.find(i => i.itemId === item._id);
+        if (inv && inv.quantity > 0) {
+          isAvailable = 'Y';
+          qty = inv.quantity;
+        }
+      } else {
+        const inv = vendor.produceInventory?.find(i => i.itemId === item._id);
+        if (inv && (inv.isAvailable === 'Y' || inv.isAvailable === 'y')) {
+          isAvailable = 'Y';
+          qty = 1; // Produce doesn't have numerical quantity, use 1 if available
+        }
+      }
+    }
+
     return {
       id: item._id,
       title: item.name,
+      description: fullItem?.description || "",
       image: item.image,
       category: item.kind,
-      type: isRetail ? "retail" : "produce",
+      type: item.type,
+      subtype: item.subtype,
       isSpecial: item.isSpecial,
       price: item.price,
       vendorId: item.vendorId,
-      isVeg: true, // Default to veg for favorites
+      isVeg: fullItem?.isVeg ?? true,
+      isAvailable,
+      quantity: qty
     };
   };
 
-  if (loading) {
-    return (
-      <div className={homeStyles.container}>
-        <div className={homeStyles.content}>
-          <div className={homeStyles.headerSection}>
-            <div className={homeStyles.iconWrapper}>
-              <GraduationCap className={homeStyles.headerIcon} size={48} />
-            </div>
-            <h1 className={homeStyles.heading}>Discover Your Campus</h1>
-            <p className={homeStyles.subtitle}>Loading delicious options...</p>
-          </div>
-          <div className={homeStyles.collegeGrid}>
-            {[...Array(6)].map((_, index) => (
-              <div key={index} className={homeStyles.skeletonCard}>
-                <div className={homeStyles.skeletonShimmer}></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.content}>
-          <div className={styles.errorState}>
-            <div className={styles.errorIconWrapper}>
-              <AlertCircle className={styles.errorIcon} size={64} />
-            </div>
-            <h1 className={styles.greeting}>Oops! Something went wrong</h1>
-            <p className={styles.errorText}>{error}</p>
-            <button 
-              className={styles.retryButton}
-              onClick={() => window.location.reload()}
+
+
+
+
+  // --- Render Helpers ---
+
+  const renderVendorList = () => (
+    <div className={styles.sectionContainer}>
+      <h2 className={styles.sectionTitle}>Available Vendors</h2>
+      {isLoadingVendors ? (
+        <VendorSkeleton />
+      ) : (
+        <div className={styles.vendorGrid}>
+          {vendors.map((vendor) => (
+            <div
+              key={vendor._id}
+              className={styles.vendorCard}
+              onClick={() => router.push(`/vendor/${vendor._id}`)}
             >
-              Try Again
-            </button>
-          </div>
+              <div className={styles.vendorImagePlaceholder}>
+                {vendor.image ? (
+                  <Image
+                    src={vendor.image}
+                    alt={vendor.fullName}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    className={styles.vendorImage}
+                  />
+                ) : (
+                  <Store size={40} color="#4ea199" />
+                )}
+              </div>
+              <div className={styles.vendorInfo}>
+                <h3 className={styles.vendorName}>{vendor.fullName}</h3>
+                <button className={styles.checkMenuBtn}> Check menu</button>
+                {vendor.isAvailable === 'N' && <span className={styles.unavailableBadge}>Unavailable</span>}
+              </div>
+            </div>
+          ))}
+          {vendors.length === 0 && <p>No vendors available at the moment.</p>}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderCategorySelection = () => {
+    const showRetail = categories.retail.length > 0;
+    const showProduce = categories.produce.length > 0;
+
+    if (isLoadingItems) {
+      return (
+        <div className={styles.sectionContainer}>
+          <h2 className={styles.sectionTitle}>Explore Food Options</h2>
+          <CategorySkeleton />
+        </div>
+      );
+    }
+
+    if (!showRetail && !showProduce) {
+      return (
+        <div className={styles.sectionContainer}>
+          <h2 className={styles.sectionTitle}>Explore Food Options</h2>
+          <p>No food items available at the moment.</p>
+        </div>
+      );
+    }
+
+    // Use college-specific images if available, otherwise fallback to static placeholders
+    const retailImage = collegeImages.retail || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=1000';
+    const produceImage = collegeImages.produce || 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=1000';
+
+    return (
+      <div className={styles.sectionContainer}>
+        <h2 className={styles.sectionTitle}>Explore Food Options</h2>
+        <div className={styles.categoryToggleGrid}>
+          {showRetail && (
+            <div
+              className={`${styles.categoryToggleCard} ${selectedCategory === 'retail' ? styles.active : ''}`}
+              onClick={() => { setSelectedCategory('retail'); setSelectedKind(null); }}
+            >
+              <div className={styles.categoryImageWrapper}>
+                <Image
+                  src={retailImage}
+                  alt="Retail"
+                  fill
+                  style={{ objectFit: 'cover' }}
+                />
+                <div className={styles.categoryOverlay} />
+                <span className={styles.categoryLabel}>Retail</span>
+              </div>
+            </div>
+          )}
+          {showProduce && (
+            <div
+              className={`${styles.categoryToggleCard} ${selectedCategory === 'produce' ? styles.active : ''}`}
+              onClick={() => { setSelectedCategory('produce'); setSelectedKind(null); }}
+            >
+              <div className={styles.categoryImageWrapper}>
+                <Image
+                  src={produceImage}
+                  alt="Produce"
+                  fill
+                  style={{ objectFit: 'cover' }}
+                />
+                <div className={styles.categoryOverlay} />
+                <span className={styles.categoryLabel}>Produce</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
-  }
+  };
 
-  return (
-    <CartProvider userId={userId}>
-      <div className={styles.container}>
-        <ToastContainer
-          position="bottom-right"
-          autoClose={2000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
-        <div className={styles.content}>
-          <h1 className={styles.greeting}>
-            {userId ? (
-              <>
-                Hi{" "}
-                <span style={{ color: "#4ea199" }}>
-                  {userFullName?.split(" ")[0] || "User"}
-                </span>
-                , what are you craving for?
-              </>
-            ) : (
-              <>
-                Welcome to{" "}
-                <span style={{ color: "#4ea199" }}>
-                  {collegeName}
-                </span>
-                , explore our menu
-              </>
-            )}
-          </h1>
+  const renderKindSelection = () => {
+    const kinds = selectedCategory === 'retail' ? categories.retail : categories.produce;
 
-          {/* Render menu by type (retail/produce) first, then categories, then subtypes */}
-          {Object.entries(categories).map(([itemType, types]) => {
-            // Only render if there are types for this item type
-            if (types.length === 0) return null;
+    return (
+      <div className={styles.sectionContainer}>
+        <div className={styles.headerRow}>
+          <button className={styles.backButton} onClick={() => setSelectedCategory(null)}>
+            <ArrowLeft size={20} /> Back
+          </button>
+          <h2 className={styles.sectionTitle}>
+            {selectedCategory === 'retail' ? 'Retail Categories' : 'Produce Categories'}
+          </h2>
+        </div>
+
+        <div className={styles.kindsGrid}>
+          {kinds.map(kind => {
+            // Find a representative image
+            const key = `${selectedCategory}-${kind}`;
+            const paramsItems = items[key] || [];
+
+            // Priority: 1. Uni assigned image (fuzzy matched), 2. First item image, 3. Placeholder
+            const assignedImage = findCategoryImage(kind);
+            const image = assignedImage || paramsItems[0]?.image || '/images/placeholder_food.jpg';
 
             return (
-              <div key={itemType} className={styles.itemTypeSection}>
-                {types.map((type) => {
-                  const categoryKey = `${itemType}-${type}`;
-                  const subtypes = categorySubtypes[categoryKey] || [];
-                  const itemsWithoutSubtype = items[categoryKey] || [];
-                  
-                  // Skip if no items at all for this category
-                  if (itemsWithoutSubtype.length === 0 && subtypes.length === 0) return null;
-                  
-                  return (
-                    <div key={categoryKey} className={styles.typeContainer}>
-                      {/* Main Type Heading */}
-                      <h3 className={styles.typeHeading}>
-                        {type.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                      </h3>
-                      
-                      {/* Items without subtype (if any) */}
-                      {itemsWithoutSubtype.length > 0 && (
-                        <div className={styles.itemsWithoutSubtype}>
-                          <CategorySection
-                            categoryItems={itemsWithoutSubtype}
-                            categoryTitle={type}
-                            sliderSettings={sliderSettings}
-                            userId={userId}
-                            categories={categories}
-                            hideTitle={true}
-                          />
-                        </div>
-                      )}
-                      
-                      {/* Subtypes */}
-                      {subtypes.length > 0 && (
-                        <div className={styles.subtypesContainer}>
-                          {itemsWithoutSubtype.length > 0 && (
-                            <div className={styles.subtypeDivider}>
-                              <span>Subtypes</span>
-                            </div>
-                          )}
-                          {subtypes.map((subtype) => {
-                            const subtypeKey = `${categoryKey}-${subtype}`;
-                            const subtypeItems = items[subtypeKey] || [];
-                            
-                            if (subtypeItems.length === 0) return null;
-                            
-                            return (
-                              <div key={subtypeKey} className={styles.subtypeSection}>
-                                <CategorySection
-                                  categoryItems={subtypeItems}
-                                  categoryTitle={subtype}
-                                  sliderSettings={sliderSettings}
-                                  userId={userId}
-                                  categories={categories}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+              <div
+                key={kind}
+                className={styles.kindCard}
+                onClick={() => setSelectedKind(kind)}
+              >
+                <div className={styles.kindImageWrapper}>
+                  <Image
+                    src={image}
+                    alt={kind}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    onError={(e) => {
+                      // fallback behavior if needed, generally handled by Image component or placeholder logic
+                      (e.target as HTMLImageElement).src = '/images/placeholder_food.jpg';
+                    }}
+                  />
+                  <div className={styles.kindOverlay} />
+                  <h3 className={styles.kindTitle}>{kind}</h3>
+                </div>
               </div>
             );
           })}
-
-          {userId && (
-            <FavoritesSection
-              favoriteItems={userFavorites}
-              convertFavoriteToFoodItem={convertFavoriteToFoodItem}
-              sliderSettings={sliderSettings}
-              userId={userId}
-              categories={categories}
-            />
-          )}
-
-          <SpecialOffersSection 
-            allItems={vendorSpecialItems}
-            sliderSettings={sliderSettings}
-            userId={userId}
-            categories={categories}
-          />
+          {kinds.length === 0 && <p>No categories found.</p>}
         </div>
       </div>
+    );
+  };
+
+  // Clear loading once cartItems confirms the item was added
+  useEffect(() => {
+    if (loadingItemId && cartItems.some(ci => ci.itemId === loadingItemId)) {
+      setLoadingItemId(null);
+    }
+  }, [cartItems, loadingItemId]);
+
+  const executeAddToCart = async (item: FoodItem, vendorId: string) => {
+    if (!userId) return;
+    setLoadingItemId(item.id);
+    try {
+      await addItemToCart(item, { _id: vendorId, name: '', price: 0 });
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to add to cart");
+      setLoadingItemId(null); // Only clear on error
+    }
+  };
+
+  const handleAddToCart = async (item: FoodItem) => {
+    if (!userId) {
+      toast.error("Please login first");
+      return;
+    }
+
+    try {
+      // If item already has a specific vendorId (from favorites)
+      if (item.vendorId) {
+        // Enforce single-vendor cart policy
+        if (confirmedVendorId && confirmedVendorId !== item.vendorId) {
+          const errorVendor = vendors.find(v => v._id === confirmedVendorId);
+          const vendorName = errorVendor ? errorVendor.fullName : "your current vendor";
+          toast.error(`Food item is only available in ${vendorName} for your current cart`);
+          return;
+        }
+
+        // Check if item is available in this specific vendor
+        const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id}`);
+        if (!response.ok) {
+          toast.error("Failed to check item availability");
+          return;
+        }
+        const fetchedVendors: VendorType[] = await response.json();
+        const vendor = fetchedVendors?.find(v => v._id === item.vendorId);
+
+        if (vendor) {
+          await executeAddToCart(item, item.vendorId);
+          return;
+        } else {
+          toast.error("This item is currently unavailable from your favorite vendor");
+          return;
+        }
+      }
+
+      const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id}`);
+      if (!response.ok) {
+        const errData = await response.json();
+        toast.error(errData.message || "No vendors available for this item");
+        return;
+      }
+
+      const fetchedVendors: VendorType[] = await response.json();
+
+      if (!fetchedVendors || fetchedVendors.length === 0) {
+        toast.error("No vendors available for this item");
+        return;
+      }
+
+      if (confirmedVendorId) {
+        // If we have a confirmed vendor (items in cart), enforce using that vendor.
+        const vendor = fetchedVendors.find(v => v._id === confirmedVendorId);
+
+        if (vendor) {
+          // Item available in current vendor -> Add directly
+          await executeAddToCart(item, confirmedVendorId);
+          return;
+        } else {
+          // Item NOT available in current vendor -> Show error
+          // Get current vendor name if possible. We might need to find it from our vendors list or from cart if available.
+          // For now, let's try to find it in the 'vendors' state since that has all university vendors.
+          const errorVendor = vendors.find(v => v._id === confirmedVendorId);
+          const vendorName = errorVendor ? errorVendor.fullName : "your current vendor";
+          toast.error(`Food item is not available in ${vendorName}`);
+          return;
+        }
+      }
+
+      setSelectedItemForModal(item);
+      setItemVendors(fetchedVendors);
+
+      setModalSelectedVendor(null);
+
+      setIsVendorModalOpen(true);
+
+    } catch (error) {
+      console.error("Error fetching vendors for item:", error);
+      toast.error("Failed to load vendor options");
+    }
+  };
+
+  const handleConfirmVendor = async () => {
+    if (!selectedItemForModal || !modalSelectedVendor) return;
+    const vendorId = modalSelectedVendor._id;
+    setConfirmedVendorId(vendorId);
+    await executeAddToCart(selectedItemForModal, vendorId);
+    setIsVendorModalOpen(false);
+    setSelectedItemForModal(null);
+    setModalSelectedVendor(null);
+  };
+
+  const handleCancelVendor = () => {
+    setIsVendorModalOpen(false);
+    setSelectedItemForModal(null);
+    setModalSelectedVendor(null);
+  };
+
+  // Helper to get cart item quantity
+  const getCartItemQuantity = (itemId: string) => {
+    if (confirmedVendorId) {
+      const item = cartItems.find(
+        (ci) => ci.itemId === itemId && ci.vendorId === confirmedVendorId
+      );
+      return item ? item.quantity : 0;
+    }
+    const relevantItems = cartItems.filter(ci => ci.itemId === itemId);
+    if (relevantItems.length === 0) return 0;
+    return relevantItems.reduce((sum, item) => sum + item.quantity, 0);
+  };
+
+  const handleIncrease = async (item: FoodItem) => {
+    if (confirmedVendorId) {
+      const cartItem = cartItems.find(ci => ci.itemId === item.id && ci.vendorId === confirmedVendorId);
+      if (cartItem) {
+        await increaseItemQuantity({ ...item, vendorId: confirmedVendorId });
+        return;
+      }
+    }
+    const existingCartItems = cartItems.filter(ci => ci.itemId === item.id);
+    if (existingCartItems.length === 1) {
+      await increaseItemQuantity({ ...item, vendorId: existingCartItems[0].vendorId });
+      return;
+    }
+    handleAddToCart(item);
+  };
+
+  const handleDecrease = async (item: FoodItem) => {
+    if (confirmedVendorId) {
+      await decreaseItemQuantity({ ...item, vendorId: confirmedVendorId });
+      return;
+    }
+    const existingCartItems = cartItems.filter(ci => ci.itemId === item.id);
+    if (existingCartItems.length === 1) {
+      await decreaseItemQuantity({ ...item, vendorId: existingCartItems[0].vendorId });
+      return;
+    }
+    if (existingCartItems.length > 0) {
+      await decreaseItemQuantity({ ...item, vendorId: existingCartItems[0].vendorId });
+    }
+  };
+
+
+
+  // Helper to get total quantity for retail items
+  const getGlobalQuantity = (item: FoodItem) => {
+    if (item.type !== 'retail') return 0;
+    return vendors.reduce((acc, v) => {
+      const inv = v.retailInventory?.find(i => i.itemId === item.id);
+      return acc + (inv?.quantity || 0);
+    }, 0);
+  };
+
+  // Helper to check availability across all vendors
+  const checkGlobalAvailability = (item: FoodItem) => {
+    if (vendors.length === 0) return false;
+
+    if (item.type === 'retail') {
+      // Check if ANY vendor has quantity > 0
+      return vendors.some(v => v.retailInventory?.some(inv => inv.itemId === item.id && inv.quantity > 0));
+    } else {
+      // Check if ANY vendor has isAvailable == 'Y' (case insensitive)
+      return vendors.some(v => v.produceInventory?.some(inv => inv.itemId === item.id && (inv.isAvailable === 'Y' || inv.isAvailable === 'y')));
+    }
+  };
+
+  const renderItemList = () => {
+    const key = `${selectedCategory}-${selectedKind}`;
+    const categoryItems = items[key] || [];
+
+    // Get unique subtypes available in this category
+    const subtypes = Array.from(new Set(
+      categoryItems
+        .map(item => item.subtype)
+        .filter((subtype): subtype is string => !!subtype && subtype.trim() !== '')
+    )).sort();
+
+    // Filter items based on dietary preference and subtype
+    const filteredItems = categoryItems.filter(item => {
+      // Dietary filter
+      if (dietaryFilter === 'veg' && !item.isVeg) return false;
+      if (dietaryFilter === 'non-veg' && item.isVeg) return false;
+
+      // Subtype filter
+      if (subtypeFilter !== 'all' && item.subtype !== subtypeFilter) return false;
+
+      return true;
+    });
+
+    return (
+      <div className={styles.sectionContainer}>
+        <div className={styles.headerRow}>
+          <button className={styles.backButton} onClick={() => {
+            setSelectedKind(null);
+            setSubtypeFilter('all'); // Reset subtype filter when going back
+            setDietaryFilter('all');
+          }}>
+            <ArrowLeft size={20} /> Back
+          </button>
+
+          <h2 className={styles.sectionTitle}>{selectedKind}</h2>
+
+          <div className={styles.headerTitleGroup}>
+            <div className={styles.filterContainer}>
+              <button
+                className={`${styles.filterBtn} ${dietaryFilter === 'all' ? styles.active : ''}`}
+                onClick={() => setDietaryFilter('all')}
+              >
+                All
+              </button>
+              <button
+                className={`${styles.filterBtn} ${dietaryFilter === 'veg' ? styles.active : ''}`}
+                onClick={() => setDietaryFilter('veg')}
+              >
+                Veg
+              </button>
+              <button
+                className={`${styles.filterBtn} ${dietaryFilter === 'non-veg' ? styles.active : ''}`}
+                onClick={() => setDietaryFilter('non-veg')}
+              >
+                Non-Veg
+              </button>
+
+              {subtypes.length > 0 && (
+                <div className={styles.subtypeDropdownContainer} ref={subtypeDropdownRef}>
+                  <div className={styles.filterDivider} />
+                  <label className={styles.subtypeLabel}>Sub Types:</label>
+                  <div className={styles.customDropdown}>
+                    <div
+                      className={`${styles.dropdownToggle} ${showSubtypeDropdown ? styles.active : ''}`}
+                      onClick={() => setShowSubtypeDropdown(!showSubtypeDropdown)}
+                    >
+                      <span>{subtypeFilter === 'all' ? 'All Types' : subtypeFilter}</span>
+                      <ChevronDown className={`${styles.dropdownIcon} ${showSubtypeDropdown ? styles.open : ''}`} size={16} />
+                    </div>
+                    <ul className={`${styles.dropdownList} ${showSubtypeDropdown ? styles.show : ''}`}>
+                      <li
+                        className={`${styles.dropdownItem} ${subtypeFilter === 'all' ? styles.selected : ''}`}
+                        onClick={() => {
+                          setSubtypeFilter('all');
+                          setShowSubtypeDropdown(false);
+                        }}
+                      >
+                        All Types
+                      </li>
+                      {subtypes.map(subtype => (
+                        <li
+                          key={subtype}
+                          className={`${styles.dropdownItem} ${subtypeFilter === subtype ? styles.selected : ''}`}
+                          onClick={() => {
+                            setSubtypeFilter(subtype);
+                            setShowSubtypeDropdown(false);
+                          }}
+                        >
+                          {subtype}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.itemsGrid}>
+          {filteredItems.map(item => {
+            const isAvailable = checkGlobalAvailability(item);
+            const totalQuantity = item.type === 'retail' ? getGlobalQuantity(item) : item.quantity;
+
+            // Override item properties for display
+            const displayItem = {
+              ...item,
+              isAvailable: isAvailable ? 'Y' : 'N',
+              quantity: totalQuantity
+            };
+
+            return (
+              <DishListItem
+                key={item.id}
+                item={displayItem}
+                quantity={getCartItemQuantity(item.id)}
+                isLoading={loadingItemId === item.id}
+                onAdd={handleAddToCart}
+                onIncrease={handleIncrease}
+                onDecrease={handleDecrease}
+              />
+            );
+          })}
+          {filteredItems.length === 0 && <p>No items found matching your selection.</p>}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className={styles.container}>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+      <div className={styles.content}>
+        <h1 className={styles.greeting}>
+          {userId ? (
+            <>
+              Welcome Back! <span style={{ color: "#4ea199" }}>{userFullName?.split(" ")[0] || "User"}</span>
+            </>
+          ) : (
+            <>
+              Welcome to <span style={{ color: "#4ea199" }}>{collegeName}</span>
+            </>
+          )}
+        </h1>
+
+        {/* New Progressive Disclosure UI */}
+
+        {/* 1. If no Kind Selected and no Category Selected -> Show Vendors & Category Toggles */}
+        {!selectedCategory && !selectedKind && (
+          <>
+            {userId && (
+              <FavoritesSection
+                favoriteItems={userFavorites}
+                convertFavoriteToFoodItem={convertFavoriteToFoodItem}
+                userId={userId}
+                categories={categories}
+                onAdd={handleAddToCart}
+                onIncrease={handleIncrease}
+                onDecrease={handleDecrease}
+                getCartItemQuantity={getCartItemQuantity}
+                loadingItemId={loadingItemId}
+                isLoading={isLoadingFavorites}
+              />
+            )}
+            {renderVendorList()}
+            {renderCategorySelection()}
+          </>
+        )}
+
+        {/* 2. If Category Selected but No Kind Selected -> Show Kinds */}
+        {selectedCategory && !selectedKind && renderKindSelection()}
+
+        {/* 3. If Kind Selected -> Show Items */}
+        {selectedKind && renderItemList()}
+
+      </div>
+      {/* Vendor Modal */}
+      {selectedItemForModal && (
+        <VendorModal
+          show={isVendorModalOpen}
+          availableVendors={itemVendors}
+          selectedVendor={modalSelectedVendor}
+          onVendorSelect={setModalSelectedVendor}
+          onConfirm={handleConfirmVendor}
+          onCancel={handleCancelVendor}
+        />
+      )}
+    </div>
+  );
+};
+
+// Wrapper Component (New CollegePageClient)
+const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
+          credentials: "include",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUserId(data._id);
+        }
+      } catch (err) {
+        console.error("Error fetching user in wrapper:", err);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  return (
+    <CartProvider userId={userId}>
+      <CollegePageContent slug={slug} userIdProp={userId} />
     </CartProvider>
   );
 };

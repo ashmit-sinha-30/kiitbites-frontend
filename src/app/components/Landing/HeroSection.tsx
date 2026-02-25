@@ -1,8 +1,75 @@
+"use client";
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-") // Replace any non-alphanumeric characters with hyphens
+    .replace(/^-+|-+$/g, ""); // Remove leading and trailing hyphens
+};
+
+interface College {
+  _id: string;
+  fullName: string;
+}
 
 const HeroSection: React.FC = () => {
+  const router = useRouter();
+
+  const handleOrderNow = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/home");
+        return;
+      }
+
+      // Fetch user info
+      const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!userRes.ok) {
+        router.push("/home");
+        return;
+      }
+
+      const userData = await userRes.json();
+      if (!userData.uniID) {
+        router.push("/home");
+        return;
+      }
+
+      // Fetch colleges to get the slug
+      const collegesRes = await fetch(`${BACKEND_URL}/api/user/auth/list`);
+      if (!collegesRes.ok) {
+        router.push("/home");
+        return;
+      }
+
+      const colleges: College[] = await collegesRes.json();
+      const userCollege = colleges.find((c) => c._id === userData.uniID);
+
+      if (userCollege) {
+        const slug = generateSlug(userCollege.fullName);
+        localStorage.setItem('currentCollegeId', userCollege._id);
+        router.push(`/home/${slug}?cid=${userCollege._id}`);
+      } else {
+        router.push("/home");
+      }
+    } catch (error) {
+      console.error("Order Now redirect failed:", error);
+      router.push("/home");
+    }
+  };
+
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-[#e0f5f0] via-[#f0f9f8] to-[#d3eeea] min-h-[80vh] sm:min-h-screen lg:min-h-[75vh] flex flex-col justify-center sm:pt-16 lg:pt-8">
       {/* Animated Background Pattern */}
@@ -53,10 +120,10 @@ const HeroSection: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button
-                asChild
+                onClick={handleOrderNow}
                 className="bg-gradient-to-r from-[#0e6e6e] to-[#01796f] hover:from-[#0a5858] hover:to-[#025e57] text-white px-8 py-6 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               >
-                <Link href="/home">Order Now</Link>
+                Order Now
               </Button>
               <Button
                 asChild
@@ -66,6 +133,7 @@ const HeroSection: React.FC = () => {
                 <Link href="/about">Learn More</Link>
               </Button>
             </div>
+
             <div className="flex items-center gap-4 flex-wrap">
               <span className="text-gray-600 font-medium">Also Available on</span>
               <div className="flex items-center gap-4">
@@ -91,10 +159,13 @@ const HeroSection: React.FC = () => {
               {/* Glow effect behind image */}
               <div className="absolute inset-0 bg-gradient-to-r from-bitesbay-accent/20 to-bitesbay-light/20 rounded-full blur-3xl transform scale-110"></div>
               <div className="relative transform hover:scale-105 transition-transform duration-500">
-                <img
+                <Image
                   src="https://res.cloudinary.com/dt45pu5mx/image/upload/v1747823127/f465837f-20c2-43c1-bd47-228aa24cb2c8_z5tdnw.png"
                   alt="Student with food delivery"
+                  width={600}
+                  height={600}
                   className="w-full h-auto drop-shadow-2xl"
+                  priority
                 />
               </div>
             </div>
