@@ -67,6 +67,24 @@ interface CartResponseItem {
 
 // Categories are now dynamic - types are determined from the item's kind field
 
+// Get auth token
+const getAuthToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("token");
+  }
+  return null;
+};
+
+// Configure axios with auth header
+const getAuthConfig = () => {
+  const token = getAuthToken();
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+};
+
 const FavouriteFoodPageContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,24 +100,6 @@ const FavouriteFoodPageContent: React.FC = () => {
   const [currentVendorId, setCurrentVendorId] = useState<string | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
-
-  // Get auth token
-  const getAuthToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("token");
-    }
-    return null;
-  };
-
-  // Configure axios with auth header
-  const getAuthConfig = () => {
-    const token = getAuthToken();
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-  };
 
   // Fetch user details
   useEffect(() => {
@@ -183,7 +183,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       collegeName: colleges.find(c => c._id === item.uniId)?.fullName || "",
       // For favorites, we might not have all details like isVeg or description here
       // but DishListItemV2 can handle defaults
-      isVeg: true,
+      isVeg: (item as FoodItem & { isVeg?: boolean | string }).isVeg,
       description: "",
       isAvailable: 'Y' // Assuming favorites are generally available or handled by stock badge
     };

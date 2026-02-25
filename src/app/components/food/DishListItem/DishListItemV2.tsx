@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { FaHeart, FaRegHeart } from 'react-icons/fa';
+import { FaHeart, FaRegHeart, FaTrash } from 'react-icons/fa';
 import styles from './DishListItem.module.scss';
 import { FoodItem } from '@/app/home/[slug]/types'; // Assuming types are exported here or similar path
 
@@ -14,6 +14,8 @@ interface DishListItemProps {
     onIncrease: (item: FoodItem) => void;
     onDecrease: (item: FoodItem) => void;
     onToggleFavorite?: (item: FoodItem) => void;
+    variant?: 'default' | 'boxed' | 'cart';
+    onRemove?: (item: FoodItem) => void;
 }
 
 const DishListItem: React.FC<DishListItemProps> = ({
@@ -26,6 +28,8 @@ const DishListItem: React.FC<DishListItemProps> = ({
     onIncrease,
     onDecrease,
     onToggleFavorite,
+    variant = 'default',
+    onRemove,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -45,8 +49,10 @@ const DishListItem: React.FC<DishListItemProps> = ({
         ? (item.quantity !== undefined ? item.quantity > 0 : true)
         : (item.isAvailable && item.isAvailable.toUpperCase() === 'Y');
 
+    const isBoxed = variant === 'boxed';
+
     return (
-        <div className={styles.dishListItem}>
+        <div className={`${styles.dishListItem} ${isBoxed ? styles.boxed : ''}`}>
             <div className={styles.leftSection}>
                 <div className={styles.imageContainer}>
                     <Image
@@ -64,9 +70,11 @@ const DishListItem: React.FC<DishListItemProps> = ({
             <div className={styles.content}>
                 <div className={styles.header}>
                     <div className={styles.titleRow}>
-                        <div className={`${styles.vegIndicator} ${item.isVeg ? styles.veg : styles.nonVeg}`}>
-                            <div className={styles.dot}></div>
-                        </div>
+                        {item.isVeg !== undefined && item.isVeg !== null && (
+                            <div className={`${styles.vegIndicator} ${String(item.isVeg) === 'true' || item.isVeg === true ? styles.veg : styles.nonVeg}`}>
+                                <div className={styles.dot}></div>
+                            </div>
+                        )}
                         <h3 className={styles.title}>{item.title}</h3>
                         {onToggleFavorite && (
                             <button
@@ -88,20 +96,24 @@ const DishListItem: React.FC<DishListItemProps> = ({
                 </div>
 
 
-                <p className={styles.description}>
-                    {displayDescription}
-                    {shouldTruncate && (
-                        <button
-                            className={styles.readMoreBtn}
-                            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-                        >
-                            {isExpanded ? "Read Less" : "Read More"}
-                        </button>
-                    )}
-                </p>
+                {!isBoxed && (
+                    <p className={styles.description}>
+                        {displayDescription}
+                        {shouldTruncate && (
+                            <button
+                                className={styles.readMoreBtn}
+                                onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+                            >
+                                {isExpanded ? "Read Less" : "Read More"}
+                            </button>
+                        )}
+                    </p>
+                )}
 
                 <div className={styles.footer}>
-                    <div className={styles.price}>₹ {item.price}</div>
+                    <div className={styles.priceSection}>
+                        <div className={styles.price}>₹ {item.price}</div>
+                    </div>
                     {showActions && (
                         <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
                             {isLoading ? (
@@ -120,6 +132,11 @@ const DishListItem: React.FC<DishListItemProps> = ({
                                     style={{ opacity: inStock ? 1 : 0.5, cursor: inStock ? 'pointer' : 'not-allowed' }}
                                 >
                                     Add +
+                                </button>
+                            )}
+                            {onRemove && (
+                                <button className={styles.removeBtn} onClick={() => onRemove(item)}>
+                                    <FaTrash className={styles.trashIcon} />
                                 </button>
                             )}
                         </div>

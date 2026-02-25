@@ -4,6 +4,7 @@ export interface FoodItem {
   price: number;
   image: string;
   kind?: string;
+  isVeg?: boolean | string;
 }
 
 export interface CartItem extends FoodItem {

@@ -80,16 +80,15 @@
   width: 100%;
   max-width: 320px;
   position: sticky;
-  margin-top: -5rem;
+  // margin-top: -5rem;
   align-self: flex-start;
   display: flex;
   flex-direction: column;
-  // align-items: center; // NEW: center billBox inside
+  z-index: 1;
 
   @media (max-width: 768px) {
     position: static;
     max-width: 100%;
-    //max-width: unset;
     margin-top: 1.5rem;
     padding: 0 1rem;
   }
@@ -223,7 +222,7 @@
 
   & > div {
     flex: 0 0 auto;
-    width: 160px;
+    width: 280px;
     scroll-snap-align: start;
   }
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import CartItemCard from "../components/cart/CartItemCard/CartItemCard";
-import ExtrasCard from "../components/cart/ExtrasCard/ExtrasCard";
+import DishListItemV2 from "../components/food/DishListItem/DishListItemV2";
 // Import both BillBoxApproval (for vendors with pending order service) and BillBox (for others)
 import BillBoxApproval from "../components/cart/BillBoxApproval/BillBoxApproval";
 import BillBox from "../components/cart/BillBox/BillBox";
@@ -9,6 +8,7 @@ import BillBox from "../components/cart/BillBox/BillBox";
 import OrderWaitingScreen from "../components/order/OrderWaitingScreen/OrderWaitingScreen";
 import styles from "./styles/Cart.module.scss";
 import { FoodItem, CartItem } from "../cart/types";
+import { FoodItem as SharedFoodItem } from "@/app/home/[slug]/types";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -23,6 +23,7 @@ interface ExtraItem {
   price: number;
   image: string;
   kind: string;
+  isVeg?: boolean | string;
 }
 
 interface CartResponse {
@@ -35,6 +36,7 @@ interface CartResponse {
     quantity: number;
     kind: string;
     packable?: boolean;
+    isVeg?: boolean | string;
     totalPrice: number;
   }>;
   vendorName: string;
@@ -105,6 +107,7 @@ export default function Cart() {
               image: e.image,
               price: e.price,
               kind: e.kind,
+              isVeg: e.isVeg,
             })
           );
           setExtras(formatted);
@@ -188,7 +191,8 @@ export default function Cart() {
             vendorName: cartRes.data.vendorName,
             vendorId: cartRes.data.vendorId,
             category,
-            packable: c.packable
+            packable: c.packable,
+            isVeg: c.isVeg
           };
           return cartItem;
         });
@@ -249,6 +253,7 @@ export default function Cart() {
                 image: e.image,
                 price: e.price,
                 kind: e.kind,
+                isVeg: e.isVeg,
               })
             );
             setExtras(formatted);
@@ -336,7 +341,8 @@ export default function Cart() {
           vendorName: cartRes.data.vendorName,
           vendorId: cartRes.data.vendorId,
           category,
-          packable: c.packable
+          packable: c.packable,
+          isVeg: c.isVeg
         };
       });
       setCart(updated);
@@ -551,7 +557,8 @@ export default function Cart() {
             image: item.image,
             vendorName: "guest",
             vendorId: "guest",
-            category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
+            category: item.kind === "Retail" ? "Retail" as const : "Produce" as const,
+            isVeg: item.isVeg
           },
         ];
       setCart(updatedCart);
@@ -585,7 +592,7 @@ export default function Cart() {
   const scrollLeft = () => {
     const container = extrasListRef.current;
     if (container) {
-      const scrollAmount = 184; // 160px card + 24px gap
+      const scrollAmount = 204; // 180px card + 24px gap
       container.scrollBy({ left: -scrollAmount, behavior: "smooth" });
     }
   };
@@ -593,7 +600,7 @@ export default function Cart() {
   const scrollRight = () => {
     const container = extrasListRef.current;
     if (container) {
-      const scrollAmount = 184; // 160px card + 24px gap
+      const scrollAmount = 204; // 180px card + 24px gap
       container.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
@@ -662,15 +669,29 @@ export default function Cart() {
                   <h3>Vendor: {getVendorName(cart[0]?.vendorName)}</h3>
                 </div>
                 <div className={styles.cartItems}>
-                  {cart.map((item, index) => (
-                    <CartItemCard
-                      key={item._id ?? index}
-                      item={item}
-                      onIncrease={() => increaseQty(item._id)}
-                      onDecrease={() => decreaseQty(item._id)}
-                      onRemove={() => removeItem(item._id)}
-                    />
-                  ))}
+                  {cart.map((item, index) => {
+                    const dishItem = {
+                      _id: item._id,
+                      title: item.name,
+                      price: item.price,
+                      image: item.image,
+                      type: item.kind?.toLowerCase() === 'retail' ? 'retail' : 'produce',
+                      isAvailable: 'Y',
+                      isVeg: (item as CartItem & { isVeg?: boolean | string }).isVeg,
+                    };
+                    return (
+                      <DishListItemV2
+                        key={item._id ?? index}
+                        item={dishItem as unknown as SharedFoodItem}
+                        quantity={item.quantity}
+                        onIncrease={() => increaseQty(item._id)}
+                        onDecrease={() => decreaseQty(item._id)}
+                        onAdd={() => increaseQty(item._id)}
+                        onRemove={() => removeItem(item._id)}
+                        variant="cart"
+                      />
+                    );
+                  })}
                 </div>
               </section>
 
@@ -697,15 +718,25 @@ export default function Cart() {
                           (cartItem) => cartItem._id === item._id
                         );
                         const quantity = cartItem?.quantity || 0;
+                        const dishItem = {
+                          _id: item._id,
+                          title: item.name,
+                          price: item.price,
+                          image: item.image,
+                          type: item.kind?.toLowerCase() === 'retail' ? 'retail' : 'produce',
+                          isAvailable: 'Y',
+                          isVeg: (item as ExtraItem & { isVeg?: boolean | string }).isVeg,
+                        };
 
                         return (
-                          <ExtrasCard
+                          <DishListItemV2
                             key={item._id}
-                            item={item}
-                            onAdd={addToCart}
-                            onIncrease={increaseQty}
-                            onDecrease={decreaseQty}
+                            item={dishItem as unknown as SharedFoodItem}
+                            onAdd={() => addToCart(item)}
+                            onIncrease={() => increaseQty(item._id)}
+                            onDecrease={() => decreaseQty(item._id)}
                             quantity={quantity}
+                            variant="boxed"
                           />
                         );
                       })
