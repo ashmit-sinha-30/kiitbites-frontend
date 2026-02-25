@@ -81,6 +81,7 @@ export default function ResetPassword() {
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
+        <div className={styles.msg}>Create new password</div>
         <div className={styles.box}>
           <h1>Reset Password</h1>
           <form onSubmit={handleResetPassword}>
