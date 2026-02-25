@@ -183,7 +183,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       collegeName: colleges.find(c => c._id === item.uniId)?.fullName || "",
       // For favorites, we might not have all details like isVeg or description here
       // but DishListItemV2 can handle defaults
-      isVeg: (item as FoodItem & { isVeg?: boolean | string }).isVeg,
+      isVeg: (item as unknown as { isVeg?: boolean }).isVeg,
       description: "",
       isAvailable: 'Y' // Assuming favorites are generally available or handled by stock badge
     };

@@ -725,7 +725,7 @@ export default function Cart() {
                           image: item.image,
                           type: item.kind?.toLowerCase() === 'retail' ? 'retail' : 'produce',
                           isAvailable: 'Y',
-                          isVeg: (item as ExtraItem & { isVeg?: boolean | string }).isVeg,
+                          isVeg: (item as unknown as { isVeg?: boolean | string }).isVeg,
                         };
 
                         return (
