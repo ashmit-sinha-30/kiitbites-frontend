@@ -238,6 +238,7 @@ export default function LoginForm() {
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
+        <div className={styles.msg}>Welcome Back</div>
         <div className={styles.box}>
           <h1>Sign In</h1>
           <form onSubmit={handleSubmit}>

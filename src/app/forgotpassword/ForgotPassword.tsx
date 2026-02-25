@@ -63,6 +63,7 @@ export default function ForgotPassword() {
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
+        <div className={styles.msg}>Reset your password</div>
         <div className={styles.box}>
           <h1>Forgot Password</h1>
           <form onSubmit={handleForgotPassword}>
