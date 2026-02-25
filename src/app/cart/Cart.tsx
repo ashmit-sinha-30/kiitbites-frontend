@@ -641,23 +641,23 @@ export default function Cart() {
           pauseOnHover
           theme="light"
         />
-        <div className={styles.cartLeft}>
-          <section className={styles.cartSection}>
-            {cart.length === 0 ? (
-              <div className={styles.emptyCartMessage}>
-                <h2>Oops! Your cart is empty</h2>
-                <p>
-                  Looks like you haven&apos;t added any items to your cart yet.
-                </p>
-                <button
-                  className={styles.homeButton}
-                  onClick={() => router.push("/home")}
-                >
-                  Go to Home
-                </button>
-              </div>
-            ) : (
-              <>
+        {cart.length === 0 ? (
+          <div className={styles.emptyCartMessage}>
+            <h2>Oops! Your cart is empty</h2>
+            <p>
+              Looks like you haven&apos;t added any items to your cart yet.
+            </p>
+            <button
+              className={styles.homeButton}
+              onClick={() => router.push("/home")}
+            >
+              Add Items To Cart
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className={styles.cartLeft}>
+              <section className={styles.cartSection}>
                 <div className={styles.vendorInfo}>
                   <h3>Vendor: {getVendorName(cart[0]?.vendorName)}</h3>
                 </div>
@@ -672,94 +672,88 @@ export default function Cart() {
                     />
                   ))}
                 </div>
-              </>
-            )}
-          </section>
+              </section>
 
-          {cart.length > 0 && (
-            <section className={styles.extrasSection}>
-              <h3>More from {getVendorName(cart[0]?.vendorName)}</h3>
-              <div className={styles.extrasContainer}>
-                {filteredExtras.length > 1 && canScrollLeft && (
-                  <button
-                    className={styles.scrollArrow}
-                    onClick={scrollLeft}
-                    aria-label="Scroll left"
+              <section className={styles.extrasSection}>
+                <h3>More from {getVendorName(cart[0]?.vendorName)}</h3>
+                <div className={styles.extrasContainer}>
+                  {filteredExtras.length > 1 && canScrollLeft && (
+                    <button
+                      className={styles.scrollArrow}
+                      onClick={scrollLeft}
+                      aria-label="Scroll left"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                  )}
+                  <div
+                    ref={extrasListRef}
+                    className={`${styles.extrasList} ${filteredExtras.length === 1 ? styles.singleCard : ""
+                      }`}
                   >
-                    <ChevronLeft size={24} />
-                  </button>
-                )}
-                <div
-                  ref={extrasListRef}
-                  className={`${styles.extrasList} ${filteredExtras.length === 1 ? styles.singleCard : ""
-                    }`}
-                >
-                  {filteredExtras.length > 0 ? (
-                    filteredExtras.map((item) => {
-                      const cartItem = cart.find(
-                        (cartItem) => cartItem._id === item._id
-                      );
-                      const quantity = cartItem?.quantity || 0;
+                    {filteredExtras.length > 0 ? (
+                      filteredExtras.map((item) => {
+                        const cartItem = cart.find(
+                          (cartItem) => cartItem._id === item._id
+                        );
+                        const quantity = cartItem?.quantity || 0;
 
-                      return (
-                        <ExtrasCard
-                          key={item._id}
-                          item={item}
-                          onAdd={addToCart}
-                          onIncrease={increaseQty}
-                          onDecrease={decreaseQty}
-                          quantity={quantity}
-                        />
-                      );
-                    })
-                  ) : (
-                    <p className={styles.emptyExtras}>No extras available.</p>
+                        return (
+                          <ExtrasCard
+                            key={item._id}
+                            item={item}
+                            onAdd={addToCart}
+                            onIncrease={increaseQty}
+                            onDecrease={decreaseQty}
+                            quantity={quantity}
+                          />
+                        );
+                      })
+                    ) : (
+                      <p className={styles.emptyExtras}>No extras available.</p>
+                    )}
+                  </div>
+                  {filteredExtras.length > 1 && canScrollRight && (
+                    <button
+                      className={styles.scrollArrow}
+                      onClick={scrollRight}
+                      aria-label="Scroll right"
+                    >
+                      <ChevronRight size={24} />
+                    </button>
                   )}
                 </div>
-                {filteredExtras.length > 1 && canScrollRight && (
-                  <button
-                    className={styles.scrollArrow}
-                    onClick={scrollRight}
-                    aria-label="Scroll right"
-                  >
-                    <ChevronRight size={24} />
-                  </button>
+              </section>
+            </div>
+
+            {userData && (
+              <aside className={styles.cartRight}>
+                {/* Conditionally render BillBoxApproval (if vendor has pending order service) or BillBox (regular flow) */}
+                {hasPendingOrderService ? (
+                  <BillBoxApproval
+                    userId={userData._id}
+                    items={cart}
+                    onOrderSubmitted={(orderId) => {
+                      // Order submitted - will show waiting screen
+                      setCurrentOrderId(orderId);
+                      setShowWaitingScreen(true);
+                    }}
+                  />
+                ) : (
+                  <BillBox
+                    userId={userData._id}
+                    items={cart}
+                    onOrder={(orderId) => {
+                      // Clear cart and redirect to payment confirmation page
+                      setCart([]);
+                      window.location.href = `/payment?orderId=${orderId}`;
+                    }}
+                  />
                 )}
-              </div>
-            </section>
-          )}
-        </div>
-
-        <div className={styles.cartPage}>
-          {/* … left‐side items & extras … */}
-
-          {cart.length > 0 && userData && (
-            <aside className={styles.cartRight}>
-              {/* Conditionally render BillBoxApproval (if vendor has pending order service) or BillBox (regular flow) */}
-              {hasPendingOrderService ? (
-                <BillBoxApproval
-                  userId={userData._id}
-                  items={cart}
-                  onOrderSubmitted={(orderId) => {
-                    // Order submitted - will show waiting screen
-                    setCurrentOrderId(orderId);
-                    setShowWaitingScreen(true);
-                  }}
-                />
-              ) : (
-                <BillBox
-                  userId={userData._id}
-                  items={cart}
-                  onOrder={(orderId) => {
-                    // Clear cart and redirect to payment confirmation page
-                    setCart([]);
-                    window.location.href = `/payment?orderId=${orderId}`;
-                  }}
-                />
-              )}
-            </aside>
-          )}
-        </div>
+              </aside>
+            )}
+          </>
+        )}
       </div>
 
       {/* Order waiting screen overlay - only show if using approval workflow */}

@@ -40,7 +40,7 @@ interface OrderResponse {
 }
 
 interface RazorpayConstructor {
-  new (options: RazorpayOptions): {
+  new(options: RazorpayOptions): {
     open: () => void;
   };
 }
@@ -72,27 +72,27 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
       setLoading(true);
       try {
         console.log("🔄 Fetching charges and delivery settings for userId:", userId);
-        
+
         // Get user's cart to find vendorId
         const cartResponse = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart/${userId}`,
           { withCredentials: true }
         );
-        
+
         console.log("📦 Cart response:", cartResponse.data);
-        
+
         if (cartResponse.data.vendorId) {
           const vendorId = cartResponse.data.vendorId;
-          
+
           // Fetch vendor delivery settings
           try {
             const deliverySettingsResponse = await axios.get(
               `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/vendor/${vendorId}/delivery-settings`,
               { withCredentials: true }
             );
-            
+
             console.log("🚚 Delivery settings response:", deliverySettingsResponse.data);
-            
+
             if (deliverySettingsResponse.data.success) {
               setVendorDeliverySettings(deliverySettingsResponse.data.data);
             }
@@ -101,24 +101,24 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
             // If we can't fetch delivery settings, assume delivery is available
             setVendorDeliverySettings({ offersDelivery: true, deliveryPreparationTime: 30 });
           }
-          
+
           // Get vendor to find university
           const vendorResponse = await axios.get(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}`,
             { withCredentials: true }
           );
-          
+
           console.log("🏪 Vendor response:", vendorResponse.data);
-          
+
           if (vendorResponse.data.uniID) {
             // Get university charges
             const chargesResponse = await axios.get(
               `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${vendorResponse.data.uniID}`,
               { withCredentials: true }
             );
-            
+
             console.log("💰 Charges response:", chargesResponse.data);
-            
+
             setCharges({
               packingCharge: chargesResponse.data.packingCharge,
               deliveryCharge: chargesResponse.data.deliveryCharge,
@@ -151,18 +151,18 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
   // Debug logging
   console.log("🔍 BillBox Debug:", {
-    items: items.map(i => ({ 
-      name: i.name, 
-      category: i.category, 
-      packable: i.packable, 
+    items: items.map(i => ({
+      name: i.name,
+      category: i.category,
+      packable: i.packable,
       quantity: i.quantity,
-      _id: i._id 
+      _id: i._id
     })),
     orderType,
     charges,
     packableItems: items.filter(i => i.packable === true)
   });
-  
+
   // More robust packable item detection
   // All produce items should be packable, and retail items based on their packable property
   // This ensures that even if the database is missing the packable property for some items,
@@ -173,44 +173,44 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
     // Retail items are packable only if explicitly set to true
     return i.packable === true;
   });
-  
+
   // Ensure all produce items are marked as packable for consistency
   const normalizedItems = items.map(item => ({
     ...item,
     packable: item.category === "Produce" ? true : (item.packable || false)
   }));
-  
-  console.log("📦 Packable items found:", packableItems.map(i => ({ 
-    name: i.name, 
-    packable: i.packable, 
-    quantity: i.quantity, 
+
+  console.log("📦 Packable items found:", packableItems.map(i => ({
+    name: i.name,
+    packable: i.packable,
+    quantity: i.quantity,
     category: i.category,
-    _id: i._id 
+    _id: i._id
   })));
-  
-  console.log("🔧 Normalized items:", normalizedItems.map(i => ({ 
-    name: i.name, 
-    category: i.category, 
-    packable: i.packable, 
-    quantity: i.quantity 
+
+  console.log("🔧 Normalized items:", normalizedItems.map(i => ({
+    name: i.name,
+    category: i.category,
+    packable: i.packable,
+    quantity: i.quantity
   })));
-  
+
   // Ensure charges are available with better fallbacks
   const packingCharge = charges.packingCharge ?? 5; // Default ₹5 if not set
   const deliveryCharge = charges.deliveryCharge ?? 50; // Default ₹50 if not set
   const platformFee = charges.platformFee ?? 2; // University-specific platform fee, default ₹2
-  
+
   const itemTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  
+
   // Calculate packaging charge - always apply for takeaway and delivery
   // Apply packing charge to each packable item based on quantity
-  const packaging = orderType !== "dinein" 
+  const packaging = orderType !== "dinein"
     ? packableItems.reduce((sum, i) => sum + packingCharge * i.quantity, 0)
     : 0;
-    
+
   const delivery = orderType === "delivery" ? deliveryCharge : 0;
   const grandTotal = itemTotal + packaging + delivery + platformFee;
-  
+
   console.log("💰 BillBox Calculation:", {
     itemTotal,
     packaging,
@@ -315,7 +315,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
           console.log("✅ Payment verified successfully:", verifyResponse.data);
           toast.success("Payment successful!");
-          
+
           // Use the actual orderId from the verification response
           const actualOrderId = verifyResponse.data.orderId;
           onOrder(actualOrderId);
@@ -334,22 +334,22 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
       modal: {
         ondismiss: async () => {
           console.warn("⚠️ Razorpay payment cancelled by user.");
-          
+
           // Only cancel order if orderId exists
           if (orderId) {
-          try {
-            // Cancel the order and release locks
-            await axios.post(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/order/${orderId}/cancel`,
-              {},
-              { withCredentials: true }
-            );
-            
-            console.log("✅ Order cancelled successfully");
-            toast.success("Payment cancelled. You can try ordering again.");
-          } catch (error) {
-            console.error("❌ Failed to cancel order:", error);
-            toast.error("Payment cancelled, but there was an issue. Please try again in a few minutes.");
+            try {
+              // Cancel the order and release locks
+              await axios.post(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/order/${orderId}/cancel`,
+                {},
+                { withCredentials: true }
+              );
+
+              console.log("✅ Order cancelled successfully");
+              toast.success("Payment cancelled. You can try ordering again.");
+            } catch (error) {
+              console.error("❌ Failed to cancel order:", error);
+              toast.error("Payment cancelled, but there was an issue. Please try again in a few minutes.");
             }
           } else {
             console.warn("⚠️ No orderId available to cancel");
@@ -374,7 +374,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
       {/* Estimated Preparation Time at the top */}
       {vendorDeliverySettings && (
         <div className={styles.preparationTime} style={{ marginBottom: '0.5rem' }}>
-          <span>Estimated preparation time</span> 
+          <span>Estimated preparation time</span>
           <span>{vendorDeliverySettings.deliveryPreparationTime} minutes</span>
         </div>
       )}
@@ -397,8 +397,8 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
               {t === "takeaway"
                 ? "Takeaway"
                 : t === "delivery"
-                ? "Delivery"
-                : "Dine In"}
+                  ? "Delivery"
+                  : "Dine In"}
             </button>
           ))}
       </div>
@@ -414,8 +414,15 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         className={styles.input}
         placeholder="Phone"
         type="tel"
+        maxLength={10}
+        pattern="[0-9]{10}"
         value={phone}
-        onChange={(e) => setPhone(e.target.value)}
+        onChange={(e) => {
+          const val = e.target.value.replace(/\D/g, "");
+          if (val.length <= 10) {
+            setPhone(val);
+          }
+        }}
         required
       />
 
@@ -431,56 +438,56 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
       <div className={styles.bill}>
         <div className={styles.items}>
-        {items.map((i) => (
-          <div key={i._id} className={styles.line}>
-            <span>
-              {i.name} ×{i.quantity}
-            </span>
-            <span>₹{i.price * i.quantity}</span>
-          </div>
-        ))}
-        </div>
-        
-      <div className={styles.totalPack}>
-        {/* Show packaging breakdown for takeaway and delivery orders */}
-        {orderType !== "dinein" && packableItems.length > 0 && (
-          <>
-            {/* Show individual packaging charges for transparency */}
-            {packableItems.map((item) => (
-              <div key={item._id} className={styles.extra}>
-                <span>Packaging - {item.name}</span>
-                <span>₹{packingCharge * item.quantity}</span>
-              </div>
-            ))}
-            {/* Show total packaging summary */}
-            <div className={styles.extra}>
-              <span>Total Packaging ({packableItems.length} item{packableItems.length > 1 ? 's' : ''})</span>
-              <span>₹{packaging}</span>
+          {items.map((i) => (
+            <div key={i._id} className={styles.line}>
+              <span>
+                {i.name} ×{i.quantity}
+              </span>
+              <span>₹{i.price * i.quantity}</span>
             </div>
-          </>
-        )}
-        
-        {/* Always show delivery charge for delivery orders */}
-        {/* This ensures transparency even when delivery charge is ₹0 */}
-        {orderType === "delivery" && (
+          ))}
+        </div>
+
+        <div className={styles.totalPack}>
+          {/* Show packaging breakdown for takeaway and delivery orders */}
+          {orderType !== "dinein" && packableItems.length > 0 && (
+            <>
+              {/* Show individual packaging charges for transparency */}
+              {packableItems.map((item) => (
+                <div key={item._id} className={styles.extra}>
+                  <span>Packaging - {item.name}</span>
+                  <span>₹{packingCharge * item.quantity}</span>
+                </div>
+              ))}
+              {/* Show total packaging summary */}
+              <div className={styles.extra}>
+                <span>Total Packaging ({packableItems.length} item{packableItems.length > 1 ? 's' : ''})</span>
+                <span>₹{packaging}</span>
+              </div>
+            </>
+          )}
+
+          {/* Always show delivery charge for delivery orders */}
+          {/* This ensures transparency even when delivery charge is ₹0 */}
+          {orderType === "delivery" && (
+            <div className={styles.extra}>
+              <span>Delivery Charge</span>
+              <span>₹{delivery}</span>
+            </div>
+          )}
+
           <div className={styles.extra}>
-            <span>Delivery Charge</span>
-            <span>₹{delivery}</span>
+            <span>Platform Fee</span>
+            <span>₹{platformFee}</span>
           </div>
-        )}
 
-        <div className={styles.extra}>
-          <span>Platform Fee</span>
-          <span>₹{platformFee}</span>
+          <div className={styles.divider} />
+
+          <div className={styles.total}>
+            <strong>Total</strong>
+            <strong>₹{grandTotal}</strong>
+          </div>
         </div>
-
-        <div className={styles.divider} />
-
-        <div className={styles.total}>
-          <strong>Total</strong>
-          <strong>₹{grandTotal}</strong>
-        </div>
-      </div>
       </div>
 
       <button type="submit" className={styles.button}>
