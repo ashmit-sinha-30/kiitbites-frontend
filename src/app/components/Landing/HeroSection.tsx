@@ -99,7 +99,7 @@ const HeroSection: React.FC = () => {
       <div className="absolute top-20 left-10 w-72 h-72 bg-[#4ea199]/10 rounded-full blur-3xl animate-float"></div>
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-[#01796f]/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
 
-      <div className="container mx-auto px-4 py-12 relative z-10">
+      <div className="container mx-auto px-4 pt-20 pb-12 relative z-10">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
           {/* Left column with text */}
           <div className="max-w-xl lg:ml-12 reveal">
