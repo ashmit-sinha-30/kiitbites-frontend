@@ -254,6 +254,7 @@ function OtpForm({
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
+        <div className={styles.msg}>Verify your identity</div>
         <div className={styles.box}>
           <h1>OTP Verification</h1>
           <p className={styles.subtext}>Enter the OTP sent to {email}</p>
