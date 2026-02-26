@@ -7,7 +7,7 @@ import FeaturesSection from "./components/Landing/FeaturesSection";
 // import TestimonialsSection from "@/components/TestimonialsSection";
 import CollegesSection from "./components/admin/CollegesSection/CollegesSection";
 import FaqSection from "./components/Landing/FaqSection";
-import Header from "./components/layout/Header/Header";
+// Header is provided globally in layout.tsx via ConditionalHeader
 
 const Index = () => {
   useEffect(() => {
@@ -37,13 +37,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden">
-      <Header showGetApp={true} showProfile={true} />
       <HeroSection />
       <WhatWeDoSection />
       <FeaturesSection />
       <CollegesSection />
       <FaqSection />
-    </div>
+    </div >
   );
 };
 

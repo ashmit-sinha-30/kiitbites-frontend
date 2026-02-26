@@ -153,11 +153,37 @@ const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setMenuOpen(false); // Close if resizing to desktop
+      }
     };
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    // Force close on route changes or any initial bizarre state
+    setMenuOpen(false);
+  }, [pathname]);
+
+  // Ensure menu-open class doesn't linger after hot reloads or hard refreshes
+  useEffect(() => {
+    document.body.classList.remove("menu-open");
+
+    // Instantly hide the menu without animation when a page refresh is initiated
+    const handleBeforeUnload = () => {
+      document.body.classList.remove("menu-open");
+      const overlay = document.querySelector(`.${styles.overlay}`) as HTMLElement;
+      const navOptions = document.querySelector(`.${styles.navOptions}`) as HTMLElement;
+      if (overlay) overlay.style.display = "none";
+      if (navOptions) navOptions.style.display = "none";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
   useEffect(() => {
@@ -166,6 +192,10 @@ const Header: React.FC<HeaderProps> = ({
     } else {
       document.body.classList.remove("menu-open");
     }
+
+    return () => {
+      document.body.classList.remove("menu-open");
+    };
   }, [menuOpen, isMobile]);
 
   const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -215,7 +245,7 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className={`${styles.header} ${scrolling ? styles.scrolled : ""}`}>
+    <header className={`${styles.header} ${scrolling ? styles.scrolled : ""} ${menuOpen ? styles.headerMenuOpen : ""}`}>
       <div className={styles.logoContainer}>
         <Link href="/home" onClick={handleLinkClick}>
           <Image
@@ -223,26 +253,26 @@ const Header: React.FC<HeaderProps> = ({
             alt="KAMPYN Logo"
             width={150} // adjust width as needed
             height={50} // adjust height as needed
+            className={styles.logoImage}
           />
         </Link>
       </div>
 
-      <div className={styles.menuToggle} onClick={() => setMenuOpen(!menuOpen)}>
+      <div className={`${styles.menuToggle} ${menuOpen ? styles.menuToggleOpen : ""}`} onClick={() => setMenuOpen(!menuOpen)}>
         {menuOpen ? (
-          <RxCross2 size={24} className={styles.menuToggleIcon} />
+          <RxCross2 size={32} />
         ) : (
           <FaBars size={24} />
         )}
       </div>
 
-      {!isLandingPage && menuOpen && isMobile && (
+      {menuOpen && isMobile && (
         <motion.div
           className={styles.overlay}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
-          onClick={() => setMenuOpen(false)}
         />
       )}
 
@@ -252,9 +282,9 @@ const Header: React.FC<HeaderProps> = ({
             {menuOpen && (
               <motion.nav
                 className={styles.navOptions}
-                initial={{ x: "100%", opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: "100%", opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
               >
                 <div className={styles.menuBox}>
@@ -280,8 +310,8 @@ const Header: React.FC<HeaderProps> = ({
                   <Link
                     href={userFullName ? "/profile" : "/login"}
                     className={`${styles.navItem} ${pathname === "/profile" || pathname === "/login"
-                        ? styles.activeNavItem
-                        : ""
+                      ? styles.activeNavItem
+                      : ""
                       }`}
                     onClick={handleLinkClick}
                   >
@@ -307,7 +337,7 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </AnimatePresence>
         ) : (
-          <nav className={styles.navOptions}>
+          <nav className={`${styles.navOptions} hideOnMobile`}>
             <div className={styles.menuBox}>
               <Link
                 href="/search"
@@ -329,8 +359,8 @@ const Header: React.FC<HeaderProps> = ({
               <Link
                 href={userFullName ? "/profile" : "/login"}
                 className={`${styles.navItem} ${pathname === "/profile" || pathname === "/login"
-                    ? styles.activeNavItem
-                    : ""
+                  ? styles.activeNavItem
+                  : ""
                   }`}
               >
                 <IoPersonOutline size={24} />
@@ -357,9 +387,9 @@ const Header: React.FC<HeaderProps> = ({
         <AnimatePresence>
           <motion.nav
             className={styles.navOptions}
-            initial={{ x: "100%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: "100%", opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             <div className={styles.menuBox}>
