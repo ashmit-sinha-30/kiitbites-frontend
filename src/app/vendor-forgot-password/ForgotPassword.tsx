@@ -58,21 +58,45 @@ export default function VendorForgotPassword() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.box}>
-        <h1 className={styles["text-black"]}>Forgot Password</h1>
-        <p>Enter your email or phone number to receive a password reset email.</p>
-        <form onSubmit={handleForgotPassword}>
-          <input
-            type="text"
-            placeholder="Email or Phone Number"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            required
-          />
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? "Sending OTP..." : "Send OTP"}
-          </button>
-        </form>
+      <div className={styles.authWrapper}>
+        <div className={styles.msg}>Reset vendor password</div>
+        <div className={styles.box}>
+          <h1>Forgot Password</h1>
+          <form onSubmit={handleForgotPassword}>
+            <div className={styles.fieldGroup}>
+              <label htmlFor="identifier">Vendor email or phone</label>
+              <input
+                id="identifier"
+                type="text"
+                placeholder="Enter your email or phone"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? "Sending OTP..." : "Send OTP"}
+              {!isLoading && <span className={styles.buttonArrow}>→</span>}
+            </button>
+          </form>
+        </div>
+
+        <div className={styles.infoPanel}>
+          <div className={styles.badge}>Reset your password</div>
+          <h2 className={styles.heading}>
+            Get back to{" "}
+            <span className={styles.highlight}>your sales</span>
+          </h2>
+          <p className={styles.subtext}>
+            Enter your registered vendor email or phone number and we&apos;ll send you a
+            verification code to reset your password securely.
+          </p>
+          <div className={styles.infoList}>
+            <p className={styles.infoItem}>• Secure password recovery</p>
+            <p className={styles.infoItem}>• Instant OTP verification</p>
+            <p className={styles.infoItem}>• Fast dashboard access</p>
+          </div>
+        </div>
       </div>
       <ToastContainer position="bottom-right" autoClose={3000} />
     </div>

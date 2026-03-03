@@ -160,59 +160,78 @@ const VendorOtpVerificationContent: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.box}>
-        <h1>OTP Verification</h1>
-        <p>Enter the OTP sent to {email}</p>
-        <form onSubmit={handleSubmit}>
-          <div className={styles.otpContainer}>
-            {otp.map((digit, index) => (
-              <input
-                key={index}
-                ref={(el) => {
-                  inputRefs.current[index] = el;
-                }}
-                type="text"
-                maxLength={1}
-                value={digit}
-                style={{ color: "black" }}
-                onChange={(e) => handleChange(index, e.target.value)}
-                onPaste={handlePaste}
-                className={styles.otpInput}
-                required
-                aria-label={`OTP Digit ${index + 1}`}
-                title={`OTP Digit ${index + 1}`}
-                placeholder=" "
-              />
-            ))}
+      <div className={styles.authWrapper}>
+        <div className={styles.msg}>Verify identity</div>
+        <div className={styles.box}>
+          <h1>OTP Verification</h1>
+          <p className={styles.subtext}>Enter the OTP sent to {email}</p>
+          <form onSubmit={handleSubmit}>
+            <div className={styles.otpContainer}>
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => {
+                    inputRefs.current[index] = el;
+                  }}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleChange(index, e.target.value)}
+                  onPaste={handlePaste}
+                  className={styles.otpInput}
+                  required
+                  aria-label={`OTP Digit ${index + 1}`}
+                  title={`OTP Digit ${index + 1}`}
+                  placeholder=" "
+                />
+              ))}
+            </div>
+            <button type="submit" disabled={loading}>
+              {loading ? "Verifying..." : "Verify OTP"}
+              {!loading && <span className={styles.buttonArrow}>→</span>}
+            </button>
+          </form>
+          <div className={styles.footer}>
+            <p>Didn&apos;t receive the code?</p>
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={resendLoading || countdown > 0}
+              className={styles.resendButton}
+            >
+              {resendLoading
+                ? "Sending..."
+                : countdown > 0
+                  ? `Resend in ${countdown}s`
+                  : "Resend OTP"}
+            </button>
+            <p className={styles.backLink}>
+              <a href="/vendor-login">Back to Login</a>
+            </p>
           </div>
-          <button type="submit" disabled={loading}>
-            {loading ? "Verifying..." : "Verify OTP"}
-          </button>
-        </form>
-        <div className={styles.footer}>
-          <p>Didn&apos;t receive the code?</p>
-          <button
-            type="button"
-            onClick={handleResendOtp}
-            disabled={resendLoading || countdown > 0}
-            className={styles.resendButton}
-          >
-            {resendLoading
-              ? 'Sending...'
-              : countdown > 0
-                ? `Resend in ${countdown}s`
-                : 'Resend OTP'
-            }
-          </button>
-          <p className={styles.backLink}>
-            <a href="/vendor-login">Back to Login</a>
+        </div>
+
+        <div className={styles.infoPanel}>
+          <div className={styles.badge}>Verify identity</div>
+          <h2 className={styles.heading}>
+            Secure{" "}
+            <span className={styles.highlight}>identity check</span>
+          </h2>
+          <p className={styles.subtext}>
+            We&apos;ve sent a 6-digit code to your registered vendor email. Enter it
+            below to verify your identity and continue.
           </p>
+          <div className={styles.infoList}>
+            <p className={styles.infoItem}>• Secure your sales account</p>
+            <p className={styles.infoItem}>• Instant identity verification</p>
+            <p className={styles.infoItem}>• Fast dashboard access</p>
+          </div>
         </div>
       </div>
       <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
   );
-};
+}
 
 const VendorOtpVerificationPage: React.FC = () => {
   return (

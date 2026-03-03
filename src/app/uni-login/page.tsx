@@ -63,6 +63,7 @@ export default function UniLoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
+        <div className={styles.msg}>Welcome Back</div>
         <div className={styles.box}>
           <h1>University Login</h1>
           <form onSubmit={handleSubmit}>

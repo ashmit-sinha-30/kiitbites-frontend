@@ -39,7 +39,7 @@ const VendorLoginPage: React.FC = () => {
     try {
       const backendUrl = getBackendUrl();
       console.log('Backend URL:', backendUrl);
-      
+
       const response = await fetch(`${backendUrl}/api/vendor/auth/login`, {
         method: 'POST',
         headers: {
@@ -51,7 +51,7 @@ const VendorLoginPage: React.FC = () => {
 
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
-      
+
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
@@ -90,6 +90,7 @@ const VendorLoginPage: React.FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.authWrapper}>
+        <div className={styles.msg}>Welcome Back</div>
         <div className={styles.box}>
           <h1>Vendor Login</h1>
           <form onSubmit={handleSubmit}>
