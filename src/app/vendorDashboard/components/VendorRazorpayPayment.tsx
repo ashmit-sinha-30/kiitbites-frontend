@@ -113,6 +113,16 @@ export const VendorRazorpayPayment: React.FC<VendorRazorpayPaymentProps> = ({
     };
   }, []);
 
+  // Auto-trigger Razorpay on mount — skip the summary screen
+  useEffect(() => {
+    // Small delay to ensure Razorpay script is loaded
+    const timer = setTimeout(() => {
+      handleUPIPayment();
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleUPIPayment = async () => {
     setIsProcessing(true);
 
@@ -283,69 +293,20 @@ export const VendorRazorpayPayment: React.FC<VendorRazorpayPaymentProps> = ({
   return (
     <div className="vendor-razorpay-payment">
       <div className="payment-summary">
-        <h3>Payment Summary</h3>
-        <div className="order-details">
-          <p><strong>Customer:</strong> {collectorName}</p>
-          <p><strong>Phone:</strong> {collectorPhone}</p>
-          <p><strong>Order Type:</strong> {orderType}</p>
+        <h3>{isProcessing ? "Opening Payment Gateway..." : "Initializing Payment..."}</h3>
+        <div className="loading-indicator">
+          <div className="spinner"></div>
+          <p>Please wait while we set up your payment...</p>
         </div>
-        
-        <div className="items-list">
-          <h4>Items:</h4>
-          {items.map((item, index) => (
-            <div key={index} className="item">
-              <span>{item.name}</span>
-              <span>₹{item.price.toFixed(2)} × {item.quantity}</span>
-            </div>
-          ))}
+        <div className="payment-actions">
+          <button
+            onClick={onCancel}
+            disabled={isProcessing}
+            className="cancel-button"
+          >
+            Cancel
+          </button>
         </div>
-
-        <div className="payment-breakdown">
-          <h4>Payment Breakdown:</h4>
-          {(() => {
-            const itemTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const packableItems = items.filter(item => item.kind === "Produce");
-            const packingTotal = packableItems.reduce((sum, item) => sum + (packingCharge * item.quantity), 0);
-            const totalWithPacking = itemTotal + packingTotal;
-            
-            return (
-              <>
-                <div className="breakdown-row">
-                  <span>Items Total:</span>
-                  <span>₹{itemTotal.toFixed(2)}</span>
-                </div>
-                {packableItems.length > 0 && (
-                  <div className="breakdown-row">
-                    <span>Packing Charge ({packableItems.length} produce items @ ₹{packingCharge} each):</span>
-                    <span>₹{packingTotal.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="breakdown-row">
-                  <strong>Total Amount:</strong>
-                  <strong>₹{totalWithPacking.toFixed(2)}</strong>
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      </div>
-
-      <div className="payment-actions">
-        <button
-          onClick={handleUPIPayment}
-          disabled={isProcessing}
-          className="pay-button"
-        >
-          {isProcessing ? "Processing..." : "Pay with UPI"}
-        </button>
-        
-        <button
-          onClick={onCancel}
-          disabled={isProcessing}
-          className="cancel-button"
-        >
-          Cancel
-        </button>
       </div>
 
       <style jsx>{`
@@ -364,95 +325,38 @@ export const VendorRazorpayPayment: React.FC<VendorRazorpayPaymentProps> = ({
           text-align: center;
         }
 
-        .order-details {
-          margin-bottom: 20px;
-          padding: 15px;
-          background: #f8f9fa;
-          border-radius: 6px;
-        }
-
-        .order-details p {
-          margin: 8px 0;
-          color: #555;
-        }
-
-        .items-list {
-          margin-bottom: 20px;
-        }
-
-        .items-list h4 {
-          margin-bottom: 10px;
-          color: #333;
-        }
-
-        .item {
+        .loading-indicator {
           display: flex;
-          justify-content: space-between;
-          padding: 8px 0;
-          border-bottom: 1px solid #eee;
-        }
-
-        .item:last-child {
-          border-bottom: none;
-        }
-
-        .payment-breakdown {
-          margin-bottom: 20px;
-          padding: 15px;
-          background: #f8f9fa;
-          border-radius: 6px;
-        }
-
-        .payment-breakdown h4 {
-          margin-bottom: 10px;
-          color: #333;
-        }
-
-        .breakdown-row {
-          display: flex;
-          justify-content: space-between;
+          flex-direction: column;
           align-items: center;
-          padding: 8px 0;
-          border-bottom: 1px solid #eee;
+          padding: 30px 0;
+          gap: 16px;
         }
 
-        .breakdown-row:last-child {
-          border-bottom: none;
+        .loading-indicator p {
+          color: #666;
+          font-size: 14px;
         }
 
-        .breakdown-row.total {
-          font-size: 1.1em;
-          color: #01796f;
-          border-top: 2px solid #01796f;
-          margin-top: 8px;
-          padding-top: 12px;
+        .spinner {
+          width: 40px;
+          height: 40px;
+          border: 4px solid #e0e0e0;
+          border-top: 4px solid #01796f;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
 
         .payment-actions {
           display: flex;
           gap: 10px;
           justify-content: center;
-        }
-
-        .pay-button {
-          background: linear-gradient(90deg, #4ea199, #6fc3bd);
-          color: white;
-          border: none;
-          padding: 12px 24px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 600;
-          transition: background 0.3s;
-        }
-
-        .pay-button:hover:not(:disabled) {
-          background: linear-gradient(90deg, #4ea199, #6fc3bd);
-          opacity: 0.9;
-        }
-
-        .pay-button:disabled {
-          background: #ccc;
-          cursor: not-allowed;
+          margin-top: 16px;
         }
 
         .cancel-button {

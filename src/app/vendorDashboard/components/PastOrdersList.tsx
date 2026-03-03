@@ -57,7 +57,7 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
       const res = await fetch(`${BASE}/order/vendor-past/${vendorId}`);
       if (!res.ok) throw new Error('Failed to load past orders');
       const data: ApiResponse = await res.json();
-      
+
       if (onLoaded && data.vendorName && data.vendorId) {
         onLoaded(data.vendorName, data.vendorId);
       }
@@ -65,7 +65,7 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
       const orders: OrderState[] = data.orders.map((o: ApiOrder) => ({
         order: o,
         status: o.status,
-      }));
+      })).sort((a, b) => new Date(b.order.createdAt).getTime() - new Date(a.order.createdAt).getTime());
 
       setList(orders);
     } catch (e: unknown) {
@@ -102,8 +102,8 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
     status === "completed" || status === "delivered"
       ? "#22543d" // darker green
       : status === "failed"
-      ? "#c53030" // dark red
-      : "#4a5568"; // dark gray
+        ? "#c53030" // dark red
+        : "#4a5568"; // dark gray
 
   const downloadInvoice = async (orderId: string) => {
     try {
@@ -165,7 +165,7 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
               </div>
               <span
                 className={styles.statusBadge}
-                style={{ 
+                style={{
                   backgroundColor: getStatusColor(os.status),
                   color: getStatusTextColor(os.status)
                 }}

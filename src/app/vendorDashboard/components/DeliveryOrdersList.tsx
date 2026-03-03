@@ -82,20 +82,22 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ vendorId
     } else {
       setLoading(true);
     }
-    
+
     setError(null);
     try {
       // Fetch only delivery orders that are on the way
       const res = await fetch(`${BASE}/order/delivery/${vendorId}`);
       if (!res.ok) throw new Error('Failed to load delivery orders');
       const data = await res.json();
-      
+
       if (onLoaded && data.vendorName && data.vendorId) {
         onLoaded(data.vendorName, data.vendorId);
       }
 
       // The backend now returns only onTheWay orders, so no filtering needed
-      const deliveryOrders = data.orders;
+      const deliveryOrders = (data.orders || []).sort((a: ApiOrder, b: ApiOrder) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
       const combined: OrderState[] = deliveryOrders.map((o: ApiOrder) => ({
         order: o,
@@ -163,7 +165,7 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ vendorId
   const advance = (orderId: string, next: LocalStatus | "delivered") => {
     // Find the order being updated
     const orderToUpdate = list.find(os => os.order.orderId === orderId);
-    
+
     if (!orderToUpdate) {
       console.error(`Order not found: ${orderId}`);
       return;
@@ -230,7 +232,7 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ vendorId
           <span>Refreshing delivery orders...</span>
         </div>
       )}
-      
+
       {currentPageList.map((os) => (
         <OrderCard
           key={os.order.orderId}

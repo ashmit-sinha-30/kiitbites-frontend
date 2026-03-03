@@ -173,6 +173,7 @@ export interface VendorCartItem {
   type: string;
   isSpecial?: "Y" | "N";
   isAvailable?: "Y" | "N";
+  packable?: boolean;
 }
 
 export interface VendorCart {

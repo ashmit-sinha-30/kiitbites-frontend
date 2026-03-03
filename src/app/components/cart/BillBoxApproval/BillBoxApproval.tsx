@@ -104,6 +104,19 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
     }
   }, [vendorDeliverySettings, orderType]);
 
+  // Check if any Produce item in the cart is non-packable
+  const hasNonPackableProduce = items.some(
+    (i) => (i.category === "Produce") && i.packable === false
+  );
+
+  // Auto-switch to dine-in if non-packable produce items are in cart
+  useEffect(() => {
+    if (hasNonPackableProduce && orderType !== "dinein") {
+      console.log("🔄 Web: Non-packable produce in cart, switching to dine-in");
+      setOrderType("dinein");
+    }
+  }, [hasNonPackableProduce, orderType]);
+
   // More robust packable item detection
   const packableItems = items.filter((i) => {
     if (i.category === "Produce") return true;
@@ -197,21 +210,31 @@ const BillBoxApproval: React.FC<Props> = ({ userId, items, onOrderSubmitted }) =
             }
             return true;
           })
-          .map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={orderType === t ? styles.active : styles.segment}
-              onClick={() => setOrderType(t)}
-            >
-              {t === "takeaway"
-                ? "Takeaway"
-                : t === "delivery"
-                  ? "Delivery"
-                  : "Dine In"}
-            </button>
-          ))}
+          .map((t) => {
+            const isDisabledByPackable = hasNonPackableProduce && t !== "dinein";
+            return (
+              <button
+                key={t}
+                type="button"
+                className={orderType === t ? styles.active : styles.segment}
+                onClick={() => !isDisabledByPackable && setOrderType(t)}
+                style={isDisabledByPackable ? { opacity: 0.4, cursor: "not-allowed" } : {}}
+                disabled={isDisabledByPackable}
+              >
+                {t === "takeaway"
+                  ? "Takeaway"
+                  : t === "delivery"
+                    ? "Delivery"
+                    : "Dine In"}
+              </button>
+            );
+          })}
       </div>
+      {hasNonPackableProduce && (
+        <p style={{ color: "#e67e22", fontSize: "0.82rem", marginTop: "0.25rem", marginBottom: "0.25rem" }}>
+          ⚠️ Dine In only — your cart contains non-packable items
+        </p>
+      )}
 
       <input
         className={styles.input}

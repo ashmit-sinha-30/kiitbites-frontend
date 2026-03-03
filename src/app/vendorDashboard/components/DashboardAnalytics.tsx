@@ -75,6 +75,8 @@ function getOrderCountsByHour(orders: Order[], date: Date) {
   return Object.entries(hours).map(([hour, count]) => ({ hour: `${hour}:00`, count }));
 }
 
+import { AnalyticsSkeleton } from "./DashboardSkeleton";
+
 const DashboardAnalytics: React.FC = () => {
   const VENDOR_ID = "6834622e10d75a5ba7b7740d"; // This should come from props or context
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -100,7 +102,7 @@ const DashboardAnalytics: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      
+
       if (data.success) {
         // Process analytics data
         setRevenue({
@@ -123,7 +125,7 @@ const DashboardAnalytics: React.FC = () => {
           week: data.week.uniqueCustomers,
           month: data.month.uniqueCustomers,
         });
-        
+
         // Process most/least sold items
         setMostSold({
           day: getMostLeastSold(data.day.itemStats).most,
@@ -135,7 +137,7 @@ const DashboardAnalytics: React.FC = () => {
           week: getMostLeastSold(data.week.itemStats).least,
           month: getMostLeastSold(data.month.itemStats).least,
         });
-        
+
         // Process order times for graph
         setOrderTimes(getOrderCountsByHour(data.ordersDay, new Date(date)));
       } else {
@@ -154,23 +156,7 @@ const DashboardAnalytics: React.FC = () => {
   }, [selectedDate]);
 
   if (loading) {
-    return (
-      <div className={styles.analyticsDashboard}>
-        <div className={styles.analyticsDatePickerRow}>
-          <label htmlFor="analytics-date-picker" className={styles.analyticsDateLabel}>Select Date:</label>
-          <input
-            id="analytics-date-picker"
-            type="date"
-            value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
-            className={styles.analyticsDatePicker}
-          />
-        </div>
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <p>Loading analytics...</p>
-        </div>
-      </div>
-    );
+    return <AnalyticsSkeleton />;
   }
 
   if (error) {

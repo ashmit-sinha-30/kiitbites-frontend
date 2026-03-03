@@ -24,7 +24,8 @@ const ConditionalHeader = () => {
     '/uni-login',
     '/admin-dashboard',
     '/food-ordering-uniDashboard',
-    '/unidashboard'
+    '/unidashboard',
+    '/vendordashboard'
   ];
 
   // Check if current path starts with any of the hide header paths

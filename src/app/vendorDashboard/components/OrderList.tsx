@@ -83,7 +83,7 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
     } else {
       setLoading(true);
     }
-    
+
     setError(null);
     try {
       const fetchType = async (type: Order["orderType"]) => {
@@ -114,7 +114,7 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
         ...takeRes.orders,
         ...dineRes.orders,
         ...cashRes.orders,
-      ];
+      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       // Filter out delivery orders that are on the way (they'll be shown in separate delivery section)
       const filteredOrders = allOrders.filter((order: ApiOrder) => {
@@ -147,7 +147,7 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
       } else {
         setList(combined);
       }
-      
+
       previousListRef.current = combined;
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'An unknown error occurred');
@@ -201,12 +201,12 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
   const advance = (orderId: string, next: LocalStatus | "delivered") => {
     // Find the order being updated
     const orderToUpdate = list.find(os => os.order.orderId === orderId);
-    
+
     if (!orderToUpdate) {
       console.error(`Order not found: ${orderId}`);
       return;
     }
-    
+
     // Optimistic update with loading state
     setList(
       (prev) =>
@@ -306,8 +306,8 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
         // Mark as completed - stays in active orders
         fetch(`${BASE}/order/${orderId}/complete`, { method: "PATCH" })
           .then(() => {
-            setList(prev => prev.map(os => 
-              os.order.orderId === orderId 
+            setList(prev => prev.map(os =>
+              os.order.orderId === orderId
                 ? { ...os, isUpdating: false }
                 : os
             ));
@@ -315,8 +315,8 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
           .catch((err) => {
             console.error("Failed to PATCH /complete", err);
             // Revert on error
-            setList(prev => prev.map(os => 
-              os.order.orderId === orderId 
+            setList(prev => prev.map(os =>
+              os.order.orderId === orderId
                 ? { ...os, localStatus: orderToUpdate.localStatus, isUpdating: false }
                 : os
             ));
@@ -342,12 +342,12 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
       next === "delivered"
         ? `/order/${orderId}/deliver`
         : next === "onTheWay"
-        ? `/order/${orderId}/onTheWay`
-        : `/order/${orderId}/complete`;
+          ? `/order/${orderId}/onTheWay`
+          : `/order/${orderId}/complete`;
     fetch(`${BASE}${endpoint}`, { method: "PATCH" })
       .then(() => {
-        setList(prev => prev.map(os => 
-          os.order.orderId === orderId 
+        setList(prev => prev.map(os =>
+          os.order.orderId === orderId
             ? { ...os, isUpdating: false }
             : os
         ));
@@ -355,8 +355,8 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
       .catch((err) => {
         console.error("Failed to PATCH", endpoint, err);
         // Revert on error
-        setList(prev => prev.map(os => 
-          os.order.orderId === orderId 
+        setList(prev => prev.map(os =>
+          os.order.orderId === orderId
             ? { ...os, localStatus: orderToUpdate.localStatus, isUpdating: false }
             : os
         ));
@@ -390,7 +390,7 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
           <span>Refreshing...</span>
         </div>
       )}
-      
+
       {currentPageList.map((os) => (
         <OrderCard
           key={os.order.orderId}

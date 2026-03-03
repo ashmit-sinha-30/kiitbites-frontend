@@ -6,17 +6,53 @@
   left: 0;
   height: 100vh;
   overflow-y: auto;
-  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
-  width: 240px;
-  padding: 1.5rem 1rem;
-  border-right: 1px solid #e1e5e9;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
-  z-index: 10;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  width: 260px;
+  padding: 2rem 1.25rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.03);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  
+  /* Modern Scrollbar Styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(1, 121, 111, 0.2) transparent;
+  
   &::-webkit-scrollbar {
-    display: none;
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(1, 121, 111, 0.1);
+    border-radius: 10px;
+    transition: background 0.3s;
+  }
+  
+  &:hover {
+    &::-webkit-scrollbar-thumb {
+      background: rgba(1, 121, 111, 0.3);
+    }
+  }
+
+  /* Visual indicator for scrollability - subtle gradient at the bottom */
+  &::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 260px;
+    height: 60px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.8) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 101;
+    border-bottom-left-radius: 0;
+    transition: opacity 0.3s;
   }
 }
 
@@ -25,85 +61,83 @@
   padding: 0;
   margin: 0;
 }
+
 .menu li {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 0.75rem;
-  margin-bottom: 0.5rem;
-  border-radius: 12px;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.65rem;
+  border-radius: 14px;
   cursor: pointer;
-  color: #374151;
+  color: #475569;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 500;
   position: relative;
   border: 1px solid transparent;
+
+  &:hover {
+    background: rgba(78, 161, 153, 0.08);
+    color: #01796f;
+    transform: translateX(4px);
+  }
 }
-.menu li:hover {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  transform: translateX(4px);
-  border-color: #e2e8f0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
+
 .active {
-  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
-  color: #fff;
-  box-shadow: 0 6px 20px rgba(78, 161, 153, 0.4);
-  transform: translateX(2px);
-  border-color: #4ea199;
+  background: linear-gradient(135deg, #01796f 0%, #4ea199 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 25px rgba(1, 121, 111, 0.25);
+  font-weight: 600 !important;
+  
+  .icon {
+    color: #ffffff !important;
+  }
 }
 
-// Special styling for logout button
 .menu li[data-segment="logout"] {
-  margin-top: 2rem;
-  background: linear-gradient(135deg, #fef2f2 0%, #fce7e7 100%);
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  font-weight: 600;
-}
-
-.menu li[data-segment="logout"]:hover {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  color: #b91c1c;
-  transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
-}
-
-.menu li[data-segment="logout"].active {
-  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-  color: #fff;
-  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+  margin-top: 3rem;
+  color: #ef4444;
+  
+  &:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+  }
 }
 
 .icon {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
+  color: #64748b;
+  transition: color 0.3s;
 }
+
+.label {
+  font-size: 0.95rem;
+}
+
 .footer {
   text-align: left;
-  font-size: 0.85rem;
-  color: #555;
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 16px;
-  border: 1px solid #dee2e6;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(10px);
+  margin-top: auto;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  margin-bottom: 1rem;
 }
+
 .vendorName {
-  color: #4ea199;
+  display: block;
+  color: #01796f;
   font-weight: 700;
   font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 1px 2px rgba(78, 161, 153, 0.1);
+  margin-bottom: 0.25rem;
 }
+
 .vendorId {
-  color: #6fc3bd;
+  color: #64748b;
   font-size: 0.8rem;
   font-weight: 500;
-  opacity: 0.9;
 }

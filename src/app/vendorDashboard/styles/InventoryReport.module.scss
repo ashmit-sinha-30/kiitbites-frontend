@@ -1,57 +1,42 @@
-/* styles/InventoryReport.module.scss */
 .container {
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(120deg, #f7fafc 60%, #e6fffa 100%);
+  background: linear-gradient(135deg, #e0f5f0 0%, #f0f9f8 50%, #d3eeea 100%);
 }
-
-/* Sidebar base styles (for reference, should be in sidebar SCSS):
-.sidebar {
-  width: 240px;
-  min-width: 240px;
-  max-width: 240px;
-  position: fixed;
-  left: 0;
-  top: 0;
-  height: 100vh;
-  z-index: 10;
-  background: #fff;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.04);
-}
-*/
 
 .main {
   flex: 1;
   overflow-y: auto;
   background: transparent;
-  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-  min-height: 100vh; /* Prevent content behind sidebar */
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
+  padding: 2.5rem;
   
   /* Custom scrollbar */
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f7fafc;
+  scrollbar-color: #4ea199 #f0f9f8;
 }
 
 .main::-webkit-scrollbar {
   width: 8px;
 }
 .main::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: #4ea199;
+  border-radius: 10px;
 }
 .main::-webkit-scrollbar-track {
-  background: #f7fafc;
+  background: #f0f9f8;
 }
 
 /* Smooth fade-in for content changes */
 .main > * {
-  animation: fadeIn 0.3s cubic-bezier(0.4,0,0.2,1);
+  animation: slideFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes fadeIn {
+@keyframes slideFadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;

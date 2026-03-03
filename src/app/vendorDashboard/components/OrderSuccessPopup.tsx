@@ -75,14 +75,14 @@ export const OrderSuccessPopup: React.FC<OrderSuccessPopupProps> = ({
               const itemTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
               const packableItems = items.filter(item => item.kind === "Produce");
               const packingTotal = packableItems.reduce((sum, item) => sum + (packingCharge * item.quantity), 0);
-              
+
               return (
                 <>
                   <div className="breakdown-row">
                     <span className="breakdown-label">Items Total:</span>
                     <span className="breakdown-value">₹{itemTotal.toFixed(2)}</span>
                   </div>
-                  {packableItems.length > 0 && (
+                  {packableItems.length > 0 && orderType === "takeaway" && (
                     <div className="breakdown-row">
                       <span className="breakdown-label">Packing Charge ({packableItems.length} produce items @ ₹{packingCharge} each):</span>
                       <span className="breakdown-value">₹{packingTotal.toFixed(2)}</span>

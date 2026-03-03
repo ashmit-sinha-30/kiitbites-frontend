@@ -26,6 +26,7 @@ import InventoryTable from "./components/InventoryTable";
 import DateFilter from "./components/DateFilter";
 import DownloadButton from "./components/DownloadButton";
 import { VendorProfile } from "./components/VendorProfile";
+import { DashboardHomeSkeleton, InventorySkeleton } from "./components/DashboardSkeleton";
 import { Order, InventoryReport, transformApiReport } from "./types";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
@@ -464,347 +465,349 @@ export default function VendorDashboardPage() {
           </div>
         )}
         {loading && (
-          <div className="p-4 text-sm text-gray-500">Loading your services…</div>
+          <DashboardHomeSkeleton />
         )}
 
         {/* Service-specific content mapping */}
-        {(() => {
-          const currentService = services.find((s) => s._id === activeSegment);
-          const name = currentService?.name?.toLowerCase() || "";
+        {
+          (() => {
+            const currentService = services.find((s) => s._id === activeSegment);
+            const name = currentService?.name?.toLowerCase() || "";
 
-          if (activeSegment === "dashboard") {
-            return <VendorDashboard vendorName={vendorName} vendorId={vendorId || ""} />;
-          }
+            if (activeSegment === "dashboard") {
+              return <VendorDashboard vendorName={vendorName} vendorId={vendorId || ""} />;
+            }
 
-          if (activeSegment === "profile") {
-            return <VendorProfile vendorId={vendorId || ""} />;
-          }
+            if (activeSegment === "profile") {
+              return <VendorProfile vendorId={vendorId || ""} />;
+            }
 
-          // Handle inventory-reports segment
-          if (activeSegment === "inventory-reports") {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Inventory Reports</h1>
-                  <p>View and export detailed inventory reports</p>
-                </div>
-                <div className={styles.topBar}>
-                  <div className={styles.stats}>
-                    {report ? (
-                      <>
-                        <StatCard
-                          label="Total Items Tracked"
-                          value={report.stats.totalTracked}
-                        />
-                        <StatCard
-                          label="Produced Today"
-                          value={report.stats.producedToday}
-                        />
-                        <StatCard
-                          label="Received Today"
-                          value={report.stats.receivedToday}
-                        />
-                        <StatCard
-                          label="Sold Today"
-                          value={report.stats.soldToday}
-                          positive
-                        />
-                        <StatCard
-                          label="Sent Today"
-                          value={report.stats.sentToday}
-                        />
-                      </>
-                    ) : (
-                      <div>Loading stats…</div>
-                    )}
+            // Handle inventory-reports segment
+            if (activeSegment === "inventory-reports") {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Inventory Reports</h1>
+                    <p>View and export detailed inventory reports</p>
                   </div>
-                  <div className={styles.controls}>
-                    <DateFilter
-                      date={selectedDate}
-                      onChange={setSelectedDate}
-                      onFilter={applyFilter}
-                    />
-                    {report && (
-                      <DownloadButton
-                        vendorName={report.vendorName}
-                        reportDate={report.reportDate}
-                        stats={report.stats}
-                        items={report.items}
-                        receivedFrom={report.receivedFrom}
-                        sent={report.sent}
-                        sentTo={report.sentTo}
+                  <div className={styles.topBar}>
+                    <div className={styles.stats}>
+                      {report ? (
+                        <>
+                          <StatCard
+                            label="Total Items Tracked"
+                            value={report.stats.totalTracked}
+                          />
+                          <StatCard
+                            label="Produced Today"
+                            value={report.stats.producedToday}
+                          />
+                          <StatCard
+                            label="Received Today"
+                            value={report.stats.receivedToday}
+                          />
+                          <StatCard
+                            label="Sold Today"
+                            value={report.stats.soldToday}
+                            positive
+                          />
+                          <StatCard
+                            label="Sent Today"
+                            value={report.stats.sentToday}
+                          />
+                        </>
+                      ) : (
+                        <InventorySkeleton />
+                      )}
+                    </div>
+                    <div className={styles.controls}>
+                      <DateFilter
+                        date={selectedDate}
+                        onChange={setSelectedDate}
+                        onFilter={applyFilter}
                       />
-                    )}
+                      {report && (
+                        <DownloadButton
+                          vendorName={report.vendorName}
+                          reportDate={report.reportDate}
+                          stats={report.stats}
+                          items={report.items}
+                          receivedFrom={report.receivedFrom}
+                          sent={report.sent}
+                          sentTo={report.sentTo}
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-                {loadingReport ? (
-                  <p>Loading report…</p>
-                ) : errorReport ? (
-                  <p className={styles.error}>{errorReport}</p>
-                ) : report ? (
-                  <InventoryTable
-                    items={report.items ?? []}
-                    date={report.reportDate}
-                    sent={report.sent}
-                    sentTo={report.sentTo}
-                  />
-                ) : (
-                  <p>No report data available.</p>
-                )}
-              </>
-            );
-          }
-
-          if (activeSegment === "pending-orders") {
-            return renderPendingOrderRequests();
-          }
-
-          if (!name) return null;
-
-          if (name === "invoice" || name.includes("invoice")) {
-            return <Invoices vendorId={vendorId || ""} />;
-          }
-          if (name === "inventory report" || name.includes("inventory report")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Inventory Reports</h1>
-                  <p>View and export detailed inventory reports</p>
-                </div>
-                <div className={styles.topBar}>
-                  <div className={styles.stats}>
-                    {report ? (
-                      <>
-                        <StatCard
-                          label="Total Items Tracked"
-                          value={report.stats.totalTracked}
-                        />
-                        <StatCard
-                          label="Produced Today"
-                          value={report.stats.producedToday}
-                        />
-                        <StatCard
-                          label="Received Today"
-                          value={report.stats.receivedToday}
-                        />
-                        <StatCard
-                          label="Sold Today"
-                          value={report.stats.soldToday}
-                          positive
-                        />
-                        <StatCard
-                          label="Sent Today"
-                          value={report.stats.sentToday}
-                        />
-                      </>
-                    ) : (
-                      <div>Loading stats…</div>
-                    )}
-                  </div>
-                  <div className={styles.controls}>
-                    <DateFilter
-                      date={selectedDate}
-                      onChange={setSelectedDate}
-                      onFilter={applyFilter}
+                  {loadingReport ? (
+                    <InventorySkeleton />
+                  ) : errorReport ? (
+                    <p className={styles.error}>{errorReport}</p>
+                  ) : report ? (
+                    <InventoryTable
+                      items={report.items ?? []}
+                      date={report.reportDate}
+                      sent={report.sent}
+                      sentTo={report.sentTo}
                     />
-                    {report && (
-                      <DownloadButton
-                        vendorName={report.vendorName}
-                        reportDate={report.reportDate}
-                        stats={report.stats}
-                        items={report.items}
-                        receivedFrom={report.receivedFrom}
-                        sent={report.sent}
-                        sentTo={report.sentTo}
-                      />
-                    )}
+                  ) : (
+                    <p>No report data available.</p>
+                  )}
+                </>
+              );
+            }
+
+            if (activeSegment === "pending-orders") {
+              return renderPendingOrderRequests();
+            }
+
+            if (!name) return null;
+
+            if (name === "invoice" || name.includes("invoice")) {
+              return <Invoices vendorId={vendorId || ""} />;
+            }
+            if (name === "inventory report" || name.includes("inventory report")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Inventory Reports</h1>
+                    <p>View and export detailed inventory reports</p>
                   </div>
-                </div>
-                {loadingReport ? (
-                  <p>Loading report…</p>
-                ) : errorReport ? (
-                  <p className={styles.error}>{errorReport}</p>
-                ) : report ? (
-                  <InventoryTable
-                    items={report.items ?? []}
-                    date={report.reportDate}
-                    sent={report.sent}
-                    sentTo={report.sentTo}
+                  <div className={styles.topBar}>
+                    <div className={styles.stats}>
+                      {report ? (
+                        <>
+                          <StatCard
+                            label="Total Items Tracked"
+                            value={report.stats.totalTracked}
+                          />
+                          <StatCard
+                            label="Produced Today"
+                            value={report.stats.producedToday}
+                          />
+                          <StatCard
+                            label="Received Today"
+                            value={report.stats.receivedToday}
+                          />
+                          <StatCard
+                            label="Sold Today"
+                            value={report.stats.soldToday}
+                            positive
+                          />
+                          <StatCard
+                            label="Sent Today"
+                            value={report.stats.sentToday}
+                          />
+                        </>
+                      ) : (
+                        <InventorySkeleton />
+                      )}
+                    </div>
+                    <div className={styles.controls}>
+                      <DateFilter
+                        date={selectedDate}
+                        onChange={setSelectedDate}
+                        onFilter={applyFilter}
+                      />
+                      {report && (
+                        <DownloadButton
+                          vendorName={report.vendorName}
+                          reportDate={report.reportDate}
+                          stats={report.stats}
+                          items={report.items}
+                          receivedFrom={report.receivedFrom}
+                          sent={report.sent}
+                          sentTo={report.sentTo}
+                        />
+                      )}
+                    </div>
+                  </div>
+                  {loadingReport ? (
+                    <InventorySkeleton />
+                  ) : errorReport ? (
+                    <p className={styles.error}>{errorReport}</p>
+                  ) : report ? (
+                    <InventoryTable
+                      items={report.items ?? []}
+                      date={report.reportDate}
+                      sent={report.sent}
+                      sentTo={report.sentTo}
+                    />
+                  ) : (
+                    <p>No report data available.</p>
+                  )}
+                </>
+              );
+            }
+            if (name === "retail inventory" || name.includes("retail inventory")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Retail Inventory</h1>
+                    <p>Manage your packaged items</p>
+                  </div>
+                  <RetailInventory vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
+                </>
+              );
+            }
+            if (name === "produce inventory" || name.includes("produce inventory")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Produce Inventory</h1>
+                    <p>Manage your fresh produce items</p>
+                  </div>
+                  <ProduceInventory vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
+                </>
+              );
+            }
+            if (name === "raw materials" || name.includes("raw materials") || name === "raw inventory") {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Raw Materials Inventory</h1>
+                    <p>Manage your raw material items with opening and closing amounts</p>
+                  </div>
+                  <RawMaterialInventory vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
+                </>
+              );
+            }
+            if (name === "inventory transfer" || name.includes("inventory transfer")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Inventory Transfer</h1>
+                    <p>Send and receive inventory from other vendors</p>
+                  </div>
+                  <InventoryTransfer vendorId={vendorId || ""} />
+                </>
+              );
+            }
+            if (name === "pending orders" || name.includes("pending orders") || name === "pending order" || name.includes("pending order")) {
+              return renderPendingOrderRequests();
+            }
+            if (name === "active orders" || name.includes("active orders") || name === "active order" || name.includes("active order")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Active Orders</h1>
+                    <p>Manage your incoming orders in real-time</p>
+                  </div>
+                  <OrderList
+                    vendorId={vendorId || ""}
+                    onLoaded={handleOnLoaded}
+                    onOrderStatusChange={handleOrderStatusChange}
+                    orderStatusChanges={orderStatusChanges}
                   />
-                ) : (
-                  <p>No report data available.</p>
-                )}
-              </>
-            );
-          }
-          if (name === "retail inventory" || name.includes("retail inventory")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Retail Inventory</h1>
-                  <p>Manage your packaged items</p>
-                </div>
-                <RetailInventory vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
-              </>
-            );
-          }
-          if (name === "produce inventory" || name.includes("produce inventory")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Produce Inventory</h1>
-                  <p>Manage your fresh produce items</p>
-                </div>
-                <ProduceInventory vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
-              </>
-            );
-          }
-          if (name === "raw materials" || name.includes("raw materials") || name === "raw inventory") {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Raw Materials Inventory</h1>
-                  <p>Manage your raw material items with opening and closing amounts</p>
-                </div>
-                <RawMaterialInventory vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
-              </>
-            );
-          }
-          if (name === "inventory transfer" || name.includes("inventory transfer")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Inventory Transfer</h1>
-                  <p>Send and receive inventory from other vendors</p>
-                </div>
-                <InventoryTransfer vendorId={vendorId || ""} />
-              </>
-            );
-          }
-          if (name === "pending orders" || name.includes("pending orders") || name === "pending order" || name.includes("pending order")) {
-            return renderPendingOrderRequests();
-          }
-          if (name === "active orders" || name.includes("active orders") || name === "active order" || name.includes("active order")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Active Orders</h1>
-                  <p>Manage your incoming orders in real-time</p>
-                </div>
-                <OrderList
-                  vendorId={vendorId || ""}
-                  onLoaded={handleOnLoaded}
-                  onOrderStatusChange={handleOrderStatusChange}
-                  orderStatusChanges={orderStatusChanges}
-                />
-              </>
-            );
-          }
-          if (name === "delivery orders" || name.includes("delivery orders") || name === "delivery order" || name.includes("delivery order")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Delivery Orders</h1>
-                  <p>Manage orders that are out for delivery</p>
-                </div>
-                <DeliveryOrdersList
-                  vendorId={vendorId || ""}
-                  onLoaded={handleOnLoaded}
-                  onOrderStatusChange={handleOrderStatusChange}
-                  orderStatusChanges={orderStatusChanges}
-                />
-              </>
-            );
-          }
-          if (name === "past orders" || name.includes("past orders") || name === "past order" || name.includes("past order")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Past Orders</h1>
-                  <p>View and manage past orders</p>
-                </div>
-                <PastOrdersList vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
-              </>
-            );
-          }
-          if (name === "vendor cart" || name.includes("vendor cart")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Vendor Cart</h1>
-                  <p>Create orders for customers directly</p>
-                </div>
-                <VendorCartComponent vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
-              </>
-            );
-          }
-          if (name === "delivery settings" || name.includes("delivery settings")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Delivery Settings</h1>
-                  <p>Configure your delivery preferences and availability</p>
-                </div>
-                <DeliverySettings vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
-              </>
-            );
-          }
-          if (name === "invoices" || name.includes("invoices")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Invoices</h1>
-                  <p>View and download your invoices</p>
-                </div>
-                <VendorInvoices vendorId={vendorId || ""} />
-              </>
-            );
-          }
-          if (name.includes("grievances") || name.includes("grievance")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Grievances</h1>
-                  <p>Submit and track your grievances</p>
-                </div>
-                <VendorGrievances vendorId={vendorId || ""} />
-              </>
-            );
-          }
-          if (name === "recipes" || name.includes("recipes")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Recipe Management</h1>
-                  <p>Create and manage your recipes</p>
-                </div>
-                <VendorRecipes vendorId={vendorId || ""} />
-              </>
-            );
-          }
-          if (name === "recipe works" || name.includes("recipe works")) {
-            return (
-              <>
-                <RecipeWorks />
-              </>
-            );
-          }
-          if (name === "delivery-settings" || name.includes("delivery settings")) {
-            return (
-              <>
-                <div className={styles.header}>
-                  <h1>Delivery Settings</h1>
-                  <p>Configure your delivery preferences and availability</p>
-                </div>
-                <DeliverySettings vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
-              </>
-            );
-          }
+                </>
+              );
+            }
+            if (name === "delivery orders" || name.includes("delivery orders") || name === "delivery order" || name.includes("delivery order")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Delivery Orders</h1>
+                    <p>Manage orders that are out for delivery</p>
+                  </div>
+                  <DeliveryOrdersList
+                    vendorId={vendorId || ""}
+                    onLoaded={handleOnLoaded}
+                    onOrderStatusChange={handleOrderStatusChange}
+                    orderStatusChanges={orderStatusChanges}
+                  />
+                </>
+              );
+            }
+            if (name === "past orders" || name.includes("past orders") || name === "past order" || name.includes("past order")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Past Orders</h1>
+                    <p>View and manage past orders</p>
+                  </div>
+                  <PastOrdersList vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
+                </>
+              );
+            }
+            if (name === "vendor cart" || name.includes("vendor cart")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Vendor Cart</h1>
+                    <p>Create orders for customers directly</p>
+                  </div>
+                  <VendorCartComponent vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
+                </>
+              );
+            }
+            if (name === "delivery settings" || name.includes("delivery settings")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Delivery Settings</h1>
+                    <p>Configure your delivery preferences and availability</p>
+                  </div>
+                  <DeliverySettings vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
+                </>
+              );
+            }
+            if (name === "invoices" || name.includes("invoices")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Invoices</h1>
+                    <p>View and download your invoices</p>
+                  </div>
+                  <VendorInvoices vendorId={vendorId || ""} />
+                </>
+              );
+            }
+            if (name.includes("grievances") || name.includes("grievance")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Grievances</h1>
+                    <p>Submit and track your grievances</p>
+                  </div>
+                  <VendorGrievances vendorId={vendorId || ""} />
+                </>
+              );
+            }
+            if (name === "recipes" || name.includes("recipes")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Recipe Management</h1>
+                    <p>Create and manage your recipes</p>
+                  </div>
+                  <VendorRecipes vendorId={vendorId || ""} />
+                </>
+              );
+            }
+            if (name === "recipe works" || name.includes("recipe works")) {
+              return (
+                <>
+                  <RecipeWorks />
+                </>
+              );
+            }
+            if (name === "delivery-settings" || name.includes("delivery settings")) {
+              return (
+                <>
+                  <div className={styles.header}>
+                    <h1>Delivery Settings</h1>
+                    <p>Configure your delivery preferences and availability</p>
+                  </div>
+                  <DeliverySettings vendorId={vendorId || ""} onLoaded={handleOnLoaded} />
+                </>
+              );
+            }
 
-          return null;
-        })()}
+            return null;
+          })()
+        }
 
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }
