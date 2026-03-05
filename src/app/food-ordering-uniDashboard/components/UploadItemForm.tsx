@@ -1,6 +1,59 @@
 import React, { useState, useEffect, useRef } from "react";
-import * as Switch from "@radix-ui/react-switch";
+import { FaChevronDown } from "react-icons/fa";
 import styles from "../styles/UploadItemForm.module.scss";
+
+// Reusable Custom Dropdown Component
+const CustomDropdown = ({ value, options, onChange, placeholder, allowCustom = false, required = false }: {
+  value: string;
+  options: string[];
+  onChange: (val: string) => void;
+  placeholder?: string;
+  allowCustom?: boolean;
+  required?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className={styles.customSelectWrapper} ref={dropdownRef}>
+      <input
+        className={styles.input}
+        value={value}
+        onChange={(e) => {
+          if (allowCustom) onChange(e.target.value);
+        }}
+        onClick={() => setIsOpen(!isOpen)}
+        readOnly={!allowCustom}
+        placeholder={placeholder}
+        required={required}
+      />
+      <FaChevronDown className={`${styles.dropdownIcon} ${isOpen ? styles.open : ""}`} onClick={() => setIsOpen(!isOpen)} />
+      <ul className={isOpen ? styles.show : ""}>
+        {options.map((opt) => (
+          <li
+            key={opt}
+            onClick={() => {
+              onChange(opt);
+              setIsOpen(false);
+            }}
+          >
+            {opt}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 interface UploadItemFormProps {
   universityId: string;
@@ -26,23 +79,23 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [packable, setPackable] = useState(itemType === "Produce");
-  const [hsnSuggestions, setHsnSuggestions] = useState<Array<{hsnCode: string, count: number, gstPercentage: number, items: string[]}>>([]);
+  const [hsnSuggestions, setHsnSuggestions] = useState<Array<{ hsnCode: string, count: number, gstPercentage: number, items: string[] }>>([]);
   const [showHsnSuggestions, setShowHsnSuggestions] = useState(false);
   const [loadingHsnSuggestions, setLoadingHsnSuggestions] = useState(false);
 
   // Calculate price excluding tax and SGST/CGST
   const calculateTaxDetails = () => {
     if (!priceIncludingTax || !gstPercentage) return null;
-    
+
     const priceIncludingTaxNum = parseFloat(priceIncludingTax);
     const gstPercentageNum = parseFloat(gstPercentage);
-    
+
     if (isNaN(priceIncludingTaxNum) || isNaN(gstPercentageNum)) return null;
-    
+
     const priceExcludingTax = priceIncludingTaxNum / (1 + gstPercentageNum / 100);
     const sgstPercentage = gstPercentageNum / 2;
     const cgstPercentage = gstPercentageNum / 2;
-    
+
     return {
       priceExcludingTax: Math.round(priceExcludingTax * 100) / 100,
       sgstPercentage: Math.round(sgstPercentage * 100) / 100,
@@ -68,11 +121,11 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
       // First try to get suggestions from the specific category
       const categoryEndpoint = `/api/item/hsn-suggestions/${itemType.toLowerCase()}/${selectedType}`;
       const categoryRes = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + categoryEndpoint);
-      
+
       if (categoryRes.ok) {
         const categoryData = await categoryRes.json();
         console.log('Category HSN suggestions response:', categoryData); // Debug log
-        
+
         if (categoryData.success && categoryData.suggestions.length > 0) {
           setHsnSuggestions(categoryData.suggestions);
           setShowHsnSuggestions(true);
@@ -80,15 +133,15 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
           return;
         }
       }
-      
+
       // If no category-specific suggestions, try common HSN codes
       const commonEndpoint = `/api/item/common-hsn/${selectedType}`;
       const commonRes = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + commonEndpoint);
-      
+
       if (commonRes.ok) {
         const commonData = await commonRes.json();
         console.log('Common HSN suggestions response:', commonData); // Debug log
-        
+
         if (commonData.success && commonData.suggestions.length > 0) {
           setHsnSuggestions(commonData.suggestions);
           setShowHsnSuggestions(true);
@@ -118,17 +171,17 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
   };
 
   // Handle HSN code selection from suggestions
-  const handleHsnSuggestionClick = (suggestion: {hsnCode: string, count: number, gstPercentage: number, items: string[]}) => {
+  const handleHsnSuggestionClick = (suggestion: { hsnCode: string, count: number, gstPercentage: number, items: string[] }) => {
     console.log('HSN Suggestion clicked:', suggestion); // Debug log
-    
+
     // Additional safety check
     if (!suggestion || !suggestion.hsnCode) {
       console.error('Invalid suggestion object:', suggestion);
       return;
     }
-    
+
     setHsnCode(suggestion.hsnCode);
-    
+
     // Validate GST percentage before setting it
     if (suggestion.gstPercentage != null && suggestion.gstPercentage !== undefined) {
       setGstPercentage(suggestion.gstPercentage.toString());
@@ -137,7 +190,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
       // Set a default value or show an error
       setGstPercentage("");
     }
-    
+
     setShowHsnSuggestions(false);
   };
 
@@ -257,14 +310,15 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
     <div className={styles.uploadItemContainer}>
       <h3 className={styles.title}>Upload New Item</h3>
       <form onSubmit={handleSubmit} className={styles.form}>
-        <label className={styles.label}>
+        <label className={`${styles.label} ${styles.fullWidth}`}>
           Type
-          <select value={itemType} onChange={e => setItemType(e.target.value)} className={styles.input}>
-            <option value="Retail">Retail</option>
-            <option value="Produce">Produce</option>
-          </select>
+          <CustomDropdown
+            value={itemType}
+            options={["Retail", "Produce"]}
+            onChange={(val) => setItemType(val)}
+          />
         </label>
-        <label className={styles.label}>
+        <label className={`${styles.label} ${styles.fullWidth}`}>
           Description
           <textarea
             value={description}
@@ -280,17 +334,14 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
         </label>
         <label className={styles.label}>
           Types
-          <input
-            list="upload-type-suggestions"
+          <CustomDropdown
             value={type}
-            onChange={e => handleTypeChange(e.target.value)}
-            required
-            className={styles.input}
+            options={types}
+            onChange={handleTypeChange}
             placeholder="Type to create or pick…"
+            allowCustom={true}
+            required={true}
           />
-          <datalist id="upload-type-suggestions">
-            {types.map(t => <option key={t} value={t} />)}
-          </datalist>
         </label>
         {itemType === "Produce" && (
           <label className={styles.label}>
@@ -319,10 +370,10 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
         </label>
         <label className={styles.label}>
           HSN Code (required)
-          <input 
-            type="text" 
-            value={hsnCode} 
-            onChange={e => setHsnCode(e.target.value)} 
+          <input
+            type="text"
+            value={hsnCode}
+            onChange={e => setHsnCode(e.target.value)}
             className={styles.input}
             required
           />
@@ -338,7 +389,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
 
         {/* HSN Suggestions */}
         {showHsnSuggestions && hsnSuggestions.length > 0 && (
-          <div className={styles.hsnSuggestions}>
+          <div className={`${styles.hsnSuggestions} ${styles.fullWidth}`}>
             <h4>HSN Code Suggestions</h4>
             <p className={styles.suggestionNote}>Click on a suggestion to auto-fill both HSN code and GST percentage:</p>
             {hsnSuggestions
@@ -374,7 +425,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
 
         {/* Tax Calculation Display */}
         {taxDetails && (
-          <div className={styles.taxCalculation}>
+          <div className={`${styles.taxCalculation} ${styles.fullWidth}`}>
             <h4>Tax Calculation</h4>
             <div className={styles.taxRow}>
               <span>Price Excluding Tax:</span>
@@ -401,7 +452,7 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
 
         {/* HSN Suggestions */}
         {showHsnSuggestions && hsnSuggestions.length > 0 && (
-          <div className={styles.hsnSuggestions}>
+          <div className={`${styles.hsnSuggestions} ${styles.fullWidth}`}>
             <h4>HSN Suggestions</h4>
             {hsnSuggestions.map(suggestion => (
               <div
@@ -417,51 +468,47 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
 
         <label className={styles.label}>
           Is Special
-          <select value={isSpecial} onChange={e => setIsSpecial(e.target.value)} className={styles.input}>
-            <option value="Y">Yes</option>
-            <option value="N">No</option>
-          </select>
-        </label>
-        <label className={styles.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span>Packable</span>
-          <Switch.Root
-            className="w-[42px] h-[25px] bg-gray-200 rounded-full relative shadow-[0_2px_10px] shadow-gray-400 focus:shadow-[0_0_0_2px] focus:shadow-black data-[state=checked]:bg-blue-600 outline-none cursor-default"
-            checked={packable}
-            onCheckedChange={setPackable}
-          >
-            <Switch.Thumb className="block w-[21px] h-[21px] bg-white rounded-full shadow-[0_2px_2px] shadow-gray-400 transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px]" />
-          </Switch.Root>
-        </label>
-        <label 
-          className={styles.label} 
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '12px', 
-            padding: '15px', 
-            backgroundColor: isVeg ? '#f0fdf4' : '#fef2f2', 
-            borderRadius: '8px', 
-            border: `2px solid ${isVeg ? '#22c55e' : '#ef4444'}`,
-            cursor: 'pointer'
-          }}
-          onClick={() => setIsVeg(!isVeg)}
-        >
-          <input
-            type="checkbox"
-            checked={isVeg}
-            onChange={(e) => setIsVeg(e.target.checked)}
-            style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-            onClick={(e) => e.stopPropagation()}
+          <CustomDropdown
+            value={isSpecial === "Y" ? "Yes" : "No"}
+            options={["Yes", "No"]}
+            onChange={(val) => setIsSpecial(val === "Yes" ? "Y" : "N")}
           />
-          <span style={{ fontWeight: '600', fontSize: '16px', color: isVeg ? '#22c55e' : '#ef4444', userSelect: 'none' }}>
-            {isVeg ? '🟢 Vegetarian' : '🔴 Non-Vegetarian'}
-          </span>
         </label>
         <label className={styles.label}>
+          Packable
+          <CustomDropdown
+            value={packable ? "Yes" : "No"}
+            options={["Yes", "No"]}
+            onChange={(val) => setPackable(val === "Yes")}
+          />
+        </label>
+        <div className={styles.vegToggleWrapper}>
+          <button
+            type="button"
+            className={`${styles.vegOption} ${isVeg ? styles.activeVeg : ''}`}
+            onClick={() => setIsVeg(true)}
+          >
+            <div className={`${styles.vegIndicator} ${styles.veg}`}>
+              <div className={styles.dot}></div>
+            </div>
+            Vegetarian
+          </button>
+          <button
+            type="button"
+            className={`${styles.vegOption} ${!isVeg ? styles.activeNonVeg : ''}`}
+            onClick={() => setIsVeg(false)}
+          >
+            <div className={`${styles.vegIndicator} ${styles.nonVeg}`}>
+              <div className={styles.dot}></div>
+            </div>
+            Non-Vegetarian
+          </button>
+        </div>
+        <label className={`${styles.label} ${styles.fullWidth}`}>
           Image
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className={styles.input} />
         </label>
-        <button type="submit" disabled={loading || !cloudName} className={styles.button}>
+        <button type="submit" disabled={loading || !cloudName} className={`${styles.button} ${styles.fullWidth}`}>
           {loading ? "Uploading..." : "Upload Item"}
         </button>
         {success && <div className={styles.success}>{success}</div>}

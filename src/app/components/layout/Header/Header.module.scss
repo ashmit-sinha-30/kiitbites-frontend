@@ -441,7 +441,9 @@
 }
 
 /* Global override for menu open scroll behavior */
-:global(body.menu-open) {
-  overflow: hidden;
-  touch-action: none;
+.dummyWrapper {
+  :global(body.menu-open) {
+    overflow: hidden;
+    touch-action: none;
+  }
 }

@@ -56,9 +56,11 @@
   max-height: 200px;
   overflow-y: auto;
   transition: max-height 0.3s;
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 8px;
-  background: #fafbfc;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   margin-top: 8px;
   margin-bottom: 8px;
   padding: 8px 0;
@@ -89,10 +91,33 @@
   flex: 1;
   padding: 2.5rem 3rem;
   padding-top: 80px;
-  background: linear-gradient(135deg, #f9f9fc 60%, #e6f7f6 100%);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   min-height: calc(100vh - 64px);
   overflow-y: auto;
   border-radius: 24px 24px 0 0;
   box-shadow: 0 4px 24px 0 rgba(78, 161, 153, 0.07);
   transition: background 0.3s;
+  
+  /* Custom Scrollbar for Main Content Area */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(1, 121, 111, 0.1);
+    border-radius: 10px;
+    transition: background 0.3s;
+  }
+  
+  &:hover {
+    &::-webkit-scrollbar-thumb {
+      background: rgba(1, 121, 111, 0.3);
+    }
+  }
 } 

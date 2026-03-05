@@ -6,17 +6,51 @@
   left: 0;
   height: 100vh;
   overflow-y: auto;
-  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   width: 240px;
   padding: 1.5rem 1rem;
-  border-right: 1px solid #e1e5e9;
+  border-right: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
   z-index: 10;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  backdrop-filter: blur(10px);
+  /* Modern Scrollbar Styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(1, 121, 111, 0.2) transparent;
+  
   &::-webkit-scrollbar {
-    display: none;
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(1, 121, 111, 0.1);
+    border-radius: 10px;
+    transition: background 0.3s;
+  }
+  
+  &:hover {
+    &::-webkit-scrollbar-thumb {
+      background: rgba(1, 121, 111, 0.3);
+    }
+  }
+
+  /* Visual indicator for scrollability - subtle gradient at the bottom */
+  &::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 240px;
+    height: 60px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.8) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 101;
+    border-bottom-left-radius: 0;
+    transition: opacity 0.3s;
   }
 }
 
