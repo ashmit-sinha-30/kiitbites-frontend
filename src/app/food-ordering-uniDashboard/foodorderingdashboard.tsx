@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AiOutlineMenu } from "react-icons/ai";
 import Sidebar from "./components/Sidebar";
 import { VendorManagement } from "./components/VendorManagement";
 import { AddVendorForm } from "./components/AddVendorForm";
@@ -26,6 +27,7 @@ export default function UniDashboardPage() {
   const [universityName, setUniversityName] = useState<string>("University");
   const [services, setServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
   const [activeSegment, setActiveSegment] = useState<string>("dashboard");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("activeSegment");
@@ -156,9 +158,19 @@ export default function UniDashboardPage() {
         universityName={universityName}
         universityId={universityId || "—"}
         segments={sidebarSegments}
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
 
       <main className={styles.main}>
+        {/* Mobile Header */}
+        <div className={styles.mobileDashboardHeader}>
+          <button className={styles.hamburgerBtn} onClick={() => setIsMobileMenuOpen(true)}>
+            <AiOutlineMenu />
+          </button>
+          <span className={styles.mobileTitle}>{universityName}</span>
+        </div>
+
         {/* Check if menu sorting is requested via URL params */}
         {menuSortingParam === "true" ? (
           <MenuSorting universityId={universityId || ""} vendorId={vendorIdParam || undefined} />

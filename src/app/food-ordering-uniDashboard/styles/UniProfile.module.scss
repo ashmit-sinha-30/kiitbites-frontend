@@ -1,37 +1,65 @@
 // Profile Styles
 .profileContainer {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 2.5rem 3rem;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+
+  @media (max-width: 768px) {
+    padding: 1.5rem 1rem;
+    margin: 1rem auto;
+  }
 }
 
 .pageTitle {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  color: #1a202c;
+  color: #1f2937;
   margin-bottom: 2rem;
-  text-align: center;
-  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  &::before {
+    content: '';
+    height: 3px;
+    width: 30px;
+    background: #01796f;
+    border-radius: 2px;
+  }
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 2rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(1, 121, 111, 0.15);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
   height: fit-content;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(1, 121, 111, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+  }
 
   .cardTitle {
     font-size: 1.25rem;
@@ -50,6 +78,10 @@
   }
 }
 
+.fullWidthCard {
+  grid-column: 1 / -1;
+}
+
 .fieldGroup {
   margin-bottom: 1.25rem;
 
@@ -64,18 +96,19 @@
 
 .input, .inputDisabled {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #2d3748;
-  font-size: 1rem;
-  transition: all 0.2s;
+  padding: 0.875rem 1.25rem;
+  border: 1px solid rgba(1, 121, 111, 0.15);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  color: #1f2937;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
 
   &:focus {
-    outline: none;
-    border-color: #4ea199;
-    box-shadow: 0 0 0 3px rgba(78, 161, 153, 0.1);
+    background: white;
+    border-color: #01796f;
+    box-shadow: 0 0 0 4px rgba(1, 121, 111, 0.1);
   }
 }
 
@@ -96,24 +129,26 @@
 
 .saveBtn {
   width: 100%;
-  padding: 0.875rem;
-  background: #4ea199;
+  padding: 1rem;
+  background: linear-gradient(135deg, #01796f 0%, #01a396 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.05rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  transition: all 0.2s;
-  margin-top: 1rem;
+  transition: all 0.3s ease;
+  margin-top: 1.5rem;
+  letter-spacing: 0.02em;
 
   &:hover:not(:disabled) {
-    background: #3d8b83;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(1, 121, 111, 0.3);
+    filter: brightness(1.05);
   }
 
   &:disabled {
@@ -141,13 +176,13 @@
   overflow: hidden;
   position: relative;
   cursor: pointer;
-  border: 2px dashed #cbd5e0;
-  transition: all 0.2s;
-  background: #f7fafc;
+  border: 2px dashed rgba(1, 121, 111, 0.3);
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.5);
 
   &:hover {
-    border-color: #4ea199;
-    background: #f0fdfa;
+    border-color: #01796f;
+    background: rgba(1, 121, 111, 0.05);
   }
 
   img {
@@ -179,55 +214,81 @@
 
 .addKindForm {
   display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #f7fafc;
-  border-radius: 12px;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(1, 121, 111, 0.05);
+  border: 1px solid rgba(1, 121, 111, 0.1);
+  border-radius: 16px;
+
+  .formInputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    width: 100%;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .actionGroup {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(1, 121, 111, 0.1);
+  }
 
   .input {
-    flex: 1;
     margin-bottom: 0;
   }
 }
 
 .miniUpload {
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
-  border: 1px dashed #cbd5e0;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  border: 2px dashed rgba(1, 121, 111, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #a0aec0;
-  background: white;
+  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.5);
   flex-shrink: 0;
   overflow: hidden;
+  transition: all 0.3s ease;
 
   &:hover {
-    border-color: #4ea199;
-    color: #4ea199;
+    border-color: #01796f;
+    color: #01796f;
+    background: rgba(1, 121, 111, 0.05);
   }
 }
 
 .addBtn {
-  background: #2d3748;
+  background: linear-gradient(135deg, #01796f 0%, #01a396 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  width: 42px;
-  height: 42px;
+  border-radius: 12px;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   flex-shrink: 0;
+  font-size: 1rem;
 
   &:hover:not(:disabled) {
-    background: #1a202c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(1, 121, 111, 0.3);
+    filter: brightness(1.05);
   }
 
   &:disabled {
@@ -279,11 +340,12 @@
   }
 }
 
-.kindImg {
-  border-radius: 6px;
-  background: white;
-  border: 1px solid #edf2f7;
-}
+  .kindImg {
+    border-radius: 6px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid rgba(1, 121, 111, 0.1);
+  }
 
 .emptyText {
   text-align: center;

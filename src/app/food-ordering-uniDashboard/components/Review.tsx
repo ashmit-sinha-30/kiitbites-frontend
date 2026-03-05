@@ -71,7 +71,7 @@ export default function Review({ universityId }: Props) {
                 {r.items.map((it, i) => (
                   <div key={i} className={styles.itemRow}>
                     <span className={styles.itemName}>{it.name || it.kind}</span>
-                    <span className={styles.itemMeta}>×{it.quantity}{it.unit ? ` ${it.unit}` : ""}</span>
+                    <span className={styles.itemMeta}>×{it.quantity}{it.unit && it.unit !== "1" ? ` ${it.unit}` : ""}</span>
                   </div>
                 ))}
               </div>

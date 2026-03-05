@@ -8,6 +8,11 @@
   border-radius: 20px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   padding: 2.5rem 3rem;
+
+  @media (max-width: 768px) {
+    padding: 1.5rem 1rem;
+    margin: 1rem auto;
+  }
 }
 
 .title {
@@ -34,6 +39,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem 1.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .label {
@@ -48,6 +57,10 @@
 
 .fullWidth {
   grid-column: span 2;
+
+  @media (max-width: 768px) {
+    grid-column: span 1;
+  }
 }
 
 .input {

@@ -9,6 +9,49 @@
   background: #f9f9fc;
   min-height: calc(100vh - 64px);
   overflow-y: auto;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    padding-top: 1rem;
+    width: 100vw;
+    box-sizing: border-box;
+  }
+}
+
+.mobileDashboardHeader {
+  display: none;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
+
+  .hamburgerBtn {
+    background: white;
+    border: 1px solid rgba(1, 121, 111, 0.15);
+    border-radius: 8px;
+    color: #01796f;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .mobileTitle {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .header h1 {

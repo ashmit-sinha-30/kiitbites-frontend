@@ -1,6 +1,63 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import * as Switch from "@radix-ui/react-switch";
+import { FaChevronDown } from "react-icons/fa";
 import styles from "../styles/ManageItems.module.scss";
+
+// Reusable Custom Dropdown Component
+const CustomDropdown = ({ value, options, onChange, placeholder, allowCustom = false, required = false, disabled = false }: {
+  value: string;
+  options: string[];
+  onChange: (val: string) => void;
+  placeholder?: string;
+  allowCustom?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className={styles.customSelectWrapper} ref={dropdownRef} style={{ opacity: disabled ? 0.6 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
+      <input
+        className={styles.input}
+        value={value}
+        onChange={(e) => {
+          if (allowCustom && !disabled) onChange(e.target.value);
+        }}
+        onClick={() => { if (!disabled) setIsOpen(!isOpen); }}
+        readOnly={!allowCustom || disabled}
+        placeholder={placeholder}
+        required={required}
+      />
+      <FaChevronDown className={`${styles.dropdownIcon} ${isOpen ? styles.open : ""}`} onClick={() => { if (!disabled) setIsOpen(!isOpen); }} />
+      <ul className={isOpen ? styles.show : ""}>
+        {options.map((opt) => (
+          <li
+            key={opt}
+            onClick={() => {
+              if (!disabled) {
+                onChange(opt);
+                setIsOpen(false);
+              }
+            }}
+          >
+            {opt}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 interface ManageItemsProps {
   universityId: string;
@@ -184,8 +241,8 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
     .filter((item) =>
       search.trim()
         ? item.name.toLowerCase().includes(search.toLowerCase()) ||
-          item.type.toLowerCase().includes(search.toLowerCase()) ||
-          (item.subtype || "").toLowerCase().includes(search.toLowerCase())
+        item.type.toLowerCase().includes(search.toLowerCase()) ||
+        (item.subtype || "").toLowerCase().includes(search.toLowerCase())
         : true
     );
 
@@ -206,36 +263,32 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
       <h2 className={styles.title}>Manage Items</h2>
       <div className={styles.filtersBar}>
         <div className={styles.filtersRow}>
-          <select
-            className={styles.select}
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as "all" | "retail" | "produce")}
-          >
-            <option value="all">All Categories</option>
-            <option value="retail">Retail</option>
-            <option value="produce">Produce</option>
-          </select>
-          <select
-            className={styles.select}
-            value={typeFilter}
-            onChange={(e) => { setTypeFilter(e.target.value); setSubtypeFilter(""); }}
-          >
-            <option value="">All Types</option>
-            {availableTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-          <select
-            className={styles.select}
-            value={subtypeFilter}
-            onChange={(e) => setSubtypeFilter(e.target.value)}
+          <CustomDropdown
+            value={categoryFilter === "all" ? "All Categories" : categoryFilter === "retail" ? "Retail" : "Produce"}
+            options={["All Categories", "Retail", "Produce"]}
+            onChange={(val) => {
+              if (val === "All Categories") setCategoryFilter("all");
+              else if (val === "Retail") setCategoryFilter("retail");
+              else setCategoryFilter("produce");
+            }}
+          />
+          <CustomDropdown
+            value={typeFilter === "" ? "All Types" : typeFilter}
+            options={["All Types", ...availableTypes]}
+            onChange={(val) => {
+              if (val === "All Types") { setTypeFilter(""); setSubtypeFilter(""); }
+              else { setTypeFilter(val); setSubtypeFilter(""); }
+            }}
+          />
+          <CustomDropdown
+            value={subtypeFilter === "" ? "All Subtypes" : subtypeFilter}
+            options={["All Subtypes", ...availableSubtypes]}
+            onChange={(val) => {
+              if (val === "All Subtypes") setSubtypeFilter("");
+              else setSubtypeFilter(val);
+            }}
             disabled={availableSubtypes.length === 0}
-          >
-            <option value="">All Subtypes</option>
-            {availableSubtypes.map((st) => (
-              <option key={st} value={st}>{st}</option>
-            ))}
-          </select>
+          />
           <input
             type="text"
             placeholder="Search by name, type, subtype..."
@@ -279,6 +332,7 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
                             {list.map((item) => (
                               <tr key={item._id} style={{ borderBottom: '1px solid #e0e7ff', background: editItem && editItem._id === item._id ? '#f0f7ff' : '#fff' }}>
                                 <td style={{ padding: 10, textAlign: 'center' }}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, boxShadow: '0 1px 4px rgba(99,102,241,0.08)' }} />
                                 </td>
                                 <td style={{ padding: 10 }}>
@@ -328,7 +382,7 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
                                       </Switch.Root>
                                     </label>
                                   ) : (
-                                    <span style={{ 
+                                    <span style={{
                                       color: (item.isVeg !== false) ? '#22c55e' : '#ef4444',
                                       fontWeight: 'bold'
                                     }}>

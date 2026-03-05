@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import styles from '../styles/UniProfile.module.scss';
-import { Camera, Save, Plus, Upload } from 'lucide-react';
+import { Camera, Plus, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { toast, ToastContainer } from 'react-toastify';
+import CustomDropdown from './CustomDropdown';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ENV_CONFIG = {
@@ -41,10 +42,18 @@ const UniProfile = () => {
     const kindImageInputRef = useRef<HTMLInputElement>(null);
 
     // New Category Image State
+    const [selectedItemType, setSelectedItemType] = useState<"retail" | "produce" | "">("");
     const [newKindName, setNewKindName] = useState("");
     const [newKindImage, setNewKindImage] = useState<File | null>(null);
     const [newKindPreview, setNewKindPreview] = useState<string | null>(null);
-    const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+
+    const [availableRetailCategories, setAvailableRetailCategories] = useState<string[]>([]);
+    const [availableProduceCategories, setAvailableProduceCategories] = useState<string[]>([]);
+
+    // Determine which category array to show based on the first dropdown
+    const currentCategories = selectedItemType === "retail"
+        ? availableRetailCategories
+        : (selectedItemType === "produce" ? availableProduceCategories : []);
 
     useEffect(() => {
         fetchProfile();
@@ -67,17 +76,19 @@ const UniProfile = () => {
             const retailItems = retailData.items || [];
             const produceItems = produceData.items || [];
 
-            const strategies = new Set<string>();
+            const retailStrategies = new Set<string>();
+            const produceStrategies = new Set<string>();
 
-            // Extract unique types (categories)
+            // Extract unique types (categories) separately
             retailItems.forEach((item: Record<string, unknown>) => {
-                if (typeof item.type === 'string') strategies.add(item.type);
+                if (typeof item.type === 'string') retailStrategies.add(item.type);
             });
             produceItems.forEach((item: Record<string, unknown>) => {
-                if (typeof item.type === 'string') strategies.add(item.type);
+                if (typeof item.type === 'string') produceStrategies.add(item.type);
             });
 
-            setAvailableCategories(Array.from(strategies).sort());
+            setAvailableRetailCategories(Array.from(retailStrategies).sort());
+            setAvailableProduceCategories(Array.from(produceStrategies).sort());
         } catch (error) {
             console.error("Error fetching categories:", error);
             // Don't show toast for this background fetch, just log it
@@ -190,8 +201,8 @@ const UniProfile = () => {
     };
 
     const handleKindImageUpload = async () => {
-        if (!newKindName || !newKindImage) {
-            toast.warning("Please provide both name and image for the category");
+        if (!selectedItemType || !newKindName || !newKindImage) {
+            toast.warning("Please provide Section Type, Category Name, and Image");
             return;
         }
 
@@ -199,6 +210,15 @@ const UniProfile = () => {
             setSaving(true);
             const uniId = localStorage.getItem('uniId');
             const formData = new FormData();
+
+            // NOTE: The backend API currently accepts `name` and `image` and dumps them 
+            // directly into the `categoryImages` array on the university record. The user 
+            // is requesting a logic split before upload (Retail vs Produce) but the 
+            // University Model `categoryImages` has no schema field for 'sectionType'.
+            // To preserve functionality, we will prepend the Section Type to the name 
+            // if we need to track it, e.g. "Produce - Fruits", or we can just send the category.
+            // Sending the unmodified name aligns with existing schema.
+
             formData.append('name', newKindName);
             formData.append('image', newKindImage);
 
@@ -228,31 +248,6 @@ const UniProfile = () => {
         }
     };
 
-    const handleUpdateCharges = async () => {
-        if (!profileData) return;
-        try {
-            setSaving(true);
-            const uniId = localStorage.getItem('uniId');
-            const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/${uniId}/profile`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    packingCharge: profileData.packingCharge,
-                    deliveryCharge: profileData.deliveryCharge
-                })
-            });
-
-            if (response.ok) {
-                toast.success("Charges updated successfully");
-            } else {
-                toast.error("Failed to update charges");
-            }
-        } catch {
-            toast.error("Error updating charges");
-        } finally {
-            setSaving(false);
-        }
-    };
 
     if (loading) return <div className={styles.loading}>Loading Profile...</div>;
     if (!profileData) return <div className={styles.error}>Profile not found</div>;
@@ -263,47 +258,6 @@ const UniProfile = () => {
             <h2 className={styles.pageTitle}>University Profile & Settings</h2>
 
             <div className={styles.grid}>
-                {/* General Info Card */}
-                <div className={styles.card}>
-                    <h3 className={styles.cardTitle}>University Details</h3>
-                    <div className={styles.fieldGroup}>
-                        <label>University Name</label>
-                        <input type="text" value={profileData.fullName} disabled className={styles.inputDisabled} />
-                    </div>
-                    <div className={styles.fieldGroup}>
-                        <label>Email</label>
-                        <input type="text" value={profileData.email} disabled className={styles.inputDisabled} />
-                    </div>
-
-                    <h4 className={styles.subTitle}>Charges (₹)</h4>
-                    <div className={styles.row}>
-                        <div className={styles.fieldGroup}>
-                            <label>Packing Charge</label>
-                            <input
-                                type="number"
-                                value={profileData.packingCharge}
-                                onChange={(e) => setProfileData({ ...profileData, packingCharge: Number(e.target.value) })}
-                                className={styles.input}
-                            />
-                        </div>
-                        <div className={styles.fieldGroup}>
-                            <label>Delivery Charge</label>
-                            <input
-                                type="number"
-                                value={profileData.deliveryCharge}
-                                onChange={(e) => setProfileData({ ...profileData, deliveryCharge: Number(e.target.value) })}
-                                className={styles.input}
-                            />
-                        </div>
-                    </div>
-                    <button
-                        className={styles.saveBtn}
-                        onClick={handleUpdateCharges}
-                        disabled={saving}
-                    >
-                        <Save size={18} /> {saving ? 'Saving...' : 'Update Charges'}
-                    </button>
-                </div>
 
                 {/* Main Category Images Card */}
                 <div className={styles.card}>
@@ -347,49 +301,63 @@ const UniProfile = () => {
                 </div>
 
                 {/* Kind/Category Specific Images Card */}
-                <div className={styles.card}>
+                <div className={`${styles.card} ${styles.fullWidthCard}`}>
                     <h3 className={styles.cardTitle}>Food Category Images</h3>
                     <p className={styles.helperText}>Upload images for specific food categories (e.g. Pizza, Burger, Fruits)</p>
 
                     <div className={styles.addKindForm}>
-                        <select
-                            value={newKindName}
-                            onChange={(e) => setNewKindName(e.target.value)}
-                            className={styles.input}
-                            style={{ flex: 1, height: '42px' }}
-                        >
-                            <option value="">Select Category</option>
-                            {availableCategories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
-                        <div className={styles.miniUpload} onClick={() => kindImageInputRef.current?.click()}>
-                            {newKindPreview ? (
-                                <Image src={newKindPreview} alt="Preview" width={40} height={40} style={{ objectFit: 'cover', borderRadius: 4 }} />
-                            ) : (
-                                <Upload size={20} />
-                            )}
+                        <div className={styles.formInputs}>
+                            <CustomDropdown
+                                value={selectedItemType}
+                                options={[
+                                    { label: 'Retail', value: 'retail' },
+                                    { label: 'Produce', value: 'produce' }
+                                ]}
+                                onChange={(val) => {
+                                    setSelectedItemType(val as "retail" | "produce" | "");
+                                    setNewKindName(""); // reset category on type change
+                                }}
+                                placeholder="Select Section Type"
+                            />
+
+                            <CustomDropdown
+                                value={newKindName}
+                                options={currentCategories.map(cat => ({ label: cat, value: cat }))}
+                                onChange={(val) => setNewKindName(val)}
+                                placeholder={selectedItemType ? "Select Category" : "Choose Section First"}
+                                disabled={!selectedItemType}
+                            />
                         </div>
-                        <input
-                            type="file"
-                            hidden
-                            ref={kindImageInputRef}
-                            accept="image/*"
-                            onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                    setNewKindImage(file);
-                                    setNewKindPreview(URL.createObjectURL(file));
-                                }
-                            }}
-                        />
-                        <button
-                            className={styles.addBtn}
-                            onClick={handleKindImageUpload}
-                            disabled={!newKindName || !newKindImage || saving}
-                        >
-                            <Plus size={18} /> Add
-                        </button>
+
+                        <div className={styles.actionGroup}>
+                            <div className={styles.miniUpload} onClick={() => kindImageInputRef.current?.click()}>
+                                {newKindPreview ? (
+                                    <Image src={newKindPreview} alt="Preview" width={48} height={48} style={{ objectFit: 'cover', borderRadius: '12px' }} />
+                                ) : (
+                                    <Upload size={20} />
+                                )}
+                            </div>
+                            <input
+                                type="file"
+                                hidden
+                                ref={kindImageInputRef}
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        setNewKindImage(file);
+                                        setNewKindPreview(URL.createObjectURL(file));
+                                    }
+                                }}
+                            />
+                            <button
+                                className={styles.addBtn}
+                                onClick={handleKindImageUpload}
+                                disabled={!selectedItemType || !newKindName || !newKindImage || saving}
+                            >
+                                <Plus size={18} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className={styles.kindsList}>

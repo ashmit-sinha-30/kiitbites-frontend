@@ -13,7 +13,8 @@
   padding: 1.5rem 1rem;
   border-right: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
-  z-index: 10;
+  z-index: 1000;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   /* Modern Scrollbar Styling */
   scrollbar-width: thin;
   scrollbar-color: rgba(1, 121, 111, 0.2) transparent;
@@ -51,6 +52,64 @@
     z-index: 101;
     border-bottom-left-radius: 0;
     transition: opacity 0.3s;
+  }
+
+  @media (max-width: 768px) {
+    position: fixed;
+    transform: translateX(-100%);
+    
+    &.open {
+      transform: translateX(0);
+    }
+  }
+}
+
+.sidebarOverlay {
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    
+    &.open {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}
+
+.mobileHeader {
+  display: none;
+  margin-bottom: 2rem;
+  text-align: right;
+
+  @media (max-width: 768px) {
+    display: block;
+  }
+
+  .closeBtn {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #4b5563;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+      color: #1f2937;
+    }
   }
 }
 

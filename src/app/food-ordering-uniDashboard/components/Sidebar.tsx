@@ -7,15 +7,17 @@ import {
   AiOutlineSetting,
   AiOutlineLogout,
   AiOutlineBook,
+  AiOutlineClose,
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import styles from "../styles/SideBar.module.scss";
 
 const defaultSegments = [
-  { key: "dashboard", 
-    label: "Dashboard", 
-    icon: <AiOutlineDashboard /> 
-},
+  {
+    key: "dashboard",
+    label: "Dashboard",
+    icon: <AiOutlineDashboard />
+  },
   {
     key: "add-vendor",
     label: "Add Vendor",
@@ -56,6 +58,8 @@ interface Props {
   universityName?: string;
   universityId?: string;
   segments?: { key: string; label: string; icon: React.ReactNode }[];
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export default function Sidebar({
@@ -64,6 +68,8 @@ export default function Sidebar({
   universityName = "—",
   universityId = "—",
   segments,
+  isOpen = false,
+  onClose,
 }: Props) {
   const router = useRouter();
 
@@ -73,6 +79,7 @@ export default function Sidebar({
     } else {
       onSegmentChange(key);
     }
+    if (onClose) onClose();
   };
 
   const handleLogout = async () => {
@@ -101,25 +108,36 @@ export default function Sidebar({
   };
 
   return (
-    <aside className={styles.sidebar}>
-      <ul className={styles.menu}>
-        {(segments || defaultSegments).map((s) => (
-          <li
-            key={s.key}
-            className={active === s.key ? styles.active : ""}
-            onClick={() => handleSegmentClick(s.key)}
-            data-segment={s.key}
-          >
-            <span className={styles.icon}>{s.icon}</span>
-            <span className={styles.label}>{s.label}</span>
-          </li>
-        ))}
-      </ul>
-      <div className={styles.footer}>
-        <span className={styles.universityName}>{universityName}</span>
-        <br />
-        <span className={styles.universityId}>ID: {universityId}</span>
-      </div>
-    </aside>
+    <>
+      <div
+        className={`${styles.sidebarOverlay} ${isOpen ? styles.open : ""}`}
+        onClick={onClose}
+      />
+      <aside className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
+        <div className={styles.mobileHeader}>
+          <button className={styles.closeBtn} onClick={onClose}>
+            <AiOutlineClose />
+          </button>
+        </div>
+        <ul className={styles.menu}>
+          {(segments || defaultSegments).map((s) => (
+            <li
+              key={s.key}
+              className={active === s.key ? styles.active : ""}
+              onClick={() => handleSegmentClick(s.key)}
+              data-segment={s.key}
+            >
+              <span className={styles.icon}>{s.icon}</span>
+              <span className={styles.label}>{s.label}</span>
+            </li>
+          ))}
+        </ul>
+        <div className={styles.footer}>
+          <span className={styles.universityName}>{universityName}</span>
+          <br />
+          <span className={styles.universityId}>ID: {universityId}</span>
+        </div>
+      </aside>
+    </>
   );
 }

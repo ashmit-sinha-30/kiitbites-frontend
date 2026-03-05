@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { ENV_CONFIG } from "@/config/environment";
 import styles from "../styles/Invoices.module.scss";
 
@@ -38,7 +38,7 @@ export default function Invoices({ universityId }: Props) {
   const [bulkDownloadLoading, setBulkDownloadLoading] = useState(false);
   const [expandedVendors, setExpandedVendors] = useState<Set<string>>(new Set());
 
-  const loadInvoices = async () => {
+  const loadInvoices = useCallback(async () => {
     if (!universityId) return;
     try {
       setLoading(true);
@@ -46,7 +46,7 @@ export default function Invoices({ universityId }: Props) {
       const url = new URL(`${ENV_CONFIG.BACKEND.URL}/api/invoices/university/${universityId}`);
       url.searchParams.set("limit", "100"); // Get more invoices for better grouping
       url.searchParams.set("invoiceType", "vendor");
-      
+
       if (startDate) {
         url.searchParams.set("startDate", startDate);
       }
@@ -68,18 +68,20 @@ export default function Invoices({ universityId }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [universityId, startDate, endDate]);
 
   const groupInvoicesByVendor = (invoiceData: InvoiceRow[]) => {
     const groups: { [key: string]: VendorInvoiceGroup } = {};
 
     invoiceData.forEach((invoice) => {
-      const vendorId = typeof invoice.vendorId === "object" ? (invoice.vendorId._id || "unknown") : (invoice.vendorId || "unknown");
-      const vendorName = typeof invoice.vendorId === "object" 
-        ? (invoice.vendorId.fullName || invoice.vendorId.name || "Unknown Vendor")
+      const isVendorObj = invoice.vendorId && typeof invoice.vendorId === "object";
+      const vendorObj = isVendorObj ? (invoice.vendorId as { _id?: string; name?: string; fullName?: string }) : null;
+      const vendorId = vendorObj ? (vendorObj._id || "unknown") : (invoice.vendorId as string || "unknown");
+      const vendorName = vendorObj
+        ? (vendorObj.fullName || vendorObj.name || "Unknown Vendor")
         : "Unknown Vendor";
 
-      const safeVendorId = vendorId || "unknown";
+      const safeVendorId = typeof vendorId === "string" ? vendorId : "unknown";
 
       if (!groups[safeVendorId]) {
         groups[safeVendorId] = {
@@ -105,7 +107,7 @@ export default function Invoices({ universityId }: Props) {
     if (universityId) {
       loadInvoices();
     }
-  }, [universityId, startDate, endDate]);
+  }, [universityId, loadInvoices]);
 
   const downloadInvoice = (invoiceId: string) => {
     window.open(`${ENV_CONFIG.BACKEND.URL}/api/invoices/${invoiceId}/download`, "_blank");
@@ -134,11 +136,11 @@ export default function Invoices({ universityId }: Props) {
 
     try {
       setBulkDownloadLoading(true);
-      
+
       // Create AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
-      
+
       const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/invoices/bulk-zip-download`, {
         method: 'POST',
         headers: {
@@ -153,7 +155,7 @@ export default function Invoices({ universityId }: Props) {
         }),
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
 
       if (!response.ok) {
@@ -217,7 +219,7 @@ export default function Invoices({ universityId }: Props) {
       <div className={styles.header}>
         <h2 className={styles.title}>Vendor Invoices</h2>
         <p className={styles.subtitle}>Invoices organized by vendor with filtering and bulk download options</p>
-        
+
         {/* Date Filters and Bulk Download */}
         <div className={styles.controls}>
           <div className={styles.dateFilters}>
@@ -293,11 +295,11 @@ export default function Invoices({ universityId }: Props) {
         <div className={styles.vendorGroups}>
           {vendorGroups.map((group) => {
             const isExpanded = expandedVendors.has(group.vendorId);
-            
+
             return (
               <div key={group.vendorId} className={styles.vendorCard}>
                 {/* Vendor Header */}
-                <div 
+                <div
                   className={styles.vendorHeader}
                   onClick={() => toggleVendorExpansion(group.vendorId)}
                 >
@@ -341,33 +343,33 @@ export default function Invoices({ universityId }: Props) {
                         {group.invoices
                           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                           .map((invoice) => (
-                          <tr key={invoice._id}>
-                            <td>
-                              <span className={styles.invoiceNumber}>{invoice.invoiceNumber}</span>
-                            </td>
-                            <td>
-                              <span className={`${styles.statusBadge} ${styles[invoice.status]}`}>
-                                {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                              </span>
-                            </td>
-                            <td>
-                              <span className={styles.amount}>
-                                {formatCurrency(invoice.totalAmount || 0)}
-                              </span>
-                            </td>
-                            <td>
-                              <span className={styles.date}>{formatDate(invoice.createdAt)}</span>
-                            </td>
-                            <td>
-                              <button
-                                className={styles.downloadBtn}
-                                onClick={() => downloadInvoice(invoice._id)}
-                              >
-                                Download
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                            <tr key={invoice._id}>
+                              <td>
+                                <span className={styles.invoiceNumber}>{invoice.invoiceNumber}</span>
+                              </td>
+                              <td>
+                                <span className={`${styles.statusBadge} ${invoice.status ? styles[invoice.status] : ""}`}>
+                                  {invoice.status ? invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1) : "Unknown"}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={styles.amount}>
+                                  {formatCurrency(invoice.totalAmount || 0)}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={styles.date}>{formatDate(invoice.createdAt)}</span>
+                              </td>
+                              <td>
+                                <button
+                                  className={styles.downloadBtn}
+                                  onClick={() => downloadInvoice(invoice._id)}
+                                >
+                                  Download
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>

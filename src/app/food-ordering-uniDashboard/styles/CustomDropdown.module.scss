@@ -1,0 +1,134 @@
+.dropdownContainer {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  
+  &.disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    
+    .dropdownTrigger {
+      cursor: not-allowed;
+      background-color: #f7fafc;
+      color: #718096;
+    }
+  }
+}
+
+.dropdownTrigger {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(1, 121, 111, 0.15);
+  border-radius: 12px;
+  padding: 0.875rem 1.25rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+  color: #1f2937;
+  outline: none;
+
+  &:hover:not(:disabled) {
+    background: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  &:focus {
+    background: white;
+    border-color: #01796f;
+    box-shadow: 0 0 0 4px rgba(1, 121, 111, 0.1);
+  }
+}
+
+.dropdownIcon {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 0.9em;
+  color: #01796f;
+  transition: transform 0.3s ease;
+  pointer-events: none;
+
+  &.open {
+    transform: translateY(-50%) rotate(180deg);
+  }
+}
+
+.dropdownList {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid rgba(1, 121, 111, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+  z-index: 9999;
+  margin-top: 0;
+  overflow: hidden;
+  list-style: none;
+  padding: 0.5rem 0;
+  opacity: 0;
+  transform: translateY(-10px);
+  visibility: hidden;
+  transition: all 0.3s ease;
+  max-height: 250px;
+  overflow-y: auto;
+
+  /* Custom subtle scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(1, 121, 111, 0.2);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(1, 121, 111, 0.4);
+  }
+
+  &.show {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+}
+
+.dropdownItem {
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #4a5568;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background: rgba(1, 121, 111, 0.05);
+    color: #01796f;
+  }
+
+  &.selected {
+    background: rgba(1, 121, 111, 0.1);
+    color: #01796f;
+    font-weight: 600;
+  }
+}
+
+.emptyItem {
+  padding: 0.9rem 1.5rem;
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 0.95rem;
+  text-align: center;
+}

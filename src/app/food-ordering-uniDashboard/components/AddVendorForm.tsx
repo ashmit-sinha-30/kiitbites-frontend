@@ -1,5 +1,63 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { FaChevronDown } from "react-icons/fa";
 import styles from "../styles/AddVendorForm.module.scss";
+
+// Reusable Custom Dropdown Component
+const CustomDropdown = ({ value, options, onChange, placeholder, allowCustom = false, required = false, disabled = false }: {
+  value: string;
+  options: string[];
+  onChange: (val: string) => void;
+  placeholder?: string;
+  allowCustom?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className={styles.customSelectWrapper} ref={dropdownRef} style={{ opacity: disabled ? 0.6 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
+      <input
+        className={styles.input}
+        value={value}
+        onChange={(e) => {
+          if (allowCustom && !disabled) onChange(e.target.value);
+        }}
+        onClick={() => { if (!disabled) setIsOpen(!isOpen); }}
+        readOnly={!allowCustom || disabled}
+        placeholder={placeholder}
+        required={required}
+      />
+      <FaChevronDown className={`${styles.dropdownIcon} ${isOpen ? styles.open : ""}`} onClick={() => { if (!disabled) setIsOpen(!isOpen); }} />
+      <ul className={isOpen ? styles.show : ""}>
+        {options.map((opt) => (
+          <li
+            key={opt}
+            onClick={() => {
+              if (!disabled) {
+                onChange(opt);
+                setIsOpen(false);
+              }
+            }}
+          >
+            {opt}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 
 interface AddVendorFormProps {
   universityId: string;
@@ -135,23 +193,18 @@ export const AddVendorForm: React.FC<AddVendorFormProps> = ({ universityId }) =>
             />
           </div>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="sellerType">Seller Type</label>
-          <select
-            id="sellerType"
-            name="sellerType"
-            value={form.sellerType}
-            onChange={(e) => setForm({ ...form, sellerType: e.target.value as "SELLER" | "NON_SELLER" })}
-            className={styles.input}
-          >
-            <option value="SELLER">Seller</option>
-            <option value="NON_SELLER">Non Seller</option>
-          </select>
-        </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="sellerType">Seller Type</label>
+            <CustomDropdown
+              value={form.sellerType === "SELLER" ? "Seller" : "Non Seller"}
+              options={["Seller", "Non Seller"]}
+              onChange={(val) => setForm({ ...form, sellerType: val === "Seller" ? "SELLER" : "NON_SELLER" })}
+            />
+          </div>
 
-          <button 
-            type="submit" 
-            disabled={loading} 
+          <button
+            type="submit"
+            disabled={loading}
             className={styles.submitButton}
           >
             {loading ? (
