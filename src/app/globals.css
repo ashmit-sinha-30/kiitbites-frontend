@@ -107,7 +107,7 @@
     transition: opacity 0.8s ease-out, transform 0.8s ease-out;
     transform: translateY(30px);
   }
-  
+
   .reveal.active {
     @apply opacity-100;
     transform: translateY(0);
@@ -124,6 +124,7 @@
       opacity: 0;
       transform: translateY(30px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -131,9 +132,12 @@
   }
 
   @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-20px);
     }
@@ -143,6 +147,7 @@
     0% {
       background-position: -1000px 0;
     }
+
     100% {
       background-position: 1000px 0;
     }
@@ -251,8 +256,32 @@
   .buildings-container {
     opacity: 0.08;
   }
-  
+
   .section {
     @apply py-12 md:py-16;
   }
+}
+
+/* Global Scrollbar Styling (Matching Vendor Sidebar) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(1, 121, 111, 0.2) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(1, 121, 111, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(1, 121, 111, 0.3);
 }
