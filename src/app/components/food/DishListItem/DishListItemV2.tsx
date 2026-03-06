@@ -71,7 +71,7 @@ const DishListItem: React.FC<DishListItemProps> = ({
                 <div className={styles.header}>
                     <div className={styles.titleRow}>
                         {item.isVeg !== undefined && item.isVeg !== null && (
-                            <div className={`${styles.vegIndicator} ${String(item.isVeg) === 'true' || item.isVeg === true ? styles.veg : styles.nonVeg}`}>
+                            <div className={`${styles.vegIndicator} ${String(item.isVeg).toLowerCase() === 'true' || String(item.isVeg).toLowerCase() === 'yes' || String(item.isVeg).toLowerCase() === 'veg' || item.isVeg === true ? styles.veg : styles.nonVeg}`}>
                                 <div className={styles.dot}></div>
                             </div>
                         )}

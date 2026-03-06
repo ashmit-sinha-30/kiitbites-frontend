@@ -369,7 +369,7 @@ export default function SignupForm() {
                     className={`${styles.dropdownIcon} ${showGenderDropdown ? styles.open : ''}`}
                   />
                   <ul className={`${styles.genderList} ${showGenderDropdown ? styles.show : ''}`}>
-                    {["Male", "Female"].map((genderOption) => (
+                    {["Male", "Female", "Others"].map((genderOption) => (
                       <li
                         key={genderOption}
                         onClick={() => handleGenderSelection(genderOption)}

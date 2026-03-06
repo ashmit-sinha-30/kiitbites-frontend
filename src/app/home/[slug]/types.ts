@@ -13,7 +13,7 @@ export interface FoodItem {
   vendorId?: string | null;
   quantity?: number;
   isAvailable?: string;
-  isVeg?: boolean;
+  isVeg?: boolean | string;
   source?: string;
 }
 

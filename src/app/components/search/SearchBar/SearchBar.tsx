@@ -26,6 +26,7 @@ interface FoodItem {
   price: number;
   image: string;
   isSpecial: string;
+  isVeg?: string | boolean;
   vendorId?: {
     location?: string;
   };
@@ -42,6 +43,7 @@ interface VendorItem {
   isAvailable?: string;
   _id?: string;
   id?: string;
+  isVeg?: string | boolean;
 }
 
 interface VendorData {
@@ -71,6 +73,7 @@ export interface SearchResult {
   kind: string;
   quantity: number;
   source?: string;
+  isVeg?: string | boolean;
 }
 
 interface SearchResponse {
@@ -267,7 +270,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
               isVendor: false,
               kind: item.type === 'retail' ? 'Retail' : 'Produce',
               quantity: 1,
-              vendorId: vendorId
+              vendorId: vendorId,
+              isVeg: item.isVeg
             }));
           setSearchResults(results);
           setSuggestedItems([]);
@@ -317,7 +321,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
             isVendor: false,
             kind: item.type === 'retail' ? 'Retail' : 'Produce',
             quantity: 1,
-            vendorId: vendorId
+            vendorId: vendorId,
+            isVeg: item.isVeg
           }));
         setSearchResults(results);
 
@@ -335,7 +340,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
             isVendor: false,
             kind: item.type === 'retail' ? 'Retail' : 'Produce',
             quantity: 1,
-            vendorId: vendorId
+            vendorId: vendorId,
+            isVeg: item.isVeg
           }));
         setSuggestedItems(suggestedResults);
 
@@ -868,7 +874,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     price: food.price,
                     image: food.image,
                     description: "",
-                    isVeg: true,
+                    isVeg: typeof food.isVeg === 'string' ? food.isVeg === 'true' : food.isVeg,
                     type: food.type as 'retail' | 'produce',
                     category: food.type,
                     isSpecial: food.isSpecial,
@@ -923,7 +929,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       price: item.price || 0,
                       image: item.image || '/images/coffee.jpeg',
                       description: "",
-                      isVeg: true,
+                      isVeg: typeof item.isVeg === 'string' ? item.isVeg === 'true' : item.isVeg,
                       type: item.type as 'retail' | 'produce' || 'retail',
                       category: item.category || item.type || 'retail',
                       isSpecial: item.isSpecial ? 'true' : 'false',
@@ -958,7 +964,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                         price: item.price || 0,
                         image: item.image || '/images/coffee.jpeg',
                         description: "",
-                        isVeg: true,
+                        isVeg: typeof item.isVeg === 'string' ? item.isVeg === 'true' : item.isVeg,
                         type: item.type as 'retail' | 'produce' || 'retail',
                         category: item.category || item.type || 'retail',
                         isSpecial: item.isSpecial ? 'true' : 'false',

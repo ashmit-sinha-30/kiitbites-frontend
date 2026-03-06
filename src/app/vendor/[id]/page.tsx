@@ -24,7 +24,7 @@ interface VendorItem {
   quantity?: number;
   isAvailable?: string;
   vendorId?: string;
-  isVeg?: boolean;
+  isVeg?: boolean | string;
   category?: "retail" | "produce";
 }
 
