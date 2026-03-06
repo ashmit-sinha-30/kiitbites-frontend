@@ -1,0 +1,24 @@
+name: Ping Backend Keep-Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sleep for random duration
+        run: |
+          # Sleep between 0 and 60 seconds to introduce randomness
+          # The cron is every 14 mins, adding up to 1m random delay = <15 min total
+          SLEEP_TIME=$((RANDOM % 60))
+          echo "Sleeping for $SLEEP_TIME seconds"
+          sleep $SLEEP_TIME
+
+      - name: Call Keep-Alive API
+        run: |
+          echo "Pinging https://kampyn.com/api/keep-alive..."
+          curl -sS --fail https://kampyn.com/api/keep-alive || echo "Failed to ping Next.js API"
