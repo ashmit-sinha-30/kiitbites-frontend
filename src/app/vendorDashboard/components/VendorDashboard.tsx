@@ -10,9 +10,9 @@ interface VendorDashboardProps {
   vendorId?: string;
 }
 
-const VendorDashboard: React.FC<VendorDashboardProps> = ({ 
-  vendorName = "Vendor", 
-  vendorId = "—" 
+const VendorDashboard: React.FC<VendorDashboardProps> = ({
+  vendorName = "Vendor",
+  vendorId = "—"
 }) => {
   return (
     <div className={styles.dashboardContainer}>
@@ -24,8 +24,8 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({
             <p>Manage your inventory, orders, and business operations</p>
           </div>
           <div className={styles.vendorStatusContainer}>
-            <VendorAvailabilityToggle 
-              vendorId={vendorId} 
+            <VendorAvailabilityToggle
+              vendorId={vendorId}
               onAvailabilityChange={(isAvailable) => {
                 console.log(`Vendor ${vendorName} availability changed to: ${isAvailable ? 'Available' : 'Unavailable'}`);
               }}
@@ -37,7 +37,7 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({
       {/* Sales Analytics Section */}
       <div className={styles.analyticsSection}>
         <h2>Sales Analytics</h2>
-        <DashboardAnalytics />
+        <DashboardAnalytics vendorId={vendorId} />
       </div>
     </div>
   );

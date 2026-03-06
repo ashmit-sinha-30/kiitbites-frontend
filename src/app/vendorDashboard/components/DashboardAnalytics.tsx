@@ -77,8 +77,11 @@ function getOrderCountsByHour(orders: Order[], date: Date) {
 
 import { AnalyticsSkeleton } from "./DashboardSkeleton";
 
-const DashboardAnalytics: React.FC = () => {
-  const VENDOR_ID = "6834622e10d75a5ba7b7740d"; // This should come from props or context
+interface DashboardAnalyticsProps {
+  vendorId?: string;
+}
+
+const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({ vendorId }) => {
   const [selectedDate, setSelectedDate] = useState(() => {
     const now = new Date();
     return now.toISOString().slice(0, 10);
@@ -94,10 +97,12 @@ const DashboardAnalytics: React.FC = () => {
   const [uniqueCustomers, setUniqueCustomers] = useState<UniqueCustomersStats>({ day: 0, week: 0, month: 0 });
 
   const fetchAnalytics = async (date: string) => {
+    if (!vendorId) return;
+
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${BACKEND_URL}/order/analytics/${VENDOR_ID}?date=${date}`);
+      const response = await fetch(`${BACKEND_URL}/order/analytics/${vendorId}?date=${date}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -153,7 +158,7 @@ const DashboardAnalytics: React.FC = () => {
 
   useEffect(() => {
     fetchAnalytics(selectedDate);
-  }, [selectedDate]);
+  }, [selectedDate, vendorId]);
 
   if (loading) {
     return <AnalyticsSkeleton />;
