@@ -152,7 +152,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { searchCartItems, addToSearchCart } = useSearchCart();
+  const { searchCartItems, addToSearchCart, decreaseSearchCartQuantity } = useSearchCart();
   const [selectedItem, setSelectedItem] = useState<SearchResult | null>(null);
   const lastSearchedQuery = useRef<string>("");
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -742,6 +742,27 @@ const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
+  const handleDecrease = async (item: SearchResult) => {
+    if (!isAuthenticated) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!userRes.ok) return;
+      const user = await userRes.json();
+
+      if (user._id) {
+        await decreaseSearchCartQuantity(user._id, item._id || item.id);
+      }
+    } catch (error) {
+      console.error('Error decreasing quantity:', error);
+    }
+  };
+
   const handleCancel = () => {
     setShowVendorModal(false);
     setSelectedVendor(null);
@@ -945,7 +966,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                           quantity={quantity}
                           onAdd={() => handleAddToCart(item)}
                           onIncrease={() => handleAddToCart(item)}
-                          onDecrease={() => { }} // SearchCartContext needs decrease support or handle via SearchQuantityControls if kept
+                          onDecrease={() => handleDecrease(item)}
                         />
                       </div>
                     );

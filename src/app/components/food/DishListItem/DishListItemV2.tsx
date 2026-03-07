@@ -88,11 +88,6 @@ const DishListItem: React.FC<DishListItemProps> = ({
                             </button>
                         )}
                     </div>
-                    {inStock ? (
-                        <span className={styles.stockBadge}>In Stock</span>
-                    ) : (
-                        <span className={`${styles.stockBadge} ${styles.outOfStock}`}>Out of Stock</span>
-                    )}
                 </div>
 
 

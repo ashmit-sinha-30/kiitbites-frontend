@@ -59,11 +59,6 @@ const DishListItem: React.FC<DishListItemProps> = ({
                         </div>
                         <h3 className={styles.title}>{item.title}</h3>
                     </div>
-                    {inStock ? (
-                        <span className={styles.stockBadge}>In Stock</span>
-                    ) : (
-                        <span className={`${styles.stockBadge} ${styles.outOfStock}`}>Out of Stock</span>
-                    )}
                 </div>
                 <div className={styles.price}>₹ {item.price}</div>
 
@@ -102,7 +97,7 @@ const DishListItem: React.FC<DishListItemProps> = ({
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
