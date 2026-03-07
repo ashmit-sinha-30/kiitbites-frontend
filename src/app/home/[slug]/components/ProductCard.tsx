@@ -297,7 +297,7 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
                   onClick={handleDecreaseQuantity}
                   disabled={loading || quantity === 0}
                 >
-                  <Minus size={16} />
+                  {loading ? <Loader2 className={styles.spinner} size={16} /> : <Minus size={16} />}
                 </button>
                 <span className={styles.quantity}>{quantity}</span>
                 <button
@@ -305,7 +305,7 @@ const ProductCard = ({ item, categories, userId, onModalOpen, onModalClose }: Pr
                   onClick={handleIncreaseQuantity}
                   disabled={loading}
                 >
-                  <Plus size={16} />
+                  {loading ? <Loader2 className={styles.spinner} size={16} /> : <Plus size={16} />}
                 </button>
               </div>
               {quantity === 0 && (

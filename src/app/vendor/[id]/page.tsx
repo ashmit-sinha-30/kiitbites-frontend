@@ -97,6 +97,8 @@ const VendorPage = () => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSubtype, setSelectedSubtype] = useState<string | null>(null);
 
+  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
+
   // Helper to get the real vendorId from the item or fallback to route id
   const getRealVendorId = (item: VendorItem) => {
     return item.vendorId ? String(item.vendorId).trim() : String(id).trim();
@@ -533,18 +535,27 @@ const VendorPage = () => {
 
     const quantity = getItemQuantity(itemId, itemCategory);
 
-    // Create a normalized item for cart utils
-    const normalizedItem = {
-      ...item,
-      itemId: itemId,
-      category: itemCategory,
-      name: ("name" in item ? item.name : item.title)
-    };
+    if (loadingItemId) return;
 
-    if (quantity === 0) {
-      await addToCart(userData._id, normalizedItem as unknown as VendorItem, id as string);
-    } else {
-      await increaseQuantity(userData._id, normalizedItem as unknown as VendorItem, id as string);
+    try {
+      setLoadingItemId(itemId);
+      // Create a normalized item for cart utils
+      const normalizedItem = {
+        ...item,
+        itemId: itemId,
+        category: itemCategory,
+        name: ("name" in item ? item.name : item.title)
+      };
+
+      if (quantity === 0) {
+        await addToCart(userData._id, normalizedItem as unknown as VendorItem, id as string);
+      } else {
+        await increaseQuantity(userData._id, normalizedItem as unknown as VendorItem, id as string);
+      }
+    } catch (error) {
+      console.error("Error updating cart:", error);
+    } finally {
+      setLoadingItemId(null);
     }
 
     // Refresh user data to update cart
@@ -563,19 +574,26 @@ const VendorPage = () => {
   };
 
   const handleDecreaseQuantity = async (item: VendorItem | FoodItem) => {
-    if (!userData) return;
+    if (!userData || loadingItemId) return;
 
     const itemId = "itemId" in item ? item.itemId : item.id;
     const itemCategory = item.category || 'retail';
 
-    const normalizedItem = {
-      ...item,
-      itemId: itemId,
-      category: itemCategory,
-      name: ("name" in item ? item.name : item.title)
-    };
+    try {
+      setLoadingItemId(itemId);
+      const normalizedItem = {
+        ...item,
+        itemId: itemId,
+        category: itemCategory,
+        name: ("name" in item ? item.name : item.title)
+      };
 
-    await decreaseQuantity(userData._id, normalizedItem as unknown as VendorItem, id as string);
+      await decreaseQuantity(userData._id, normalizedItem as unknown as VendorItem, id as string);
+    } catch (error) {
+      console.error("Error decreasing quantity:", error);
+    } finally {
+      setLoadingItemId(null);
+    }
 
     // Refresh user data to update cart
     const token = localStorage.getItem("token");
@@ -789,6 +807,7 @@ const VendorPage = () => {
                   item={foodItem}
                   quantity={quantity}
                   isFavorite={isFav}
+                  isLoading={loadingItemId === item.itemId}
                   onAdd={handleAddToCart}
                   onIncrease={handleAddToCart}
                   onDecrease={handleDecreaseQuantity}
@@ -821,6 +840,7 @@ const VendorPage = () => {
                             item={foodItem}
                             quantity={quantity}
                             isFavorite={isFav}
+                            isLoading={loadingItemId === item.itemId}
                             onAdd={handleAddToCart}
                             onIncrease={handleAddToCart}
                             onDecrease={handleDecreaseQuantity}

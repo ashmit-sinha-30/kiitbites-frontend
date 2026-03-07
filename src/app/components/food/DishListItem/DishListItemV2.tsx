@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { FaHeart, FaRegHeart, FaTrash } from 'react-icons/fa';
+import { Loader2 } from 'lucide-react';
 import styles from './DishListItem.module.scss';
 import { FoodItem } from '@/app/home/[slug]/types'; // Assuming types are exported here or similar path
 
@@ -111,26 +112,50 @@ const DishListItem: React.FC<DishListItemProps> = ({
                     </div>
                     {showActions && (
                         <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
-                            {isLoading ? (
-                                <div className={styles.loader}></div>
-                            ) : quantity > 0 ? (
+                            {quantity > 0 ? (
                                 <div className={styles.quantityControls}>
-                                    <button className={`${styles.qtyBtn} ${styles.decrease}`} onClick={() => onDecrease(item)}>-</button>
-                                    <span className={styles.qtyValue}>{quantity}</span>
-                                    <button className={`${styles.qtyBtn} ${styles.increase}`} onClick={() => onIncrease(item)}>+</button>
+                                    <button
+                                        className={`${styles.qtyBtn} ${styles.decrease}`}
+                                        onClick={() => onDecrease(item)}
+                                        disabled={isLoading}
+                                    >
+                                        -
+                                    </button>
+                                    <span className={styles.qtyValue}>
+                                        {isLoading ? <Loader2 className={styles.spinner} size={14} /> : quantity}
+                                    </span>
+                                    <button
+                                        className={`${styles.qtyBtn} ${styles.increase}`}
+                                        onClick={() => onIncrease(item)}
+                                        disabled={isLoading}
+                                    >
+                                        +
+                                    </button>
                                 </div>
                             ) : (
                                 <button
                                     className={styles.addBtn}
                                     onClick={() => onAdd(item)}
-                                    disabled={!inStock}
-                                    style={{ opacity: inStock ? 1 : 0.5, cursor: inStock ? 'pointer' : 'not-allowed' }}
+                                    disabled={!inStock || isLoading}
+                                    style={{
+                                        opacity: (inStock && !isLoading) ? 1 : 0.5,
+                                        cursor: (inStock && !isLoading) ? 'pointer' : 'not-allowed',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '4px'
+                                    }}
                                 >
-                                    Add +
+                                    {isLoading && <Loader2 className={styles.spinner} size={14} />}
+                                    {isLoading ? 'Adding...' : 'Add +'}
                                 </button>
                             )}
                             {onRemove && (
-                                <button className={styles.removeBtn} onClick={() => onRemove(item)}>
+                                <button
+                                    className={styles.removeBtn}
+                                    onClick={() => onRemove(item)}
+                                    disabled={isLoading}
+                                >
                                     <FaTrash className={styles.trashIcon} />
                                 </button>
                             )}

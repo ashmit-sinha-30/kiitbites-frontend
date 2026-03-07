@@ -106,7 +106,7 @@ const ItemDetailModal = ({
       handleAddToCart();
       return;
     }
-    
+
     try {
       setLoading(true);
       const itemWithVendor = {
@@ -134,7 +134,7 @@ const ItemDetailModal = ({
 
   const handleDecreaseQuantity = async () => {
     if (!userId || !item || !cartItem) return;
-    
+
     try {
       setLoading(true);
       const itemWithVendor = {
@@ -164,7 +164,7 @@ const ItemDetailModal = ({
       document.body.style.top = `-${scrollYRef.current}px`;
       document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
-      
+
       return () => {
         // Unlock body scroll when modal closes
         const scrollY = scrollYRef.current;
@@ -182,25 +182,25 @@ const ItemDetailModal = ({
 
   return createPortal(
     <>
-      <div 
-        className={styles.itemDetailModalOverlay} 
+      <div
+        className={styles.itemDetailModalOverlay}
         onClick={onClose}
         style={{ pointerEvents: showVendorModal ? 'none' : 'auto' }}
       >
-        <div 
-          className={styles.itemDetailModal} 
+        <div
+          className={styles.itemDetailModal}
           onClick={(e) => e.stopPropagation()}
           style={{ pointerEvents: showVendorModal ? 'none' : 'auto' }}
         >
-          <button 
-            className={styles.closeButton} 
+          <button
+            className={styles.closeButton}
             onClick={onClose}
             aria-label="Close modal"
             type="button"
           >
             <X size={20} />
           </button>
-          
+
           <div className={styles.itemDetailImageContainer}>
             {item.image ? (
               <img src={item.image} alt={item.title} className={styles.itemDetailImage} />
@@ -214,9 +214,9 @@ const ItemDetailModal = ({
             {item.isVeg !== undefined && (
               <div className={styles.vegIndicator}>
                 <div className={item.isVeg ? styles.veg : styles.nonVeg}>
-                  <Circle 
-                    size={14} 
-                    fill="currentColor" 
+                  <Circle
+                    size={14}
+                    fill="currentColor"
                     className={styles.vegIcon}
                   />
                   <span>{item.isVeg ? 'Veg' : 'Non-Veg'}</span>
@@ -227,21 +227,21 @@ const ItemDetailModal = ({
 
           <div className={styles.itemDetailContent}>
             <h2 className={styles.itemDetailTitle}>{item.title}</h2>
-            
+
             {/* Veg/Non-Veg Indicator - below the name */}
             {item.isVeg !== undefined && (
               <div className={styles.vegIndicatorBelowName}>
                 <div className={item.isVeg ? styles.veg : styles.nonVeg}>
-                  <Circle 
-                    size={12} 
-                    fill="currentColor" 
+                  <Circle
+                    size={12}
+                    fill="currentColor"
                     className={styles.vegIcon}
                   />
                   <span>{item.isVeg ? 'Veg' : 'Non-Veg'}</span>
                 </div>
               </div>
             )}
-            
+
             {(item.category || item.subtype) && (
               <p className={styles.itemDetailSubtitle}>
                 {item.category}
@@ -268,7 +268,7 @@ const ItemDetailModal = ({
                     onClick={handleDecreaseQuantity}
                     disabled={loading || quantity === 0}
                   >
-                    <Minus size={16} />
+                    {loading ? <Loader2 className={styles.spinner} size={16} /> : <Minus size={16} />}
                   </button>
                   <span className={styles.quantity}>{quantity}</span>
                   <button
@@ -276,7 +276,7 @@ const ItemDetailModal = ({
                     onClick={handleIncreaseQuantity}
                     disabled={loading}
                   >
-                    <Plus size={16} />
+                    {loading ? <Loader2 className={styles.spinner} size={16} /> : <Plus size={16} />}
                   </button>
                 </div>
                 {quantity === 0 && (

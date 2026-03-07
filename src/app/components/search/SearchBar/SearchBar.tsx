@@ -154,8 +154,18 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const searchParams = useSearchParams();
   const { searchCartItems, addToSearchCart, decreaseSearchCartQuantity } = useSearchCart();
   const [selectedItem, setSelectedItem] = useState<SearchResult | null>(null);
+  const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
   const lastSearchedQuery = useRef<string>("");
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const setItemLoading = (itemId: string, isLoading: boolean) => {
+    setLoadingItems(prev => {
+      const next = new Set(prev);
+      if (isLoading) next.add(itemId);
+      else next.delete(itemId);
+      return next;
+    });
+  };
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -582,108 +592,136 @@ const SearchBar: React.FC<SearchBarProps> = ({
     router.push(url);
   };
 
-  const handleAddToCart = async (item: SearchResult) => {
+  const handleAddToCart = async (item: SearchResult | SharedFoodItem) => {
     if (!isAuthenticated) {
-      toast.error('Please login to add items to cart');
+      toast.error("Please login to add items to cart");
       return;
     }
 
-    setSelectedItem(item);
-    console.log('Selected item:', item);
+    const itemId = (item as SearchResult).itemId || (item as SearchResult)._id || item.id || "";
+    if (!itemId || loadingItems.has(itemId)) return;
 
-    const itemId = item.id || item._id || item.itemId;
-    if (!itemId) {
-      console.error('Item missing ID:', item);
-      toast.error('Invalid item ID');
-      return;
-    }
-
-    // If in vendor mode, add directly to cart with vendorId and skip modal
-    if (vendorId) {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error('Please login to add items to cart');
-        return;
-      }
-      try {
-        // Get user info
-        const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!response.ok) {
-          toast.error('Failed to get user info');
-          return;
-        }
-        const user = await response.json();
-        if (!user._id) {
-          toast.error('Invalid user data');
-          return;
-        }
-        // Add to cart directly
-        await addToSearchCart(user._id, item, vendorId);
-      } catch (error) {
-        console.error('Error adding to cart:', error);
-        toast.error(error instanceof Error ? error.message : 'Failed to add item to cart');
-      }
-      return;
-    }
-
-    // If not in vendor mode, show vendor selection modal or check existing cart vendor
     try {
-      // Fetch vendors for the selected item
-      const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id || item._id || item.itemId}`);
-      if (!response.ok) {
-        toast.error('Failed to fetch vendors for this item');
-        return;
-      }
-      const fetchedVendors: Vendor[] = await response.json();
+      setItemLoading(itemId, true);
+      // If item is SharedFoodItem, we may need to convert it or find the original SearchResult
+      // but SearchResult has more info like 'kind', 'name', etc.
+      // Actually, handleAddToCart uses item.id, item._id, it works for both.
+      setSelectedItem(item as SearchResult);
+      console.log('Selected item:', item);
 
-      // Check if cart has items from another vendor
-      const confirmedVendorId = searchCartItems.length > 0 ? searchCartItems[0].vendorId : null;
-
-      if (confirmedVendorId) {
-        const vendor = fetchedVendors.find(v => v._id === confirmedVendorId);
-        if (vendor) {
-          // Item available in current vendor -> Add directly
-          const token = localStorage.getItem("token");
-          if (!token) {
-            toast.error('Please login to add items to cart');
-            return;
-          }
-          const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
+      // If in vendor mode, add directly to cart with vendorId and skip modal
+      if (vendorId) {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error('Please login to add items to cart');
+          return;
+        }
+        try {
+          // Get user info
+          const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          if (!userRes.ok) {
+          if (!response.ok) {
             toast.error('Failed to get user info');
             return;
           }
-          const user = await userRes.json();
-          await addToSearchCart(user._id, item, confirmedVendorId);
-          return;
-        } else {
-          // Item NOT available in current vendor -> Show error "Item not available in {vendorName}"
-          try {
-            const vRes = await fetch(`${BACKEND_URL}/api/vendor/${confirmedVendorId}`);
-            if (vRes.ok) {
-              const vData = await vRes.json();
-              toast.error(`Item not available in ${vData.fullName || vData.name || 'your current vendor'}`);
-            } else {
-              toast.error('Item not available in your current vendor');
-            }
-          } catch {
-            toast.error('Item not available in your current vendor');
+          const user = await response.json();
+          if (!user._id) {
+            toast.error('Invalid user data');
+            return;
           }
-          return;
+          // Add to cart directly
+          await addToSearchCart(user._id, item as SearchResult, vendorId);
+        } catch (error) {
+          console.error('Error adding to cart:', error);
+          toast.error(error instanceof Error ? error.message : 'Failed to add item to cart');
+        } finally {
+          setItemLoading(itemId, false);
         }
+        return;
       }
 
-      // No confirmed vendor -> Show selection modal
-      setAvailableVendors(fetchedVendors);
-      setSelectedVendor(null); // Ensure no auto-selection
-      setShowVendorModal(true);
+      // If not in vendor mode, show vendor selection modal or check existing cart vendor
+      try {
+        // Fetch vendors for the selected item
+        const response = await fetch(`${BACKEND_URL}/api/item/vendors/${itemId}`);
+        if (!response.ok) {
+          toast.error('Failed to fetch vendors for this item');
+          return;
+        }
+        const fetchedVendors: Vendor[] = await response.json();
+
+        // Check if cart has items from another vendor
+        const confirmedVendorId = searchCartItems.length > 0 ? searchCartItems[0].vendorId : null;
+
+        if (confirmedVendorId) {
+          const vendor = fetchedVendors.find(v => v._id === confirmedVendorId);
+          if (vendor) {
+            // Item available in current vendor -> Add directly
+            const token = localStorage.getItem("token");
+            if (!token) {
+              toast.error('Please login to add items to cart');
+              return;
+            }
+            const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!userRes.ok) {
+              toast.error('Failed to get user info');
+              return;
+            }
+            const user = await userRes.json();
+            await addToSearchCart(user._id, item as SearchResult, confirmedVendorId);
+            return;
+          } else {
+            // Item NOT available in current vendor -> Show error "Item not available in {vendorName}"
+            try {
+              const vRes = await fetch(`${BACKEND_URL}/api/vendor/${confirmedVendorId}`);
+              if (vRes.ok) {
+                const vData = await vRes.json();
+                toast.error(`Item not available in ${vData.fullName || vData.name || 'your current vendor'}`);
+              } else {
+                toast.error('Item not available in your current vendor');
+              }
+            } catch {
+              toast.error('Item not available in your current vendor');
+            }
+            return;
+          }
+        }
+
+        // No confirmed vendor -> Show selection modal
+        setAvailableVendors(fetchedVendors);
+        setSelectedVendor(null); // Ensure no auto-selection
+        setShowVendorModal(true);
+      } catch (error) {
+        console.error("Error checking item availability:", error);
+        const itemId = (item as SearchResult).itemId || (item as SearchResult)._id || item.id || "";
+        // If we are showing the vendor modal, we don't clear loading yet
+        // because the process is still ongoing.
+        // However, if we didn't show the modal, we should clear it.
+        if (!showVendorModal) {
+          setItemLoading(itemId, false);
+        }
+        toast.error("Failed to check item availability");
+      } finally {
+        // If we are showing the vendor modal, we don't clear loading yet
+        // because the process is still ongoing.
+        // However, if we didn't show the modal, we should clear it.
+        // This block is now redundant as the logic has been moved to the catch block.
+        // if (!showVendorModal) {
+        //   setItemLoading(itemId, false);
+        // }
+      }
     } catch (error) {
       console.error('Error in handleAddToCart:', error);
       toast.error('Failed to process request');
+    } finally {
+      // This finally block handles errors that occur before the inner try-catch
+      // or if the vendor modal was not shown.
+      if (!showVendorModal) {
+        setItemLoading(itemId, false);
+      }
     }
   };
 
@@ -693,11 +731,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleVendorConfirm = async () => {
     if (!selectedVendor || !selectedItem) {
-      toast.error('Please select a vendor and item');
+      toast.error("Please select a vendor");
       return;
     }
 
+    const itemId = selectedItem.itemId || selectedItem._id || selectedItem.id || "";
+    if (!itemId || loadingItems.has(itemId)) return;
+
     try {
+      setItemLoading(itemId, true);
       const token = localStorage.getItem("token");
       if (!token) {
         toast.error('Please login to add items to cart');
@@ -718,7 +760,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         return;
       }
 
-      if (!selectedItem._id && !selectedItem.id) {
+      if (!selectedItem._id && !selectedItem.id && !selectedItem.itemId) {
         toast.error('Invalid item data');
         return;
       }
@@ -739,13 +781,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to add item to cart');
+    } finally {
+      setItemLoading(itemId, false);
     }
   };
 
-  const handleDecrease = async (item: SearchResult) => {
+  const handleDecrease = async (item: SearchResult | SharedFoodItem) => {
     if (!isAuthenticated) return;
 
+    const itemId = (item as SearchResult).itemId || (item as SearchResult)._id || item.id || "";
+    if (!itemId || loadingItems.has(itemId)) return;
+
     try {
+      setItemLoading(itemId, true);
       const token = localStorage.getItem("token");
       if (!token) return;
 
@@ -756,10 +804,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
       const user = await userRes.json();
 
       if (user._id) {
-        await decreaseSearchCartQuantity(user._id, item._id || item.id);
+        await decreaseSearchCartQuantity(user._id, itemId);
       }
     } catch (error) {
       console.error('Error decreasing quantity:', error);
+    } finally {
+      setItemLoading(itemId, false);
     }
   };
 
@@ -767,12 +817,18 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setShowVendorModal(false);
     setSelectedVendor(null);
     setAvailableVendors([]);
+    // If an item was loading when the modal was opened, clear its loading state
+    if (selectedItem) {
+      const itemId = selectedItem.itemId || selectedItem._id || selectedItem.id || "";
+      setItemLoading(itemId, false);
+    }
+    setSelectedItem(null);
   };
 
-  // Find cart item and its quantity
-  const getCartItemQuantity = (itemId: string) => {
-    const cartItem = searchCartItems.find(item => item.id === itemId);
-    return cartItem?.quantity || 0;
+  const getCartItemQuantity = (itemId: string | undefined) => {
+    if (!itemId) return 0;
+    const cartItem = searchCartItems.find((ci) => ci.id === itemId);
+    return cartItem ? cartItem.quantity : 0;
   };
 
   // const handleClearSearch = () => {
@@ -923,7 +979,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
               {searchResults.length > 0 && (
                 <div className={styles.resultsGrid}>
                   {searchResults.map((item) => {
-                    const quantity = getCartItemQuantity(item._id || item.id);
+                    const itemId = item._id || item.id || item.itemId;
+                    const quantity = getCartItemQuantity(itemId);
 
                     if (item.isVendor) {
                       return (
@@ -933,7 +990,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
                             className={styles.checkMenuButton}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleVendorClick(item._id!);
+                              if (item._id) handleVendorClick(item._id);
+                              else if (item.id) handleVendorClick(item.id);
                             }}
                           >
                             Check Menu
@@ -943,30 +1001,30 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       );
                     }
 
-                    // Map SearchResult to SharedFoodItem
                     const itemForList: SharedFoodItem = {
-                      id: item._id || item.id,
-                      title: item.name,
+                      id: itemId as string,
+                      title: item.name || "",
                       price: item.price || 0,
-                      image: item.image || '/images/coffee.jpeg',
+                      image: (item.image as string) || '/images/coffee.jpeg',
                       description: "",
                       isVeg: typeof item.isVeg === 'string' ? item.isVeg === 'true' : item.isVeg,
-                      type: item.type as 'retail' | 'produce' || 'retail',
+                      type: (item.type as 'retail' | 'produce') || 'retail',
                       category: item.category || item.type || 'retail',
                       isSpecial: item.isSpecial ? 'true' : 'false',
                       isAvailable: 'Y',
                       quantity: 10,
-                      source: item.source
+                      source: item.source || ""
                     };
 
                     return (
-                      <div key={item._id || item.id}>
+                      <div key={itemId}>
                         <DishListItemV2
                           item={itemForList}
                           quantity={quantity}
-                          onAdd={() => handleAddToCart(item)}
-                          onIncrease={() => handleAddToCart(item)}
-                          onDecrease={() => handleDecrease(item)}
+                          isLoading={loadingItems.has(itemId as string)}
+                          onAdd={(i) => { handleAddToCart(i); }}
+                          onIncrease={(i) => { handleAddToCart(i); }}
+                          onDecrease={(i) => { handleDecrease(i); }}
                         />
                       </div>
                     );

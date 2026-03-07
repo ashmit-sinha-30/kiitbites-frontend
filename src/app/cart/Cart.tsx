@@ -89,6 +89,7 @@ export default function Cart() {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const extrasListRef = useRef<HTMLDivElement>(null);
+  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -381,6 +382,8 @@ export default function Cart() {
       return;
     }
 
+    if (loadingItemId) return;
+    setLoadingItemId(id);
     if (userLoggedIn && userData) {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
@@ -407,6 +410,9 @@ export default function Cart() {
           } else {
             toast.error("Failed to increase quantity");
           }
+        })
+        .finally(() => {
+          setLoadingItemId(null);
         });
     } else {
       const updatedCart = cart.map((item) =>
@@ -415,6 +421,7 @@ export default function Cart() {
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.success(`Increased quantity of ${thisItem.name}`);
+      setLoadingItemId(null);
       // Dispatch event to update cart count in navbar
       window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     }
@@ -430,6 +437,8 @@ export default function Cart() {
       return;
     }
 
+    if (loadingItemId) return;
+    setLoadingItemId(id);
     if (userLoggedIn && userData) {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
@@ -448,6 +457,9 @@ export default function Cart() {
           toast.error(
             err.response?.data?.message || "Failed to decrease quantity"
           );
+        })
+        .finally(() => {
+          setLoadingItemId(null);
         });
     } else {
       const updatedCart = cart.map((item) =>
@@ -456,6 +468,7 @@ export default function Cart() {
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.info(`Decreased quantity of ${thisItem.name}`);
+      setLoadingItemId(null);
       // Dispatch event to update cart count in navbar
       window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     }
@@ -483,23 +496,30 @@ export default function Cart() {
         })
         .catch((err) => {
           toast.error(err.response?.data?.message || "Failed to remove item");
+        })
+        .finally(() => {
+          setLoadingItemId(null);
         });
     } else {
       const updatedCart = cart.filter((item) => item._id !== id) as CartItem[];
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.error(`${thisItem.name} removed from cart`);
+      setLoadingItemId(null);
       // Dispatch event to update cart count in navbar
       window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     }
   };
 
   const addToCart = (item: FoodItem) => {
+    if (loadingItemId) return;
+    setLoadingItemId(item._id);
     if (userLoggedIn && userData) {
       // Get vendorId from the first item in cart
       const vendorId = cart[0]?.vendorId;
       if (!vendorId) {
         toast.error("Cannot add items without a vendor selected");
+        setLoadingItemId(null);
         return;
       }
 
@@ -532,6 +552,9 @@ export default function Cart() {
           } else {
             toast.error("Failed to add item to cart");
           }
+        })
+        .finally(() => {
+          setLoadingItemId(null);
         });
     } else {
       const existingItem = cart.find((i) => i._id === item._id);
@@ -566,6 +589,7 @@ export default function Cart() {
       setCart(updatedCart);
       localStorage.setItem("guest_cart", JSON.stringify(updatedCart));
       toast.success(`${item.name} added to cart!`);
+      setLoadingItemId(null);
       // Dispatch event to update cart count in navbar
       window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
     }
@@ -722,6 +746,7 @@ export default function Cart() {
                         key={item._id ?? index}
                         item={dishItem as unknown as SharedFoodItem}
                         quantity={item.quantity}
+                        isLoading={loadingItemId === item._id}
                         onIncrease={() => increaseQty(item._id)}
                         onDecrease={() => decreaseQty(item._id)}
                         onAdd={() => increaseQty(item._id)}
@@ -774,6 +799,7 @@ export default function Cart() {
                             onIncrease={() => increaseQty(item._id)}
                             onDecrease={() => decreaseQty(item._id)}
                             quantity={quantity}
+                            isLoading={loadingItemId === item._id}
                             variant="boxed"
                           />
                         );

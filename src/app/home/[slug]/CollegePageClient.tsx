@@ -99,6 +99,7 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
   const [selectedItemForModal, setSelectedItemForModal] = useState<FoodItem | null>(null);
   const [modalSelectedVendor, setModalSelectedVendor] = useState<VendorType | null>(null);
+  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
   const [confirmedVendorId, setConfirmedVendorId] = useState<string | null>(null);
   const [showSubtypeDropdown, setShowSubtypeDropdown] = useState(false);
   const subtypeDropdownRef = useRef<HTMLDivElement>(null);
@@ -117,7 +118,7 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
 
   // State to hold valid vendors for the modal
   const [itemVendors, setItemVendors] = useState<VendorType[]>([]);
-  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
+  // const [loadingItemId, setLoadingItemId] = useState<string | null>(null); // Moved up
 
   // Loading states for sections
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
@@ -682,14 +683,19 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
   }, [cartItems, loadingItemId]);
 
   const executeAddToCart = async (item: FoodItem, vendorId: string) => {
-    if (!userId) return;
+    if (!userId) {
+      toast.error("Please login first");
+      return;
+    }
+    if (loadingItemId) return; // Prevent multiple clicks
     setLoadingItemId(item.id);
     try {
       await addItemToCart(item, { _id: vendorId, name: '', price: 0 });
     } catch (e) {
       console.error(e);
       toast.error("Failed to add to cart");
-      setLoadingItemId(null); // Only clear on error
+    } finally {
+      // setLoadingItemId(null); // Cleared by useEffect when cartItems updates
     }
   };
 
@@ -698,6 +704,8 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
       toast.error("Please login first");
       return;
     }
+
+    if (loadingItemId) return; // Prevent multiple clicks
 
     try {
       // If item already has a specific vendorId (from favorites)
@@ -711,9 +719,11 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
         }
 
         // Check if item is available in this specific vendor
+        setLoadingItemId(item.id); // Set loading state here
         const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id}`);
         if (!response.ok) {
           toast.error("Failed to check item availability");
+          setLoadingItemId(null); // Clear loading on error
           return;
         }
         const fetchedVendors: VendorType[] = await response.json();
@@ -721,17 +731,21 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
 
         if (vendor) {
           await executeAddToCart(item, item.vendorId);
+          // executeAddToCart will handle its own loading state, no need to clear here
           return;
         } else {
           toast.error("This item is currently unavailable from your favorite vendor");
+          setLoadingItemId(null); // Clear loading if not available
           return;
         }
       }
 
+      setLoadingItemId(item.id); // Set loading state here for items without pre-selected vendor
       const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id}`);
       if (!response.ok) {
         const errData = await response.json();
         toast.error(errData.message || "No vendors available for this item");
+        setLoadingItemId(null); // Clear loading on error
         return;
       }
 
@@ -739,6 +753,7 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
 
       if (!fetchedVendors || fetchedVendors.length === 0) {
         toast.error("No vendors available for this item");
+        setLoadingItemId(null); // Clear loading if no vendors
         return;
       }
 
@@ -749,28 +764,29 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
         if (vendor) {
           // Item available in current vendor -> Add directly
           await executeAddToCart(item, confirmedVendorId);
+          // executeAddToCart will handle its own loading state, no need to clear here
           return;
         } else {
           // Item NOT available in current vendor -> Show error
-          // Get current vendor name if possible. We might need to find it from our vendors list or from cart if available.
-          // For now, let's try to find it in the 'vendors' state since that has all university vendors.
           const errorVendor = vendors.find(v => v._id === confirmedVendorId);
           const vendorName = errorVendor ? errorVendor.fullName : "your current vendor";
           toast.error(`Food item is not available in ${vendorName}`);
+          setLoadingItemId(null); // Clear loading on error
           return;
         }
       }
 
       setSelectedItemForModal(item);
       setItemVendors(fetchedVendors);
-
       setModalSelectedVendor(null);
-
       setIsVendorModalOpen(true);
+      // loadingItemId will be cleared by handleConfirmVendor or handleCancelVendor
+      // or by useEffect if item is added to cart directly (e.g., if only one vendor)
 
     } catch (error) {
       console.error("Error fetching vendors for item:", error);
       toast.error("Failed to load vendor options");
+      setLoadingItemId(null); // Clear loading on general error
     }
   };
 
@@ -782,12 +798,14 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
     setIsVendorModalOpen(false);
     setSelectedItemForModal(null);
     setModalSelectedVendor(null);
+    // setLoadingItemId(null); // Cleared by useEffect when cartItems updates
   };
 
   const handleCancelVendor = () => {
     setIsVendorModalOpen(false);
     setSelectedItemForModal(null);
     setModalSelectedVendor(null);
+    setLoadingItemId(null); // Clear loading if modal is cancelled
   };
 
   // Helper to get cart item quantity
@@ -804,33 +822,62 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
   };
 
   const handleIncrease = async (item: FoodItem) => {
-    if (confirmedVendorId) {
-      const cartItem = cartItems.find(ci => ci.itemId === item.id && ci.vendorId === confirmedVendorId);
-      if (cartItem) {
-        await increaseItemQuantity({ ...item, vendorId: confirmedVendorId });
-        return;
-      }
-    }
-    const existingCartItems = cartItems.filter(ci => ci.itemId === item.id);
-    if (existingCartItems.length === 1) {
-      await increaseItemQuantity({ ...item, vendorId: existingCartItems[0].vendorId });
+    if (!userId) {
+      toast.error("Please login first");
       return;
     }
-    handleAddToCart(item);
+    if (loadingItemId) return;
+    setLoadingItemId(item.id);
+    try {
+      if (confirmedVendorId) {
+        const cartItem = cartItems.find(ci => ci.itemId === item.id && ci.vendorId === confirmedVendorId);
+        if (cartItem) {
+          await increaseItemQuantity({ ...item, vendorId: confirmedVendorId });
+          return;
+        }
+      }
+      const existingCartItems = cartItems.filter(ci => ci.itemId === item.id);
+      if (existingCartItems.length === 1) {
+        await increaseItemQuantity({ ...item, vendorId: existingCartItems[0].vendorId });
+        return;
+      }
+      // If we need to show the vendor modal, handleAddToCart will be called
+      // handleAddToCart will set its own loading state, so we clear it here first
+      setLoadingItemId(null);
+      handleAddToCart(item);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to increase quantity");
+      setLoadingItemId(null); // Clear loading on error
+    } finally {
+      // setLoadingItemId(null); // Cleared by useEffect when cartItems updates, or by handleAddToCart if called
+    }
   };
 
   const handleDecrease = async (item: FoodItem) => {
-    if (confirmedVendorId) {
-      await decreaseItemQuantity({ ...item, vendorId: confirmedVendorId });
+    if (!userId) {
+      toast.error("Please login first");
       return;
     }
-    const existingCartItems = cartItems.filter(ci => ci.itemId === item.id);
-    if (existingCartItems.length === 1) {
-      await decreaseItemQuantity({ ...item, vendorId: existingCartItems[0].vendorId });
-      return;
-    }
-    if (existingCartItems.length > 0) {
-      await decreaseItemQuantity({ ...item, vendorId: existingCartItems[0].vendorId });
+    if (loadingItemId) return;
+    setLoadingItemId(item.id);
+    try {
+      if (confirmedVendorId) {
+        await decreaseItemQuantity({ ...item, vendorId: confirmedVendorId });
+        return;
+      }
+      const existingCartItems = cartItems.filter(ci => ci.itemId === item.id);
+      if (existingCartItems.length > 0) {
+        await decreaseItemQuantity({ ...item, vendorId: existingCartItems[0].vendorId });
+      } else {
+        // Should not happen if decrease is called on an item already in cart
+        toast.error("Item not found in cart to decrease.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to decrease quantity");
+    } finally {
+      setLoadingItemId(null); // Always clear loading after decrease attempt
     }
   };
 
