@@ -25,21 +25,6 @@ const SearchQuantityControls: React.FC<SearchQuantityControlsProps> = ({
   const { increaseSearchCartQuantity, decreaseSearchCartQuantity } = useSearchCart();
   const [loading, setLoading] = useState(false);
 
-  const getUserId = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return null;
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return null;
-      const user = await response.json();
-      return user;
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      return null;
-    }
-  };
 
   const handleIncrease = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -49,17 +34,9 @@ const SearchQuantityControls: React.FC<SearchQuantityControlsProps> = ({
     }
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error('Please login to modify cart');
-        return;
-      }
-      const userId = await getUserId();
-      if (!userId) {
-        toast.error('Failed to get user ID');
-        return;
-      }
-      await increaseSearchCartQuantity(userId._id, item.id);
+      await increaseSearchCartQuantity(item.id);
+    } catch (error) {
+      console.error('Error increasing quantity:', error);
     } finally {
       setLoading(false);
     }
@@ -73,17 +50,9 @@ const SearchQuantityControls: React.FC<SearchQuantityControlsProps> = ({
     }
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error('Please login to modify cart');
-        return;
-      }
-      const userId = await getUserId();
-      if (!userId) {
-        toast.error('Failed to get user ID');
-        return;
-      }
-      await decreaseSearchCartQuantity(userId._id, item.id);
+      await decreaseSearchCartQuantity(item.id);
+    } catch (error) {
+      console.error('Error decreasing quantity:', error);
     } finally {
       setLoading(false);
     }

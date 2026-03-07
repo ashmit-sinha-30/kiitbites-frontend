@@ -152,7 +152,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { searchCartItems, addToSearchCart, decreaseSearchCartQuantity } = useSearchCart();
+  const { searchCartItems, addToSearchCart, increaseSearchCartQuantity, decreaseSearchCartQuantity } = useSearchCart();
   const [selectedItem, setSelectedItem] = useState<SearchResult | null>(null);
   const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
   const lastSearchedQuery = useRef<string>("");
@@ -601,6 +601,20 @@ const SearchBar: React.FC<SearchBarProps> = ({
     const itemId = (item as SearchResult).itemId || (item as SearchResult)._id || item.id || "";
     if (!itemId || loadingItems.has(itemId)) return;
 
+    // OPTIMIZATION: If item already in cart, just increase quantity and return
+    const existingItem = searchCartItems.find(ci => ci.id === itemId);
+    if (existingItem) {
+      try {
+        setItemLoading(itemId, true);
+        await increaseSearchCartQuantity(itemId);
+        return;
+      } catch (error) {
+        console.error('Error increasing quantity (fast-path):', error);
+      } finally {
+        setItemLoading(itemId, false);
+      }
+    }
+
     try {
       setItemLoading(itemId, true);
       // If item is SharedFoodItem, we may need to convert it or find the original SearchResult
@@ -611,27 +625,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
       // If in vendor mode, add directly to cart with vendorId and skip modal
       if (vendorId) {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          toast.error('Please login to add items to cart');
-          return;
-        }
         try {
-          // Get user info
-          const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (!response.ok) {
-            toast.error('Failed to get user info');
-            return;
-          }
-          const user = await response.json();
-          if (!user._id) {
-            toast.error('Invalid user data');
-            return;
-          }
-          // Add to cart directly
-          await addToSearchCart(user._id, item as SearchResult, vendorId);
+          // Add to cart directly - SearchCartContext handles userId caching
+          await addToSearchCart(item as SearchResult, vendorId);
         } catch (error) {
           console.error('Error adding to cart:', error);
           toast.error(error instanceof Error ? error.message : 'Failed to add item to cart');
@@ -658,20 +654,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           const vendor = fetchedVendors.find(v => v._id === confirmedVendorId);
           if (vendor) {
             // Item available in current vendor -> Add directly
-            const token = localStorage.getItem("token");
-            if (!token) {
-              toast.error('Please login to add items to cart');
-              return;
-            }
-            const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!userRes.ok) {
-              toast.error('Failed to get user info');
-              return;
-            }
-            const user = await userRes.json();
-            await addToSearchCart(user._id, item as SearchResult, confirmedVendorId);
+            await addToSearchCart(item as SearchResult, confirmedVendorId);
             return;
           } else {
             // Item NOT available in current vendor -> Show error "Item not available in {vendorName}"
@@ -746,17 +729,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        toast.error('Failed to get user info');
-        return;
-      }
-      const user = await response.json();
-
-      if (!user._id) {
-        toast.error('Invalid user data');
+      if (!selectedItem._id && !selectedItem.id && !selectedItem.itemId) {
+        toast.error('Invalid item data');
         return;
       }
 
@@ -766,14 +740,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
       }
 
       console.log('Adding to cart:', {
-        user: user._id,
         item: selectedItem,
         vendor: selectedVendor._id
       });
 
       // Add to cart with all required parameters
       await addToSearchCart(
-        user._id,
         selectedItem,
         selectedVendor._id
       );
@@ -794,18 +766,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
     try {
       setItemLoading(itemId, true);
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!userRes.ok) return;
-      const user = await userRes.json();
-
-      if (user._id) {
-        await decreaseSearchCartQuantity(user._id, itemId);
-      }
+      // decreaseSearchCartQuantity handles token internally
+      await decreaseSearchCartQuantity(itemId);
     } catch (error) {
       console.error('Error decreasing quantity:', error);
     } finally {

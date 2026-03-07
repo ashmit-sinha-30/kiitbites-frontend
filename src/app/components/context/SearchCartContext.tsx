@@ -32,9 +32,10 @@ interface SearchCartItem {
 
 interface SearchCartContextType {
   searchCartItems: SearchCartItem[];
-  addToSearchCart: (userId: string, item: SearchResult, vendorId: string) => Promise<void>;
-  increaseSearchCartQuantity: (userId: string, itemId: string) => Promise<void>;
-  decreaseSearchCartQuantity: (userId: string, itemId: string) => Promise<void>;
+  userId: string | null;
+  addToSearchCart: (item: SearchResult, vendorId: string) => Promise<void>;
+  increaseSearchCartQuantity: (itemId: string) => Promise<void>;
+  decreaseSearchCartQuantity: (itemId: string) => Promise<void>;
   refreshSearchCart: () => Promise<void>;
 }
 
@@ -54,9 +55,11 @@ interface SearchCartProviderProps {
 
 export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
   const [searchCartItems, setSearchCartItems] = useState<SearchCartItem[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const getUserId = async () => {
+  const getUserId = useCallback(async () => {
+    if (userId) return userId;
     const token = localStorage.getItem("token");
     if (!token) {
       console.log('No token found in localStorage');
@@ -72,12 +75,14 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
       }
       const user = await response.json();
       console.log('User data received:', user);
-      return user._id || user.id;
+      const id = user._id || user.id;
+      setUserId(id);
+      return id;
     } catch (error) {
       console.error('Error fetching user:', error);
       return null;
     }
-  };
+  }, [userId]);
 
   const refreshSearchCart = useCallback(async () => {
     if (isRefreshing) return;
@@ -90,13 +95,13 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         return;
       }
 
-      const userId = await getUserId();
-      if (!userId) {
+      const currentUserId = await getUserId();
+      if (!currentUserId) {
         console.log('No user ID found, skipping cart refresh');
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/cart/${userId}`, {
+      const response = await fetch(`${BACKEND_URL}/cart/${currentUserId}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -139,7 +144,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array means it only runs once on mount
 
-  const addToSearchCart = async (userId: string, item: SearchResult, vendorId: string) => {
+  const addToSearchCart = async (item: SearchResult, vendorId: string) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -147,8 +152,9 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         return;
       }
 
+      const currentUserId = await getUserId();
       // Validate required fields
-      if (!userId) {
+      if (!currentUserId) {
         throw new Error('User ID is required');
       }
       if (!vendorId) {
@@ -190,7 +196,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         data: requestData
       });
 
-      const response = await fetch(`${BACKEND_URL}/cart/add/${userId}`, {
+      const response = await fetch(`${BACKEND_URL}/cart/add/${currentUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -210,7 +216,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
       }
 
       await refreshSearchCart();
-      toast.success(`${item.name} added to cart!`);
+      toast.success(`${item.name || item.title || 'Item'} added to cart!`);
     } catch (error) {
       console.error('Error adding to search cart:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to add item to cart');
@@ -218,10 +224,13 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
     }
   };
 
-  const increaseSearchCartQuantity = async (userId: string, itemId: string) => {
+  const increaseSearchCartQuantity = async (itemId: string) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
+
+      const currentUserId = await getUserId();
+      if (!currentUserId) return;
 
       // Find the item in the cart to get its type
       const item = searchCartItems.find(item => item.id === itemId);
@@ -229,7 +238,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         throw new Error('Item not found in cart');
       }
 
-      const response = await fetch(`${BACKEND_URL}/cart/add-one/${userId}`, {
+      const response = await fetch(`${BACKEND_URL}/cart/add-one/${currentUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -258,10 +267,13 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
     }
   };
 
-  const decreaseSearchCartQuantity = async (userId: string, itemId: string) => {
+  const decreaseSearchCartQuantity = async (itemId: string) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
+
+      const currentUserId = await getUserId();
+      if (!currentUserId) return;
 
       // Find the item in the cart to get its type
       const item = searchCartItems.find(item => item.id === itemId);
@@ -269,7 +281,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         throw new Error('Item not found in cart');
       }
 
-      const response = await fetch(`${BACKEND_URL}/cart/remove-one/${userId}`, {
+      const response = await fetch(`${BACKEND_URL}/cart/remove-one/${currentUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -302,6 +314,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
     <SearchCartContext.Provider
       value={{
         searchCartItems,
+        userId,
         addToSearchCart,
         increaseSearchCartQuantity,
         decreaseSearchCartQuantity,
