@@ -7,6 +7,7 @@ import ReviewForm from "./components/ReviewForm";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { OrderSkeleton } from "../components/skeleton/SkeletonLoader/SkeletonLoader";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -297,7 +298,7 @@ const PastOrdersPageContent: React.FC = () => {
         </div>
 
         {loading ? (
-          null
+          <OrderSkeleton />
         ) : pastOrders.length === 0 ? (
           <div className={styles.emptyState}>
             <h2>No past orders found</h2>

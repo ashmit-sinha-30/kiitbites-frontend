@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PageLoading from "../components/layout/PageLoading/PageLoading";
+import { OrderSkeleton } from "../components/skeleton/SkeletonLoader/SkeletonLoader";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -286,7 +287,7 @@ const ActiveOrdersPageContent: React.FC = () => {
         </div>
 
         {loading ? (
-          <PageLoading message="Loading your active orders…" />
+          <OrderSkeleton />
         ) : activeOrders.length === 0 ? (
           <div className={styles.emptyState}>
             <h2>No active orders found</h2>
