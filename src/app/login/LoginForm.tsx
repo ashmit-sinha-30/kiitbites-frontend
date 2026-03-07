@@ -7,6 +7,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import dynamic from "next/dynamic";
 import styles from "./styles/Login.module.scss";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { TransitionOverlay } from "../components/shared/Skeleton/TransitionOverlay";
 // import GoogleLogin from "./GoogleLogin";
 
 // Lazy load ToastContainer to reduce initial bundle size
@@ -29,6 +30,7 @@ export default function LoginForm() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
 
   const BACKEND_URL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -104,6 +106,7 @@ export default function LoginForm() {
       }
 
       notify("Login successful!", "success");
+      setIsRedirecting(true);
 
       // Get user data to determine university slug for redirect
       try {
@@ -155,7 +158,10 @@ export default function LoginForm() {
       console.error("Login error:", error);
       notify("An unexpected error occurred. Please try again.", "error");
     } finally {
-      setIsLoading(false);
+      // Don't set isLoading(false) if we are redirecting to avoid flicker
+      if (!isRedirecting) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -279,6 +285,7 @@ export default function LoginForm() {
       </div>
 
       <ToastContainer />
+      {isRedirecting && <TransitionOverlay />}
     </div>
   );
 }

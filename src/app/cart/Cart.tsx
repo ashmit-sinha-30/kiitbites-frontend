@@ -15,6 +15,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Script from "next/script";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CART_COUNT_UPDATE_EVENT } from "../hooks/useCartCount";
+import { Skeleton, SkeletonCircle, SkeletonText } from "../components/shared/Skeleton/Skeleton";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
 
 interface ExtraItem {
@@ -86,6 +87,7 @@ export default function Cart() {
   // State for scroll arrows
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const extrasListRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -120,6 +122,7 @@ export default function Cart() {
     };
 
     const fetchUserAndCart = async () => {
+      setIsLoading(true);
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -132,10 +135,11 @@ export default function Cart() {
             category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
           }));
           setCart(guestCartWithCategory);
-          // Dispatch event to update cart count in navbar
           window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
         } catch {
           setCart([]);
+        } finally {
+          setIsLoading(false);
         }
         return;
       }
@@ -198,10 +202,8 @@ export default function Cart() {
         });
 
         setCart(detailedCart);
-        // Dispatch event to update cart count in navbar
         window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
 
-        // Check if vendor has pending order service
         if (cartRes.data.vendorId) {
           try {
             const vendorServicesRes = await axios.get(
@@ -218,16 +220,16 @@ export default function Cart() {
             }
           } catch (error) {
             console.error("Error fetching vendor services:", error);
-            // Default to false if we can't fetch services
             setHasPendingOrderService(false);
           }
         }
 
-        // Fetch extras after cart is loaded
         await fetchExtras();
       } catch {
         localStorage.removeItem("token");
         setUserLoggedIn(false);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -648,7 +650,43 @@ export default function Cart() {
           pauseOnHover
           theme="light"
         />
-        {cart.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col lg:flex-row gap-8 w-full max-w-6xl mx-auto">
+            <div className="flex-1 space-y-4">
+              <Skeleton width={200} height={40} className="mb-8 rounded-lg opacity-60 bg-teal-900/10" />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="p-6 rounded-2xl border border-white/80 bg-white/60 backdrop-blur-md shadow-sm flex gap-6 items-center">
+                  <Skeleton width={100} height={100} className="rounded-xl shrink-0 bg-teal-900/5" />
+                  <div className="flex-1">
+                    <Skeleton width="60%" height={24} className="mb-3 bg-teal-900/10" />
+                    <SkeletonText lines={2} className="opacity-40 bg-teal-900/5" />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <SkeletonCircle size={32} className="bg-teal-900/5" />
+                    <Skeleton width={40} height={32} className="bg-teal-900/10" />
+                    <SkeletonCircle size={32} className="bg-teal-900/5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="w-full lg:w-96">
+              <div className="p-8 rounded-3xl border border-white/80 bg-white/80 backdrop-blur-xl shadow-lg sticky top-32">
+                <Skeleton width={150} height={28} className="mb-8 bg-teal-900/10" />
+                <div className="space-y-4 mb-8">
+                  <div className="flex justify-between">
+                    <Skeleton width={100} height={20} className="bg-teal-900/5" />
+                    <Skeleton width={60} height={20} className="bg-teal-900/10" />
+                  </div>
+                  <div className="flex justify-between">
+                    <Skeleton width={120} height={20} className="bg-teal-900/5" />
+                    <Skeleton width={60} height={20} className="bg-teal-900/10" />
+                  </div>
+                </div>
+                <Skeleton width="100%" height={56} className="rounded-2xl bg-teal-600/20" />
+              </div>
+            </div>
+          </div>
+        ) : cart.length === 0 ? (
           <div className={styles.emptyCartMessage}>
             <h2>Oops! Your cart is empty</h2>
             <p>

@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Metadata } from "next";
 import { SearchCartProvider } from './components/context/SearchCartContext';
 import ConditionalHeader from './components/layout/ConditionalHeader/ConditionalHeader';
+import NextTopLoader from 'nextjs-toploader';
 
 export const metadata: Metadata = {
   title: {
@@ -83,6 +84,17 @@ export default function RootLayout({
       <body>
         <GoogleOAuthProvider clientId={googleClientId}>
           <SearchCartProvider>
+            <NextTopLoader
+              color="#01796f"
+              initialPosition={0.08}
+              crawlSpeed={200}
+              height={3}
+              crawl={true}
+              showSpinner={false}
+              easing="ease"
+              speed={200}
+              shadow="0 0 10px #01796f,0 0 5px #01796f"
+            />
             <ConditionalHeader />
             <main>{children}</main>
             <Footer />

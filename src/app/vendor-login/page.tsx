@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import styles from './styles/vendorLogin.module.scss';
+import { VendorTransitionOverlay } from '../components/shared/Skeleton/VendorTransitionOverlay';
 import { getBackendUrl } from '@/utils/backendCheck';
 
 // Lazy load ToastContainer to reduce initial bundle size
@@ -25,6 +26,7 @@ const VendorLoginPage: React.FC = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,6 +70,7 @@ const VendorLoginPage: React.FC = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('vendorRole', 'seller'); // Default role, can be updated later
         toast.success('Login successful!');
+        setIsRedirecting(true);
         router.push('/vendorDashboard');
       } else {
         if (data.redirectTo) {
@@ -83,7 +86,9 @@ const VendorLoginPage: React.FC = () => {
       console.error('Login error:', error);
       toast.error('Network error. Please try again.');
     } finally {
-      setIsLoading(false);
+      if (!isRedirecting) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -152,6 +157,7 @@ const VendorLoginPage: React.FC = () => {
       </div>
 
       <ToastContainer />
+      {isRedirecting && <VendorTransitionOverlay />}
     </div>
   );
 };

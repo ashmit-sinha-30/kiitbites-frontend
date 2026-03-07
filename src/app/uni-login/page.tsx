@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import { ENV_CONFIG } from '@/config/environment';
+import { UniTransitionOverlay } from '../components/shared/Skeleton/UniTransitionOverlay';
 import styles from "./styles/login.module.scss";
 
 // Lazy load ToastContainer to reduce initial bundle size
@@ -26,6 +27,7 @@ export default function UniLoginPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -50,13 +52,16 @@ export default function UniLoginPage() {
       if (json.token) {
         localStorage.setItem('token', json.token);
         toast.success('Login successful!');
+        setIsRedirecting(true);
       }
       window.dispatchEvent(new Event('authChanged'));
       router.push('/uniDashboard');
     } catch {
       toast.error('Network error. Please try again.');
     } finally {
-      setIsLoading(false);
+      if (!isRedirecting) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -125,6 +130,7 @@ export default function UniLoginPage() {
       </div>
 
       <ToastContainer />
+      {isRedirecting && <UniTransitionOverlay />}
     </div>
   );
 }

@@ -285,3 +285,49 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(1, 121, 111, 0.3);
 }
+
+/* Premium Skeleton Pulse Animation - Updated for Light Theme */
+@keyframes premium-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    background-color: rgba(78, 161, 153, 0.05);
+    /* Light teal tint */
+  }
+
+  50% {
+    opacity: 0.6;
+    background-color: rgba(78, 161, 153, 0.1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-skeleton {
+  animation: premium-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-image: linear-gradient(90deg,
+      transparent 0,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%);
+  background-size: 200% 100%;
+}
+
+.shimmer {
+  animation: shimmer 2.5s infinite linear;
+}
+
+.skeleton-base {
+  background-color: rgba(78, 161, 153, 0.1);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  position: relative;
+}
