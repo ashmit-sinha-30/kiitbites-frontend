@@ -89,6 +89,18 @@ const AdminDashboard: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const router = useRouter();
 
+  React.useEffect(() => {
+    const adminToken = localStorage.getItem('adminToken');
+    if (!adminToken) {
+      router.push('/admin-login');
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    router.push('/admin-login');
+  };
+
   const dashboardOptions: DashboardOption[] = [
     {
       id: 'check-colleges',
@@ -210,9 +222,14 @@ const AdminDashboard: React.FC = () => {
         <div className={styles.welcomeContent}>
           <h1 className={styles.welcomeTitle}>Hello Ansh</h1>
           <p className={styles.welcomeSubtitle}>Welcome to your Admin Dashboard</p>
-          <Badge variant="outline" className={styles.statusBadge}>
-            Administrator Access
-          </Badge>
+          <div className={styles.headerActions}>
+            <Badge variant="outline" className={styles.statusBadge}>
+              Administrator Access
+            </Badge>
+            <button onClick={handleLogout} className={styles.logoutButton}>
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 

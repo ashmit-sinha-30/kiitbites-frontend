@@ -39,7 +39,11 @@ api.interceptors.request.use(
     (config) => {
         if (typeof window !== 'undefined') {
             const token = localStorage.getItem('token');
-            if (token) {
+            const adminToken = localStorage.getItem('adminToken');
+
+            if (adminToken) {
+                config.headers.Authorization = `Bearer ${adminToken}`;
+            } else if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             } else {
                 // If no token is found, ensure no stale Authorization header is sent
@@ -66,14 +70,19 @@ api.interceptors.response.use(
 
             if (isDashboardArea) {
                 console.warn('Unauthorized access detected in dashboard. Redirecting to login.');
-                localStorage.removeItem('token');
 
-                // Determine which login to go to
-                if (pathname.includes('uni')) {
+                // Determine which login to go to and which token to clear
+                if (pathname.includes('admin')) {
+                    localStorage.removeItem('adminToken');
+                    window.location.href = '/admin-login';
+                } else if (pathname.includes('uni')) {
+                    localStorage.removeItem('token');
                     window.location.href = '/uni-login';
                 } else if (pathname.includes('vendor')) {
+                    localStorage.removeItem('token');
                     window.location.href = '/vendor-login';
                 } else {
+                    localStorage.removeItem('token');
                     window.location.href = '/login';
                 }
             }
