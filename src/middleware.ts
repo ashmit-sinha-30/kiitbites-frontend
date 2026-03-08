@@ -19,8 +19,11 @@ export function middleware(request: NextRequest) {
 
   // Handle admin subdomain routing
   if (hostname.startsWith("admin.")) {
+    if (pathname === "/" || pathname === "/login") {
+      return NextResponse.rewrite(new URL("/admin-login", request.url));
+    }
     // Only prepend /admin-dashboard if the path doesn't already start with it
-    if (!pathname.startsWith("/admin-dashboard")) {
+    if (!pathname.startsWith("/admin-dashboard") && !pathname.startsWith("/admin-login")) {
       return NextResponse.rewrite(
         new URL("/admin-dashboard" + pathname, request.url)
       );
@@ -33,8 +36,8 @@ export function middleware(request: NextRequest) {
     "/vendorDashboard",
     "/food-ordering-uniDashboard",
   ];
-  
-  const isCamelCaseRoute = camelCaseRoutes.some(route => 
+
+  const isCamelCaseRoute = camelCaseRoutes.some(route =>
     pathname.startsWith(route)
   );
 

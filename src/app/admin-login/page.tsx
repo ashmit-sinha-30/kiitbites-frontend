@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import { UniTransitionOverlay } from '../components/shared/Skeleton/UniTransitionOverlay';
@@ -99,9 +98,7 @@ export default function AdminLoginPage() {
                                 {showPassword ? <FaEye /> : <FaEyeSlash />}
                             </span>
                         </div>
-                        <div className={styles.forgotPassword}>
-                            <Link href="/admin-forgot-password">Forgot Password?</Link>
-                        </div>
+
                         <button type="submit" disabled={isLoading}>
                             {isLoading ? "Logging in..." : "Login to Dashboard"}
                             {!isLoading && <span className={styles.buttonArrow}>→</span>}
