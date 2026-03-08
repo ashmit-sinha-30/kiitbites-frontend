@@ -3,9 +3,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Order } from "../types";
 import { OrderCard, LocalStatus } from "./OrderCard";
+import api from "@/utils/apiUtils";
 import styles from "../styles/OrderList.module.scss";
 
-const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 const PAGE_SIZE = 5; // number of orders per page
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
@@ -86,9 +86,8 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ vendorId
     setError(null);
     try {
       // Fetch only delivery orders that are on the way
-      const res = await fetch(`${BASE}/order/delivery/${vendorId}`);
-      if (!res.ok) throw new Error('Failed to load delivery orders');
-      const data = await res.json();
+      const res = await api.get(`/order/delivery/${vendorId}`);
+      const data = res.data;
 
       if (onLoaded && data.vendorName && data.vendorId) {
         onLoaded(data.vendorName, data.vendorId);
@@ -132,7 +131,7 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ vendorId
         setIsInitialLoad(false);
       }
     }
-  }, [onLoaded]);
+  }, [vendorId, onLoaded]);
 
   // Load once + auto-refresh
   useEffect(() => {
@@ -193,7 +192,7 @@ export const DeliveryOrdersList: React.FC<DeliveryOrdersListProps> = ({ vendorId
 
     // For delivery orders in onTheWay status, only allow marking as delivered
     if (next === "delivered") {
-      fetch(`${BASE}/order/${orderId}/deliver`, { method: "PATCH" })
+      api.patch(`/order/${orderId}/deliver`)
         .then(() => {
           // Order will be removed by the status change handler
         })

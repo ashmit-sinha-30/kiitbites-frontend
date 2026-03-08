@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./styles/ResetPassword.module.scss";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
+import api from "@/utils/apiUtils";
 
 export default function VendorResetPassword() {
   const [password, setPassword] = useState("");
@@ -15,7 +16,6 @@ export default function VendorResetPassword() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
   const validatePassword = (value: string): boolean =>
     value.length >= 8 &&
@@ -52,15 +52,11 @@ export default function VendorResetPassword() {
 
     try {
       setIsLoading(true);
-      const res = await fetch(`${BACKEND_URL}/api/vendor/auth/resetpassword`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await api.post("/api/vendor/auth/resetpassword", { email, password });
 
-      const data = await res.json();
+      const data = res.data;
 
-      if (res.ok) {
+      if (res.status === 200) {
         toast.success("Password reset successfully!");
         setTimeout(() => router.push("/vendor-login"), 2000);
       } else {

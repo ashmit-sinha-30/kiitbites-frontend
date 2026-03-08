@@ -6,6 +6,7 @@ import styles from "./styles/ResetPassword.module.scss";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import api from "@/utils/apiUtils";
 
 export default function ResetPassword() {
   // Redirect if user is already authenticated
@@ -19,7 +20,7 @@ export default function ResetPassword() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
 
   const validatePassword = (password: string): boolean =>
     password.length >= 8 &&
@@ -56,15 +57,11 @@ export default function ResetPassword() {
 
     try {
       setIsLoading(true);
-      const res = await fetch(`${BACKEND_URL}/api/user/auth/resetpassword`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await api.post("/api/user/auth/resetpassword", { email, password });
 
-      const data = await res.json();
+      const data = res.data;
 
-      if (res.ok) {
+      if (res.status === 200) {
         toast.success("Password reset successfully!");
         setTimeout(() => router.push("/login"), 2000);
       } else {

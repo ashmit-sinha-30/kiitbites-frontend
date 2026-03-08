@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import api from "@/utils/apiUtils";
 import { VendorCart as VendorCartType, BillingFormData } from "../types";
-import styles from "../styles/VendorCart.module.scss";
 import { VendorRazorpayPayment } from "./VendorRazorpayPayment";
 import { OrderSuccessPopup } from "./OrderSuccessPopup";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import styles from "../styles/VendorCart.module.scss";
 
 interface VendorCartProps {
   vendorId: string;
@@ -73,11 +73,11 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
   const hasPendingOrderService = vendorServices.some(s => s.name?.toLowerCase().includes("pending order"));
 
   // Fetch vendor cart from backend
-  const fetchVendorCart = async () => {
+  const fetchVendorCart = useCallback(async () => {
     setCartLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/vendorcart/${vendorId}`);
-      const data = await response.json();
+      const response = await api.get(`/vendorcart/${vendorId}`);
+      const data = response.data;
 
       if (data.success) {
         console.log("🛒 Cart data from backend:", data.data);
@@ -101,14 +101,14 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
     } finally {
       setCartLoading(false);
     }
-  };
+  }, [vendorId]);
 
   // Fetch university charges for the vendor
-  const fetchUniversityCharges = async () => {
+  const fetchUniversityCharges = useCallback(async () => {
     try {
       console.log("🔍 Fetching university charges for vendor:", vendorId);
-      const response = await fetch(`${BACKEND_URL}/api/vendor/${vendorId}/university-charges`);
-      const data = await response.json();
+      const response = await api.get(`/api/vendor/${vendorId}/university-charges`);
+      const data = response.data;
 
       if (data.success) {
         console.log("✅ University charges fetched:", data.data);
@@ -131,20 +131,20 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
         universityName: "University"
       });
     }
-  };
+  }, [vendorId]);
 
   // Fetch vendor assignments (services)
-  const fetchVendorServices = async () => {
+  const fetchVendorServices = useCallback(async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/vendor/${vendorId}/assignments`);
-      const data = await response.json();
+      const response = await api.get(`/api/vendor/${vendorId}/assignments`);
+      const data = response.data;
       if (data.success && data.data?.services) {
         setVendorServices(data.data.services);
       }
     } catch (err) {
       console.error("❌ Error fetching vendor services:", err);
     }
-  };
+  }, [vendorId]);
 
   // Fetch vendor items and cart
   useEffect(() => {
@@ -153,12 +153,12 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       setError(null);
       try {
         const [retailRes, produceRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}/retail`),
-          fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}/produce`)
+          api.get(`/api/item/getvendors/${vendorId}/retail`),
+          api.get(`/api/item/getvendors/${vendorId}/produce`)
         ]);
 
-        if (retailRes.ok) {
-          const retailData = await retailRes.json();
+        if (retailRes.status === 200) {
+          const retailData = retailRes.data;
           if (retailData.success && retailData.data.retailItems) {
             setRetailItems(retailData.data.retailItems.map((item: ApiItem & { packable?: boolean }) => ({
               ...item,
@@ -168,8 +168,8 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
           }
         }
 
-        if (produceRes.ok) {
-          const produceData = await produceRes.json();
+        if (produceRes.status === 200) {
+          const produceData = produceRes.data;
           if (produceData.success && produceData.data.produceItems) {
             setProduceItems(produceData.data.produceItems.map((item: ApiItem & { packable?: boolean }) => ({
               ...item,
@@ -195,7 +195,7 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
     fetchVendorCart();
     fetchUniversityCharges();
     fetchVendorServices();
-  }, [vendorId, onLoaded]);
+  }, [vendorId, onLoaded, fetchVendorCart, fetchUniversityCharges, fetchVendorServices]);
 
   // Reset payment method if UPI becomes unavailable
   useEffect(() => {
@@ -217,27 +217,21 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
   const addToCart = async (item: VendorItem) => {
     try {
       console.log("➕ Adding item to cart:", item);
-      const response = await fetch(`${BACKEND_URL}/vendorcart/${vendorId}/items`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          item: {
-            itemId: item.itemId,
-            name: item.name,
-            price: item.price,
-            quantity: 1,
-            kind: item.kind,
-            type: item.type,
-            isSpecial: item.isSpecial,
-            isAvailable: item.isAvailable,
-            packable: item.packable ?? (item.kind === "Produce"),
-          }
-        }),
+      const response = await api.post(`/vendorcart/${vendorId}/items`, {
+        item: {
+          itemId: item.itemId,
+          name: item.name,
+          price: item.price,
+          quantity: 1,
+          kind: item.kind,
+          type: item.type,
+          isSpecial: item.isSpecial,
+          isAvailable: item.isAvailable,
+          packable: item.packable ?? (item.kind === "Produce"),
+        }
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         console.log("✅ Item added to cart:", data.data);
@@ -263,15 +257,9 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
     }
 
     try {
-      const response = await fetch(`${BACKEND_URL}/vendorcart/${vendorId}/items/${itemId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ quantity: newQuantity }),
-      });
+      const response = await api.put(`/vendorcart/${vendorId}/items/${itemId}`, { quantity: newQuantity });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         // Calculate total WITHOUT packing charges for cart view
@@ -290,11 +278,9 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
 
   const removeFromCart = async (itemId: string) => {
     try {
-      const response = await fetch(`${BACKEND_URL}/vendorcart/${vendorId}/items/${itemId}`, {
-        method: 'DELETE',
-      });
+      const response = await api.delete(`/vendorcart/${vendorId}/items/${itemId}`);
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         // Calculate total WITHOUT packing charges for cart view
@@ -354,43 +340,35 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
 
     // For cash payment - Place order immediately (streamlined)
     try {
-      const response = await fetch(`${BACKEND_URL}/order/guest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vendorId,
-          items: cart.items,
-          total: finalTotal,
-          collectorName: billingForm.userName,
-          collectorPhone: billingForm.phoneNumber,
-          orderType: billingForm.orderType,
-          paymentMethod: billingForm.paymentMethod,
-          isGuest: true,
-        }),
+      const response = await api.post(`/order/guest`, {
+        vendorId,
+        items: cart.items,
+        total: finalTotal,
+        collectorName: billingForm.userName,
+        collectorPhone: billingForm.phoneNumber,
+        orderType: billingForm.orderType,
+        paymentMethod: billingForm.paymentMethod,
+        isGuest: true,
       });
 
-      const result = await response.json();
+      const result = response.data;
 
       if (result.success) {
         // Save billing info
-        await fetch(`${BACKEND_URL}/billinginfo`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            vendorId,
-            customerName: billingForm.userName,
-            phoneNumber: billingForm.phoneNumber,
-            paymentMethod: billingForm.paymentMethod,
-            totalAmount: finalTotal,
-            orderNumber: result.orderNumber,
-            orderId: result.orderId,
-            items: cart.items,
-            isGuest: true
-          }),
+        await api.post(`/billinginfo`, {
+          vendorId,
+          customerName: billingForm.userName,
+          phoneNumber: billingForm.phoneNumber,
+          paymentMethod: billingForm.paymentMethod,
+          totalAmount: finalTotal,
+          orderNumber: result.orderNumber,
+          orderId: result.orderId,
+          items: cart.items,
+          isGuest: true
         }).catch(err => console.error("Error saving billing info:", err));
 
         // Clear cart
-        await fetch(`${BACKEND_URL}/vendorcart/${vendorId}`, { method: 'DELETE' }).catch(err => console.error("Error clearing cart:", err));
+        await api.delete(`/vendorcart/${vendorId}`).catch(err => console.error("Error clearing cart:", err));
 
         setCart({ items: [], total: 0 });
         setBillingForm({ userName: "", phoneNumber: "", orderType: "takeaway", paymentMethod: "cash" });
@@ -419,24 +397,20 @@ export const VendorCartComponent: React.FC<VendorCartProps> = ({
       const { finalTotal } = calculateFinalTotal();
 
       // Save billing info
-      await fetch(`${BACKEND_URL}/billinginfo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vendorId,
-          customerName: billingForm.userName,
-          phoneNumber: billingForm.phoneNumber,
-          paymentMethod: "upi",
-          totalAmount: finalTotal,
-          orderNumber: orderNumber,
-          orderId: orderId,
-          items: cart.items,
-          isGuest: true
-        }),
+      api.post(`/billinginfo`, {
+        vendorId,
+        customerName: billingForm.userName,
+        phoneNumber: billingForm.phoneNumber,
+        paymentMethod: "upi",
+        totalAmount: finalTotal,
+        orderNumber: orderNumber,
+        orderId: orderId,
+        items: cart.items,
+        isGuest: true
       }).catch(err => console.error("Error saving billing info:", err));
 
       // Clear cart
-      await fetch(`${BACKEND_URL}/vendorcart/${vendorId}`, { method: 'DELETE' }).catch(err => console.error("Error clearing cart:", err));
+      api.delete(`/vendorcart/${vendorId}`).catch(err => console.error("Error clearing cart:", err));
 
       setCart({ items: [], total: 0 });
       setBillingForm({ userName: "", phoneNumber: "", orderType: "takeaway", paymentMethod: "cash" });

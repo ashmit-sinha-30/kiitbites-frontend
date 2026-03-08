@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import styles from "../styles/TaxUpdating.module.scss";
+import api from "@/utils/apiUtils";
 
 interface Props {
   universityId: string;
@@ -42,16 +43,8 @@ export default function TaxUpdating({ universityId }: Props) {
           setTypes([]);
           return;
         }
-        const url = `${baseUrl}/api/item/types/${category}?t=${Date.now()}`;
-        const res = await fetch(url);
-        const ct = res.headers.get("content-type") || "";
-        if (!res.ok || !ct.includes("application/json")) {
-          const text = await res.text();
-          setResultMsg(`Failed to load types (${res.status}). ${text.slice(0,200)}`);
-          setTypes([]);
-          return;
-        }
-        const data: TypeResponse = await res.json();
+        const res = await api.get(`/api/item/types/${category}?t=${Date.now()}`);
+        const data: TypeResponse = res.data;
         setTypes(data?.types || []);
         setSelectedType("");
         setPreviousHsn("");
@@ -76,15 +69,8 @@ export default function TaxUpdating({ universityId }: Props) {
         setPreviousHsn("");
         setPreviousGst(null);
         if (!baseUrl || !selectedType || !universityId) return;
-        const url = `${baseUrl}/api/item/${category}/${encodeURIComponent(selectedType)}/${universityId}/detailed?t=${Date.now()}`;
-        const res = await fetch(url);
-        const ct = res.headers.get("content-type") || "";
-        if (!res.ok || !ct.includes("application/json")) {
-          const text = await res.text();
-          setResultMsg(`Failed to load items (${res.status}). ${text.slice(0,200)}`);
-          return;
-        }
-        const data = await res.json();
+        const res = await api.get(`/api/item/${category}/${encodeURIComponent(selectedType)}/${universityId}/detailed?t=${Date.now()}`);
+        const data = res.data;
         const items: FetchedItem[] = Array.isArray(data?.items) ? data.items : [];
         setDetailedItems(
           items.map((it: FetchedItem) => ({
@@ -110,15 +96,8 @@ export default function TaxUpdating({ universityId }: Props) {
         } else {
           // Fallback: use common-hsn suggestions across categories for this type
           try {
-            const url2 = `${baseUrl}/api/item/common-hsn/${encodeURIComponent(selectedType)}?t=${Date.now()}`;
-            const res2 = await fetch(url2);
-            const ct2 = res2.headers.get("content-type") || "";
-            if (!res2.ok || !ct2.includes("application/json")) {
-              const text2 = await res2.text();
-              setResultMsg(`No current items found; suggestions failed (${res2.status}). ${text2.slice(0,200)}`);
-              return;
-            }
-            const data2 = await res2.json();
+            const res2 = await api.get(`/api/item/common-hsn/${encodeURIComponent(selectedType)}?t=${Date.now()}`);
+            const data2 = res2.data;
             const top = Array.isArray(data2?.suggestions) ? data2.suggestions[0] : null;
             if (top && top.hsnCode) {
               setPreviousHsn(top.hsnCode);
@@ -153,11 +132,7 @@ export default function TaxUpdating({ universityId }: Props) {
     try {
       setIsSubmitting(true);
       setResultMsg("");
-      const token = localStorage.getItem("token");
-      const headers = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      } as Record<string, string>;
+
 
       // Build body with optional fields
       type UpdatePayload = { hsnCode?: string; gstPercentage?: number };
@@ -169,30 +144,16 @@ export default function TaxUpdating({ universityId }: Props) {
         bodyPayload.gstPercentage = Number(gstPercentage);
       }
 
-      let res: Response;
+      let res;
       if (selectedItemIds.length > 0) {
         // Update specific items only
-        res = await fetch(
-          `${baseUrl}/api/items/${category}/tax/by-ids`,
-          {
-            method: "PUT",
-            headers,
-            body: JSON.stringify({ uniId: universityId, itemIds: selectedItemIds, ...bodyPayload }),
-          }
-        );
+        res = await api.put(`/api/items/${category}/tax/by-ids`, { uniId: universityId, itemIds: selectedItemIds, ...bodyPayload });
       } else {
         // Update all items by type within uni
-        res = await fetch(
-          `${baseUrl}/api/items/${category}/${encodeURIComponent(selectedType)}/${universityId}/tax`,
-          {
-            method: "PUT",
-            headers,
-            body: JSON.stringify(bodyPayload),
-          }
-        );
+        res = await api.put(`/api/items/${category}/${encodeURIComponent(selectedType)}/${universityId}/tax`, bodyPayload);
       }
-      const data = await res.json();
-      if (!res.ok) {
+      const data = res.data;
+      if (res.status !== 200) {
         setResultMsg(data?.error || "Failed to update taxes");
       } else {
         const matched = data?.matchedCount ?? 0;
@@ -224,19 +185,19 @@ export default function TaxUpdating({ universityId }: Props) {
 
 
       <div className={styles.toggle}>
-      <label className={styles.label}>
-            Update Fields
-            <div className={styles.toggleRow}>
-              <label className={styles.toggleLabel}>
-                <input type="checkbox" checked={enableHsn} onChange={(e) => setEnableHsn(e.target.checked)} />
-                HSN
-              </label>
-              <label className={styles.toggleLabel}>
-                <input type="checkbox" checked={enableGst} onChange={(e) => setEnableGst(e.target.checked)} />
-                GST
-              </label>
-            </div>
-          </label>
+        <label className={styles.label}>
+          Update Fields
+          <div className={styles.toggleRow}>
+            <label className={styles.toggleLabel}>
+              <input type="checkbox" checked={enableHsn} onChange={(e) => setEnableHsn(e.target.checked)} />
+              HSN
+            </label>
+            <label className={styles.toggleLabel}>
+              <input type="checkbox" checked={enableGst} onChange={(e) => setEnableGst(e.target.checked)} />
+              GST
+            </label>
+          </div>
+        </label>
       </div>
 
       {selectedType && (
@@ -303,7 +264,7 @@ export default function TaxUpdating({ universityId }: Props) {
         </div>
 
         <div className={styles.row}>
-         
+
 
           <label className={styles.label}>
             HSN Code
@@ -331,7 +292,7 @@ export default function TaxUpdating({ universityId }: Props) {
             />
           </label>
 
-          
+
         </div>
 
         <button className={styles.primaryButton} type="submit" disabled={!canSubmit || isSubmitting}>

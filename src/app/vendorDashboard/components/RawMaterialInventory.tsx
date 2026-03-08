@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "../styles/RawMaterialInventory.module.scss";
+import api from "@/utils/apiUtils";
 
 interface RawMaterialApiItem {
   itemId: string;
@@ -49,15 +50,8 @@ export const RawMaterialInventory: React.FC<RawMaterialInventoryProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}/raw`
-        );
-        if (!res.ok) {
-          throw new Error(
-            `Failed to fetch raw material items (status ${res.status})`
-          );
-        }
-        const json = await res.json() as unknown;
+        const res = await api.get(`/api/item/getvendors/${vendorId}/raw`);
+        const json = res.data;
         let rawItems: unknown[] = [];
         function isObject(val: unknown): val is Record<string, unknown> {
           return typeof val === 'object' && val !== null;
@@ -139,60 +133,38 @@ export const RawMaterialInventory: React.FC<RawMaterialInventoryProps> = ({
       // If we're adding a new item, we need to create it first
       if (!editingItem) {
         // Create the raw material item
-        const createResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/raw`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: formData.name,
-              unit: formData.unit,
-              uniId: "68320fd75c6f79ec179ad3bb", // Default uniId - you might want to get this from context
-              vendorId: vendorId,
-            }),
-          }
-        );
+        const createResponse = await api.post("/api/item/raw", {
+          name: formData.name,
+          unit: formData.unit,
+          uniId: "68320fd75c6f79ec179ad3bb", // Default uniId - you might want to get this from context
+          vendorId: vendorId,
+        });
 
-        if (!createResponse.ok) {
-          const errorData = await createResponse.json();
-          throw new Error(errorData.error || "Failed to create raw material item");
+        if (createResponse.status !== 201 && createResponse.status !== 200) {
+          throw new Error(createResponse.data.error || "Failed to create raw material item");
         }
 
-        const createData = await createResponse.json();
+        const createData = createResponse.data;
         itemId = createData.item._id;
       }
 
       // Now update the inventory
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/inventory/raw-materials`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            vendorId,
-            itemId: itemId,
-            openingAmount: formData.openingAmount,
-            closingAmount: formData.closingAmount,
-            unit: formData.unit,
-          }),
-        }
-      );
+      const response = await api.post("/inventory/raw-materials", {
+        vendorId,
+        itemId: itemId,
+        openingAmount: formData.openingAmount,
+        closingAmount: formData.closingAmount,
+        unit: formData.unit,
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update raw material inventory");
+      if (response.status !== 200) {
+        throw new Error(response.data.message || "Failed to update raw material inventory");
       }
 
       // Refresh the list
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}/raw`
-      );
-      if (res.ok) {
-        const json = await res.json();
+      const res = await api.get(`/api/item/getvendors/${vendorId}/raw`);
+      if (res.status === 200) {
+        const json = res.data;
         const rawItems = json.data?.rawItems || [];
         setItems(rawItems);
       }
@@ -235,24 +207,16 @@ export const RawMaterialInventory: React.FC<RawMaterialInventoryProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/inventory/raw-materials`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ vendorId, itemId: deletePending }),
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete raw material");
+      const response = await api.delete("/inventory/raw-materials", {
+        data: { vendorId, itemId: deletePending }
+      });
+      if (response.status !== 200) {
+        throw new Error(response.data.message || "Failed to delete raw material");
       }
       // Refresh the list
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}/raw`
-      );
-      if (res.ok) {
-        const json = await res.json();
+      const res = await api.get(`/api/item/getvendors/${vendorId}/raw`);
+      if (res.status === 200) {
+        const json = res.data;
         const rawItems = json.data?.rawItems || [];
         setItems(rawItems);
       }

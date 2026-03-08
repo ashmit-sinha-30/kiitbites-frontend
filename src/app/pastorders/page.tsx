@@ -2,15 +2,13 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { FaChevronDown, FaStar } from "react-icons/fa";
 import styles from "./styles/pastorder.module.scss";
-import axios from "axios";
+import { userApi } from "@/utils/apiUtils";
 import ReviewForm from "./components/ReviewForm";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { OrderSkeleton } from "../components/skeleton/SkeletonLoader/SkeletonLoader";
-
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import axios from "axios";
 
 interface OrderItem {
   name: string;
@@ -55,24 +53,6 @@ interface User {
   name: string;
 }
 
-// Get auth token
-const getAuthToken = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("token");
-  }
-  return null;
-};
-
-// Configure axios with auth header
-const getAuthConfig = () => {
-  const token = getAuthToken();
-  return {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-};
-
 const PastOrdersPageContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -93,21 +73,11 @@ const PastOrdersPageContent: React.FC = () => {
     hasInitialized.current = true;
 
     const initializePage = async () => {
-      const token = getAuthToken();
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
       try {
         // Fetch user and colleges in parallel
         const [userRes, collegesRes] = await Promise.all([
-          axios.get(`${BACKEND_URL}/api/user/auth/user`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${BACKEND_URL}/api/user/auth/list`, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
+          userApi.get("/api/user/auth/user"),
+          userApi.get("/api/user/auth/list")
         ]);
 
         setUser(userRes.data);
@@ -116,10 +86,8 @@ const PastOrdersPageContent: React.FC = () => {
         // Check for review assignments
         try {
           const uniId = userRes.data?.uniID || userRes.data?.college?._id;
-          if (uniId && token) {
-            const assignRes = await axios.get(`${BACKEND_URL}/api/university/universities/${uniId}/assignments`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
+          if (uniId) {
+            const assignRes = await userApi.get(`/api/university/universities/${uniId}/assignments`);
             const services = assignRes.data?.data?.services || [];
             const isAllowed = services.some((s: { name: string }) =>
               String(s.name || '').toLowerCase().includes('review')
@@ -151,10 +119,10 @@ const PastOrdersPageContent: React.FC = () => {
       try {
         setLoading(true);
         const url = selectedCollege
-          ? `${BACKEND_URL}/order/past/${user._id}?collegeId=${selectedCollege._id}`
-          : `${BACKEND_URL}/order/past/${user._id}`;
+          ? `/order/past/${user._id}?collegeId=${selectedCollege._id}`
+          : `/order/past/${user._id}`;
 
-        const response = await axios.get(url, getAuthConfig());
+        const response = await userApi.get(url);
         console.log('Past orders response:', response.data);
         setPastOrders(response.data.orders || []);
       } catch (error) {
@@ -168,7 +136,7 @@ const PastOrdersPageContent: React.FC = () => {
     };
 
     fetchPastOrders();
-  }, [user?._id, selectedCollege]); // Removed router from dependencies
+  }, [user?._id, selectedCollege, router]);
 
   // Handle URL query parameter on initial load or change
   useEffect(() => {
@@ -408,10 +376,8 @@ const PastOrdersPageContent: React.FC = () => {
                           onSubmit={async (rating, comment) => {
                             try {
                               setSubmitting(order._id);
-                              const token = getAuthToken();
-                              await axios.post(`${BACKEND_URL}/api/reviews/order/${order._id}`,
-                                { rating, comment },
-                                { headers: { Authorization: `Bearer ${token}` } }
+                              await userApi.post(`/api/reviews/order/${order._id}`,
+                                { rating, comment }
                               );
                               toast.success('Review submitted');
                               // Optimistically update review status

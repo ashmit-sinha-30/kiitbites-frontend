@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
-import { ENV_CONFIG } from '@/config/environment';
 import { UniTransitionOverlay } from '../components/shared/Skeleton/UniTransitionOverlay';
 import styles from "./styles/login.module.scss";
+import api from '@/utils/apiUtils';
 
 // Lazy load ToastContainer to reduce initial bundle size
 const ToastContainer = dynamic(
@@ -38,14 +38,9 @@ export default function UniLoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/uni/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(formData)
-      });
-      const json = await res.json();
-      if (!res.ok) {
+      const res = await api.post('/api/uni/auth/login', formData);
+      const json = res.data;
+      if (res.status !== 200) {
         toast.error(json.message || 'Login failed');
         return;
       }

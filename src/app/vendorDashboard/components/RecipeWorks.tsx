@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import api from "@/utils/apiUtils";
 import { useToast } from "@/hooks/use-toast";
 import styles from "../styles/RecipeWorks.module.scss";
 
@@ -19,6 +20,7 @@ interface Recipe {
   ingredients: Ingredient[];
   outputType: 'retail' | 'produce';
   outputItemId: string;
+  outputName?: string;
 }
 
 interface RawMaterial {
@@ -45,10 +47,6 @@ interface ApiRawItem {
   unit: string;
 }
 
-type ApiResult = {
-  success?: boolean;
-  message?: string;
-};
 
 const RecipeWorks: React.FC = () => {
   const { toast } = useToast();
@@ -61,64 +59,15 @@ const RecipeWorks: React.FC = () => {
   const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
   const [calculatedIngredients, setCalculatedIngredients] = useState<CalculatedIngredient[]>([]);
 
-  useEffect(() => {
-    // Get vendorId from localStorage
-    const storedVendorId = localStorage.getItem("vendorId");
-    if (storedVendorId) {
-      setVendorId(storedVendorId);
-    } else {
-      // Try to get from token
-      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/vendor/auth/user`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json"
-        },
-        credentials: "include"
-      })
-        .then(res => res.json())
-        .then(user => {
-          const id = user._id || user.id;
-          setVendorId(id);
-          localStorage.setItem("vendorId", id);
-        });
-    }
-  }, []);
 
-  useEffect(() => {
-    if (vendorId) {
-      fetchRecipes();
-      fetchRawMaterials();
-    }
-  }, [vendorId]);
 
-  useEffect(() => {
-    if (selectedRecipe && quantity > 0) {
-      calculateIngredients();
-    }
-  }, [selectedRecipe, quantity]);
 
-  // Recalculate when raw materials load/update
-  useEffect(() => {
-    if (selectedRecipe && quantity > 0) {
-      calculateIngredients();
-    }
-  }, [rawMaterials]);
-
-  const fetchRecipes = async () => {
+  const fetchRecipes = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+      const response = await api.get(`/inventory/recipe-works/recipes`);
 
-      const response = await fetch(`${backendUrl}/inventory/recipe-works/recipes`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        credentials: "include"
-      });
-
-      if (response.ok) {
-        const json = await response.json();
+      if (response.status === 200) {
+        const json = response.data;
         if (json.success) {
           // Combine retail and produce recipes
           const allRecipes = [...(json.data.retail || []), ...(json.data.produce || [])];
@@ -133,24 +82,16 @@ const RecipeWorks: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [toast]);
 
-  const fetchRawMaterials = async () => {
+  const fetchRawMaterials = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-      
       if (!vendorId) return;
 
-      const response = await fetch(`${backendUrl}/api/item/getvendors/${vendorId}/raw`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
+      const response = await api.get(`/api/item/getvendors/${vendorId}/raw`);
 
-      if (response.ok) {
-        const json = await response.json();
+      if (response.status === 200) {
+        const json = response.data;
         if (json.success && json.data) {
           const rawItems = (json.data.rawItems || []).map((item: ApiRawItem) => ({
             itemId: item.itemId || item._id,
@@ -165,9 +106,34 @@ const RecipeWorks: React.FC = () => {
     } catch (error) {
       console.error("Error fetching raw materials:", error);
     }
-  };
+  }, [vendorId]);
 
-  const calculateIngredients = () => {
+  useEffect(() => {
+    // Get vendorId from localStorage
+    const storedVendorId = localStorage.getItem("vendorId");
+    if (storedVendorId) {
+      setVendorId(storedVendorId);
+    } else {
+      // Try to get from token
+      api.get(`/api/vendor/auth/user`)
+        .then(response => {
+          const user = response.data;
+          const id = user._id || user.id;
+          setVendorId(id);
+          localStorage.setItem("vendorId", id);
+        })
+        .catch(err => console.error("Error fetching user:", err));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (vendorId) {
+      fetchRecipes();
+      fetchRawMaterials();
+    }
+  }, [vendorId, fetchRecipes, fetchRawMaterials]);
+
+  const calculateIngredients = useCallback(() => {
     if (!selectedRecipe) return;
 
     const multiplier = quantity / selectedRecipe.servings;
@@ -248,7 +214,7 @@ const RecipeWorks: React.FC = () => {
       // Prefer closingAmount when > 0, otherwise fall back to openingAmount if present
       const rawAvailable = rawMat ? (rawMat.closingAmount > 0 ? rawMat.closingAmount : (rawMat.openingAmount ?? 0)) : 0;
       const availableInTargetUnit = rawAvailable;
-      
+
       return {
         ...ing,
         requiredQty: requiredInTargetUnit,
@@ -259,7 +225,20 @@ const RecipeWorks: React.FC = () => {
     });
 
     setCalculatedIngredients(calculated);
-  };
+  }, [selectedRecipe, quantity, rawMaterials]);
+
+  useEffect(() => {
+    if (selectedRecipe && quantity > 0) {
+      calculateIngredients();
+    }
+  }, [selectedRecipe, quantity, calculateIngredients]);
+
+  // Recalculate when raw materials load/update
+  useEffect(() => {
+    if (selectedRecipe && quantity > 0) {
+      calculateIngredients();
+    }
+  }, [rawMaterials, calculateIngredients, selectedRecipe, quantity]);
 
   const handleCreateItems = async () => {
     if (!selectedRecipe) {
@@ -302,59 +281,35 @@ const RecipeWorks: React.FC = () => {
 
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
-      let response: Response;
+      let response;
+      const normalizeName = (name: string) => name.trim().toLowerCase();
+      const rawUsages = calculatedIngredients.map(ing => {
+        const rm = rawMaterials.find(r => normalizeName(r.name) === normalizeName(ing.name));
+        return rm ? { rawItemId: rm.itemId, quantity: ing.requiredQty, unit: rm.unit } : null;
+      }).filter(Boolean);
+
       if (selectedRecipe.outputType === 'retail') {
-        // Build rawUsages from calculatedIngredients using matched rawMaterials
-        const normalizeName = (name: string) => name.trim().toLowerCase();
-        const rawUsages = calculatedIngredients.map(ing => {
-          const rm = rawMaterials.find(r => normalizeName(r.name) === normalizeName(ing.name));
-          return rm ? { rawItemId: rm.itemId, quantity: ing.requiredQty, unit: rm.unit } : null;
-        }).filter(Boolean);
-        response = await fetch(`${backendUrl}/inventory/produce-retail-simple`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            vendorId,
-            quantity,
-            outputRetailItemId: selectedRecipe.outputItemId,
-            outputName: selectedRecipe.title,
-            rawUsages
-          })
+        response = await api.post(`/inventory/produce-retail-simple`, {
+          vendorId,
+          quantity,
+          outputRetailItemId: selectedRecipe.outputItemId,
+          outputName: selectedRecipe.title,
+          rawUsages
         });
       } else {
         // Produce: only deduct raw, do not change produce inventory
-        const normalizeName = (name: string) => name.trim().toLowerCase();
-        const rawUsages = calculatedIngredients.map(ing => {
-          const rm = rawMaterials.find(r => normalizeName(r.name) === normalizeName(ing.name));
-          return rm ? { rawItemId: rm.itemId, quantity: ing.requiredQty, unit: rm.unit } : null;
-        }).filter(Boolean);
-        response = await fetch(`${backendUrl}/inventory/produce-produce-simple`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            vendorId,
-            rawUsages,
-            outputProduceItemId: selectedRecipe.outputItemId,
-            outputName: selectedRecipe.title
-          })
+        response = await api.post(`/inventory/produce-produce-simple`, {
+          vendorId,
+          rawUsages,
+          outputProduceItemId: selectedRecipe.outputItemId,
+          outputName: selectedRecipe.title
         });
       }
 
-      let json: ApiResult | null = null;
-      try {
-        json = await response.json() as ApiResult;
-      } catch {}
+      const json = response.data;
 
-      if (response.ok && json?.success) {
+      if (response.status === 200 && json?.success) {
         toast({
           title: "Success",
           description: json.message || "Items created successfully"
@@ -521,4 +476,3 @@ const RecipeWorks: React.FC = () => {
 };
 
 export default RecipeWorks;
-

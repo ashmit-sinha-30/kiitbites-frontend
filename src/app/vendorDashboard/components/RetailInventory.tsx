@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import styles from "../styles/RetailInventory.module.scss"; // ensure filename matches
 import * as Switch from '@radix-ui/react-switch';
+import api from "@/utils/apiUtils";
 
 interface RetailApiItem {
   itemId: string;
@@ -48,15 +49,8 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}/retail`
-        );
-        if (!res.ok) {
-          throw new Error(
-            `Failed to fetch retail items (status ${res.status})`
-          );
-        }
-        const json = await res.json() as unknown;
+        const res = await api.get(`/api/item/getvendors/${vendorId}/retail`);
+        const json = res.data as unknown;
         let rawItems: unknown[] = [];
         if (isObject(json)) {
           const jsonObj = json as Record<string, unknown>;
@@ -78,8 +72,8 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
             typeof it.price === "number"
               ? it.price
               : typeof it.price === "string"
-              ? parseFloat(it.price) || 0
-              : 0,
+                ? parseFloat(it.price) || 0
+                : 0,
           quantity:
             typeof it.quantity === "number"
               ? it.quantity
@@ -153,8 +147,8 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
       setError(null);
 
       // Calculate new quantity based on update type
-      const newQuantity = updateType === "add" 
-        ? updatingItem.quantity + updateQuantity 
+      const newQuantity = updateType === "add"
+        ? updatingItem.quantity + updateQuantity
         : updateQuantity;
 
       if (newQuantity < 0) {
@@ -163,33 +157,21 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
       }
 
       // Call the inventory update API
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/inventory/add`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            vendorId,
-            itemId: updatingItem.itemId,
-            itemType: "retail",
-            quantity: updateType === "add" ? updateQuantity : newQuantity - updatingItem.quantity,
-          }),
-        }
-      );
+      const response = await api.post("/inventory/add", {
+        vendorId,
+        itemId: updatingItem.itemId,
+        itemType: "retail",
+        quantity: updateType === "add" ? updateQuantity : newQuantity - updatingItem.quantity,
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update inventory");
+      if (response.status !== 200) {
+        throw new Error(response.data.message || "Failed to update inventory");
       }
 
       // Refresh the items list
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}/retail`
-      );
-      if (res.ok) {
-        const json = await res.json();
+      const res = await api.get(`/api/item/getvendors/${vendorId}/retail`);
+      if (res.status === 200) {
+        const json = res.data;
         const rawItems = json.data?.retailItems || [];
         setItems(rawItems);
       }
@@ -247,7 +229,7 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
           <div className={styles.form}>
             <h3>Update Inventory - {updatingItem.name}</h3>
             <p>Current Stock: {updatingItem.quantity} units</p>
-            
+
             <div className={styles.formGroup}>
               <label>Update Type:</label>
               <select
@@ -291,8 +273,8 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
             )}
 
             <div className={styles.formActions}>
-              <button 
-                onClick={confirmUpdateInventory} 
+              <button
+                onClick={confirmUpdateInventory}
                 disabled={loading || updateQuantity < 0}
                 className={styles.updateButton}
               >
@@ -302,7 +284,7 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
                 Cancel
               </button>
             </div>
-            
+
             {error && <div className={styles.error}>{error}</div>}
           </div>
         </div>
@@ -349,12 +331,10 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
                       onCheckedChange={async (checked: boolean) => {
                         const newSpecial = checked ? 'Y' : 'N';
                         try {
-                          const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/vendor/${vendorId}/item/${item.itemId}/retail/special`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ isSpecial: newSpecial }),
+                          const res = await api.patch(`/api/vendor/${vendorId}/item/${item.itemId}/retail/special`, {
+                            isSpecial: newSpecial
                           });
-                          if (!res.ok) throw new Error('Failed to update special status');
+                          if (res.status !== 200) throw new Error('Failed to update special status');
                           setItems(prev => prev.map(it => it.itemId === item.itemId ? { ...it, isSpecial: newSpecial } : it));
                         } catch {
                           alert('Failed to update special status');
@@ -382,12 +362,10 @@ export const RetailInventory: React.FC<RetailInventoryProps> = ({
                             onCheckedChange={async (checked: boolean) => {
                               const newAvailable = checked ? 'Y' : 'N';
                               try {
-                                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/inventory/retail/availability`, {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ vendorId, itemId: item.itemId, isAvailable: newAvailable }),
+                                const res = await api.post("/inventory/retail/availability", {
+                                  vendorId, itemId: item.itemId, isAvailable: newAvailable
                                 });
-                                if (!res.ok) throw new Error('Failed to update availability');
+                                if (res.status !== 200) throw new Error('Failed to update availability');
                                 setItems(prev => prev.map(it => it.itemId === item.itemId ? { ...it, isAvailable: newAvailable } : it));
                               } catch {
                                 alert('Failed to update availability');

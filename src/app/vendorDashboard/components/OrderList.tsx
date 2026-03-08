@@ -3,9 +3,9 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Order } from "../types";
 import { OrderCard, LocalStatus } from "./OrderCard";
+import api from "@/utils/apiUtils";
 import styles from "../styles/OrderList.module.scss";
 
-const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 const PAGE_SIZE = 5; // number of orders per page
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
@@ -87,9 +87,8 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
     setError(null);
     try {
       const fetchType = async (type: Order["orderType"]) => {
-        const res = await fetch(`${BASE}/order/active/${vendorId}/${type}`);
-        if (!res.ok) throw new Error(`Failed to load ${type}`);
-        return res.json(); // response includes vendorId, vendorName, orders
+        const res = await api.get(`/order/active/${vendorId}/${type}`);
+        return res.data; // response includes vendorId, vendorName, orders
       };
 
       const [delRes, takeRes, dineRes, cashRes] = await Promise.all([
@@ -228,9 +227,8 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
     if (orderToUpdate?.order.orderType === "delivery") {
       if (next === "ready") {
         // Mark as ready - persist to backend
-        fetch(`${BASE}/order/${orderId}/ready`, { method: "PATCH" })
-          .then(async (res) => {
-            if (!res.ok) throw new Error("Failed to mark as ready");
+        api.patch(`/order/${orderId}/ready`)
+          .then(() => {
             setList(prev => prev.map(os =>
               os.order.orderId === orderId
                 ? { ...os, localStatus: mapToLocal("ready"), isUpdating: false }
@@ -249,7 +247,7 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
         return;
       } else if (next === "onTheWay") {
         // Start delivery - moves to delivery orders section
-        fetch(`${BASE}/order/${orderId}/onTheWay`, { method: "PATCH" })
+        api.patch(`/order/${orderId}/onTheWay`)
           .then(() => {
             // Order will be removed by the status change handler
           })
@@ -265,7 +263,7 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
         return;
       } else if (next === "delivered") {
         // Mark as delivered - moves to past orders
-        fetch(`${BASE}/order/${orderId}/deliver`, { method: "PATCH" })
+        api.patch(`/order/${orderId}/deliver`)
           .then(() => {
             // Order will be removed by the status change handler
           })
@@ -283,9 +281,8 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
     if (orderToUpdate?.order.orderType === "takeaway" || orderToUpdate?.order.orderType === "dinein") {
       if (next === "ready") {
         // Mark as ready - persist to backend
-        fetch(`${BASE}/order/${orderId}/ready`, { method: "PATCH" })
-          .then(async (res) => {
-            if (!res.ok) throw new Error("Failed to mark as ready");
+        api.patch(`/order/${orderId}/ready`)
+          .then(() => {
             setList(prev => prev.map(os =>
               os.order.orderId === orderId
                 ? { ...os, localStatus: mapToLocal("ready"), isUpdating: false }
@@ -304,7 +301,7 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
         return;
       } else if (next === "completed") {
         // Mark as completed - stays in active orders
-        fetch(`${BASE}/order/${orderId}/complete`, { method: "PATCH" })
+        api.patch(`/order/${orderId}/complete`)
           .then(() => {
             setList(prev => prev.map(os =>
               os.order.orderId === orderId
@@ -324,7 +321,7 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
         return;
       } else if (next === "delivered") {
         // Mark as delivered - moves to past orders
-        fetch(`${BASE}/order/${orderId}/deliver`, { method: "PATCH" })
+        api.patch(`/order/${orderId}/deliver`)
           .then(() => {
             // Order will be removed by the status change handler
           })
@@ -344,7 +341,7 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
         : next === "onTheWay"
           ? `/order/${orderId}/onTheWay`
           : `/order/${orderId}/complete`;
-    fetch(`${BASE}${endpoint}`, { method: "PATCH" })
+    api.patch(endpoint)
       .then(() => {
         setList(prev => prev.map(os =>
           os.order.orderId === orderId

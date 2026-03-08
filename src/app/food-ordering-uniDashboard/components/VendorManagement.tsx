@@ -2,9 +2,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Vendor } from "../types";
 import styles from "../styles/VendorManagement.module.scss";
+import api from "@/utils/apiUtils";
 import Modal from "react-modal";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
 
 interface Props {
   universityId: string;
@@ -30,14 +31,10 @@ export function VendorManagement({ universityId }: Props) {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(`${BACKEND_URL}/api/vendor/availability/uni/${universityId}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch vendors: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+
+      const response = await api.get(`/api/vendor/availability/uni/${universityId}`);
+
+      const data = response.data;
       setVendors(data);
     } catch (err) {
       console.error("Error fetching vendors:", err);
@@ -51,31 +48,25 @@ export function VendorManagement({ universityId }: Props) {
     try {
       setUpdatingVendor(vendorId);
       const newStatus = currentStatus === "Y" ? "N" : "Y";
-      
-      const response = await fetch(
-        `${BACKEND_URL}/api/vendor/availability/uni/${universityId}/vendor/${vendorId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ isAvailable: newStatus }),
-        }
+
+      const response = await api.patch(
+        `/api/vendor/availability/uni/${universityId}/vendor/${vendorId}`,
+        { isAvailable: newStatus }
       );
-      
-      if (!response.ok) {
+
+      if (response.status !== 200) {
         throw new Error(`Failed to update vendor: ${response.statusText}`);
       }
-      
+
       // Update the local state
-      setVendors(prev => 
-        prev.map(vendor => 
-          vendor._id === vendorId 
+      setVendors(prev =>
+        prev.map(vendor =>
+          vendor._id === vendorId
             ? { ...vendor, isAvailable: newStatus }
             : vendor
         )
       );
-      
+
     } catch (err) {
       console.error("Error updating vendor availability:", err);
       alert(`Failed to update vendor: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -88,12 +79,9 @@ export function VendorManagement({ universityId }: Props) {
     setDeleteLoading(true);
     setSuccessMsg("");
     try {
-      const res = await fetch(
-        `${BACKEND_URL}/api/vendor/delete/uni/${universityId}/vendor/${vendorId}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to delete vendor");
+      const res = await api.delete(`/api/vendor/delete/uni/${universityId}/vendor/${vendorId}`);
+      const data = res.data;
+      if (res.status !== 200) throw new Error(data.error || "Failed to delete vendor");
       setVendors(vendors.filter(v => v._id !== vendorId));
       setSuccessMsg("Vendor deleted successfully.");
     } catch (err: unknown) {
@@ -116,16 +104,9 @@ export function VendorManagement({ universityId }: Props) {
     setEditLoading(true);
     setSuccessMsg("");
     try {
-      const res = await fetch(
-        `${BACKEND_URL}/api/vendor/update/${editVendor._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(editVendor),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to update vendor");
+      const res = await api.put(`/api/vendor/update/${editVendor._id}`, editVendor);
+      const data = res.data;
+      if (res.status !== 200) throw new Error(data.error || "Failed to update vendor");
       setVendors(vendors.map(v => v._id === editVendor._id ? { ...v, ...editVendor } : v));
       setSuccessMsg("Vendor updated successfully.");
       setShowEditModal(false);
@@ -172,10 +153,10 @@ export function VendorManagement({ universityId }: Props) {
   // Filter vendors based on search query
   const filteredVendors = vendors.filter(vendor => {
     if (!searchQuery.trim()) return true;
-    
+
     const query = searchQuery.toLowerCase();
     const sellerTypeText = vendor.sellerType === "SELLER" ? "seller" : "non-seller";
-    
+
     return (
       vendor.fullName.toLowerCase().includes(query) ||
       vendor.email.toLowerCase().includes(query) ||

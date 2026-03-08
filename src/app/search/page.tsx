@@ -1,5 +1,6 @@
 "use client";
 
+import api from "@/utils/apiUtils";
 import { Suspense, useEffect, useState } from "react";
 import SearchBar from "../components/search/SearchBar/SearchBar";
 import { CartProvider } from "../home/[slug]/context/CartContext";
@@ -16,10 +17,8 @@ export default function SearchBarPage() {
       if (!token) return;
 
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/auth/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const user = await res.json();
+        const res = await api.get("/api/user/auth/user");
+        const user = res.data;
         if (user?._id) {
           setUserId(user._id);
         }

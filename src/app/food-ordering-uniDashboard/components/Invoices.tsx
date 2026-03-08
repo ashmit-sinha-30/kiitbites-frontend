@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { ENV_CONFIG } from "@/config/environment";
+import api from "@/utils/apiUtils";
 import styles from "../styles/Invoices.module.scss";
 
 interface InvoiceRow {
@@ -43,19 +44,15 @@ export default function Invoices({ universityId }: Props) {
     try {
       setLoading(true);
       setError(null);
-      const url = new URL(`${ENV_CONFIG.BACKEND.URL}/api/invoices/university/${universityId}`);
-      url.searchParams.set("limit", "100"); // Get more invoices for better grouping
-      url.searchParams.set("invoiceType", "vendor");
-
-      if (startDate) {
-        url.searchParams.set("startDate", startDate);
-      }
-      if (endDate) {
-        url.searchParams.set("endDate", endDate);
-      }
-
-      const res = await fetch(url.toString());
-      const json = await res.json();
+      const res = await api.get(`/api/invoices/university/${universityId}`, {
+        params: {
+          limit: 100,
+          invoiceType: "vendor",
+          startDate: startDate || undefined,
+          endDate: endDate || undefined
+        }
+      });
+      const json = res.data;
       if (json?.success) {
         const invoiceData = json.data?.invoices || [];
         setInvoices(invoiceData);
@@ -139,32 +136,20 @@ export default function Invoices({ universityId }: Props) {
 
       // Create AbortController for timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
+      setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
 
-      const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/invoices/bulk-zip-download`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          startDate,
-          endDate,
-          uniId: universityId,
-          invoiceType: 'vendor',
-          recipientType: 'vendor'
-        }),
-        signal: controller.signal
+      const response = await api.post("/api/invoices/bulk-zip-download", {
+        startDate,
+        endDate,
+        uniId: universityId,
+        invoiceType: 'vendor',
+        recipientType: 'vendor'
+      }, {
+        responseType: 'blob'
       });
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(errorData.message || 'Failed to download bulk invoices');
-      }
-
       // Create blob and download
-      const blob = await response.blob();
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

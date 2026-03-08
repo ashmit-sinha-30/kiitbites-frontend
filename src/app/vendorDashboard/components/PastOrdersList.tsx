@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { Order, OrderType, Status, Item } from "../types";
+import api from "@/utils/apiUtils";
 import styles from "../styles/OrderList.module.scss";
 
-const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 const PAGE_SIZE = 5; // number of orders per page
 const REFRESH_INTERVAL = 60000; // 60 seconds (less frequent for past orders)
 
@@ -48,15 +48,13 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
   const fetchPastOrders = useCallback(async () => {
     setError(null);
     try {
       // Fetch past orders for the vendor
-      const res = await fetch(`${BASE}/order/vendor-past/${vendorId}`);
-      if (!res.ok) throw new Error('Failed to load past orders');
-      const data: ApiResponse = await res.json();
+      const res = await api.get(`/order/vendor-past/${vendorId}`);
+      const data: ApiResponse = res.data;
 
       if (onLoaded && data.vendorName && data.vendorId) {
         onLoaded(data.vendorName, data.vendorId);
@@ -108,8 +106,8 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
   const downloadInvoice = async (orderId: string) => {
     try {
       // Fetch backend invoice list and use PDF download endpoint
-      const response = await fetch(`${API_BASE}/api/invoices/order/${orderId}`);
-      const data = await response.json();
+      const response = await api.get(`/api/invoices/order/${orderId}`);
+      const data = response.data;
 
       if (data?.success && Array.isArray(data.data) && data.data.length > 0) {
         const vendorInvoice = data.data.find((invoice: InvoiceData) => invoice.recipientType === 'vendor');
@@ -117,7 +115,7 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
 
         // Always use backend PDF download endpoint first
         if (selectedInvoice?._id) {
-          window.open(`${API_BASE}/api/invoices/${selectedInvoice._id}/download`, '_blank');
+          window.open(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices/${selectedInvoice._id}/download`, '_blank');
           return;
         }
         // Fallback to direct PDF URL if available

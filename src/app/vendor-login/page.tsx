@@ -7,7 +7,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import styles from './styles/vendorLogin.module.scss';
 import { VendorTransitionOverlay } from '../components/shared/Skeleton/VendorTransitionOverlay';
-import { getBackendUrl } from '@/utils/backendCheck';
+import api from '@/utils/apiUtils';
 
 // Lazy load ToastContainer to reduce initial bundle size
 const ToastContainer = dynamic(
@@ -39,33 +39,11 @@ const VendorLoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const backendUrl = getBackendUrl();
-      console.log('Backend URL:', backendUrl);
+      const response = await api.post('/api/vendor/auth/login', formData);
 
-      const response = await fetch(`${backendUrl}/api/vendor/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
+      const data = response.data;
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text);
-        toast.error('Server returned invalid response. Please check if backend is running.');
-        return;
-      }
-
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.status === 200) {
         // Store token and redirect to vendor dashboard
         localStorage.setItem('token', data.token);
         localStorage.setItem('vendorRole', 'seller'); // Default role, can be updated later

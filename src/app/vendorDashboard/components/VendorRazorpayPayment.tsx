@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import api from "@/utils/apiUtils";
 
 interface VendorRazorpayPaymentProps {
   vendorId: string;
@@ -137,39 +136,33 @@ export const VendorRazorpayPayment: React.FC<VendorRazorpayPaymentProps> = ({
       });
 
       // Create Razorpay order for vendor guest order
-      const createOrderResponse = await fetch(`${BACKEND_URL}/vendor-payment/create-order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          vendorId,
-          items,
-          total: (() => {
-            const itemTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const packableItems = items.filter(item => item.kind === "Produce");
-            const packingTotal = packableItems.reduce((sum, item) => sum + (packingCharge * item.quantity), 0);
-            return itemTotal + packingTotal;
-          })(),
-          collectorName,
-          collectorPhone,
-          orderType,
-        }),
+      const response = await api.post(`/vendor-payment/create-order`, {
+        vendorId,
+        items,
+        total: (() => {
+          const itemTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          const packableItems = items.filter(item => item.kind === "Produce");
+          const packingTotal = packableItems.reduce((sum, item) => sum + (packingCharge * item.quantity), 0);
+          return itemTotal + packingTotal;
+        })(),
+        collectorName,
+        collectorPhone,
+        orderType,
       });
 
-      if (!createOrderResponse.ok) {
+      if (response.status !== 200) {
         throw new Error("Failed to create Razorpay order");
       }
 
-      const razorpayOrder = await createOrderResponse.json();
+      const razorpayOrder = response.data;
       console.log("💳 Razorpay order created:", razorpayOrder);
 
       // Get Razorpay key
-      const keyResponse = await fetch(`${BACKEND_URL}/vendor-payment/key`);
-      if (!keyResponse.ok) {
+      const keyResponse = await api.get(`/vendor-payment/key`);
+      if (keyResponse.status !== 200) {
         throw new Error("Failed to get Razorpay key");
       }
-      const { key: razorpayKey } = await keyResponse.json();
+      const { key: razorpayKey } = keyResponse.data;
 
       // Create Razorpay options
       const options: RazorpayOptions = {
@@ -260,23 +253,17 @@ export const VendorRazorpayPayment: React.FC<VendorRazorpayPaymentProps> = ({
     try {
       console.log("📨 Verifying payment:", response);
 
-      const verifyResponse = await fetch(`${BACKEND_URL}/vendor-payment/verify`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature,
-        }),
+      const verifyResponse = await api.post(`/vendor-payment/verify`, {
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
       });
 
-      if (!verifyResponse.ok) {
+      if (verifyResponse.status !== 200) {
         throw new Error("Payment verification failed");
       }
 
-      const verifyResult = await verifyResponse.json();
+      const verifyResult = verifyResponse.data;
       console.log("✅ Payment verified:", verifyResult);
 
       if (verifyResult.success) {

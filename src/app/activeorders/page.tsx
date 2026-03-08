@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { ChevronDown } from "lucide-react";
 import styles from "./styles/activeorder.module.scss";
+import api from "@/utils/apiUtils";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer } from 'react-toastify';
@@ -9,8 +10,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import PageLoading from "../components/layout/PageLoading/PageLoading";
 import { OrderSkeleton } from "../components/skeleton/SkeletonLoader/SkeletonLoader";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
 
 interface OrderItem {
   name: string;
@@ -54,23 +54,6 @@ interface User {
   name: string;
 }
 
-// Get auth token
-const getAuthToken = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("token");
-  }
-  return null;
-};
-
-// Configure axios with auth header
-const getAuthConfig = () => {
-  const token = getAuthToken();
-  return {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-};
 
 const ActiveOrdersPageContent: React.FC = () => {
   const router = useRouter();
@@ -87,16 +70,13 @@ const ActiveOrdersPageContent: React.FC = () => {
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const token = getAuthToken();
+        const token = localStorage.getItem("token");
         if (!token) {
           router.push("/login");
           return;
         }
 
-        const response = await axios.get(
-          `${BACKEND_URL}/api/user/auth/user`,
-          getAuthConfig()
-        );
+        const response = await api.get("/api/user/auth/user");
         setUser(response.data);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -113,10 +93,7 @@ const ActiveOrdersPageContent: React.FC = () => {
   useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const response = await axios.get(
-          `${BACKEND_URL}/api/user/auth/list`,
-          getAuthConfig()
-        );
+        const response = await api.get("/api/user/auth/list");
         setColleges(response.data);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -137,10 +114,10 @@ const ActiveOrdersPageContent: React.FC = () => {
       try {
         setLoading(true);
         const url = selectedCollege
-          ? `${BACKEND_URL}/order/user-active/${user._id}?collegeId=${selectedCollege._id}`
-          : `${BACKEND_URL}/order/user-active/${user._id}`;
+          ? `/order/user-active/${user._id}?collegeId=${selectedCollege._id}`
+          : `/order/user-active/${user._id}`;
 
-        const response = await axios.get(url, getAuthConfig());
+        const response = await api.get(url);
         console.log('Active orders response:', response.data);
         setActiveOrders(response.data.orders || []);
       } catch (error) {

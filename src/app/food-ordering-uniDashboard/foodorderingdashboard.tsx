@@ -17,8 +17,9 @@ import UniGrievances from "./components/UniGrievances";
 import UniversityRecipes from "./components/UniversityRecipes";
 import MenuSorting from "./components/MenuSorting";
 import styles from "./styles/InventoryReport.module.scss";
-import { ENV_CONFIG } from "../../config/environment";
+
 import UniProfile from "./components/UniProfile";
+import api from "@/utils/apiUtils";
 
 export default function UniDashboardPage() {
   const router = useRouter();
@@ -102,12 +103,9 @@ export default function UniDashboardPage() {
           router.push("/uni-login");
           return;
         }
-        const userRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/uni/auth/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: "include",
-        });
-        if (userRes.ok) {
-          const user = await userRes.json();
+        const userRes = await api.get("/api/uni/auth/user");
+        if (userRes.status === 200) {
+          const user = userRes.data;
           const uniId = user._id || user.id;
           setUniversityId(uniId);
           setUniversityName(user.fullName || "University");
@@ -115,8 +113,8 @@ export default function UniDashboardPage() {
           // Store uniId in localStorage
           localStorage.setItem("uniId", uniId);
 
-          const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
-          const assignJson = await assignRes.json();
+          const assignRes = await api.get(`/api/university/universities/${uniId}/assignments`);
+          const assignJson = assignRes.data;
           if (assignJson.success) {
             setServices(assignJson.data.services);
           }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import styles from '../styles/VendorProfile.module.scss';
-import { ENV_CONFIG } from '@/config/environment';
+import api from "@/utils/apiUtils";
 import Image from 'next/image';
 
 interface VendorProfileProps {
@@ -36,15 +36,9 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ vendorId }) => {
     useEffect(() => {
         const fetchVendorData = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) return;
-
-                const res = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/vendor/auth/user`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
+                const res = await api.get("/api/vendor/auth/user");
+                if (res.status === 200) {
+                    const data = res.data;
                     setVendorData(data);
                     setProfilePreview(data.image || null);
                     setCoverPreview(data.coverImage || null);
@@ -100,20 +94,17 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ vendorId }) => {
                 return;
             }
 
-            const res = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/vendor/${vendorId}/profile`, {
-                method: 'PUT',
-                body: formData, // Don't set Content-Type header, let browser set it with boundary
+            const res = await api.put(`/api/vendor/${vendorId}/profile`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            const data = await res.json();
-
-            if (res.ok) {
+            if (res.status === 200) {
                 setMessage({ type: 'success', text: 'Profile updated successfully!' });
-                setVendorData(data.vendor);
+                setVendorData(res.data.vendor);
                 setProfileImageFile(null);
                 setCoverImageFile(null);
             } else {
-                throw new Error(data.message || 'Failed to update profile');
+                throw new Error(res.data.message || 'Failed to update profile');
             }
         } catch (err: unknown) {
             console.error("Error updating profile:", err);

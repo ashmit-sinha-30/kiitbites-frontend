@@ -2,16 +2,14 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
 
 import styles from "./styles/FavouriteFoodPage.module.scss";
-import axios from "axios";
+import { userApi } from "@/utils/apiUtils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaChevronDown } from "react-icons/fa";
 import DishListItem from "@/app/components/food/DishListItem/DishListItemV2";
 import { FoodItem as HomeFoodItem } from "@/app/home/[slug]/types";
-
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import axios from "axios";
 
 interface FoodItem {
   _id: string;
@@ -65,26 +63,6 @@ interface CartResponseItem {
   vendorName: string;
 }
 
-// Categories are now dynamic - types are determined from the item's kind field
-
-// Get auth token
-const getAuthToken = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("token");
-  }
-  return null;
-};
-
-// Configure axios with auth header
-const getAuthConfig = () => {
-  const token = getAuthToken();
-  return {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-};
-
 const FavouriteFoodPageContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -105,16 +83,7 @@ const FavouriteFoodPageContent: React.FC = () => {
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const token = getAuthToken();
-        if (!token) {
-          router.push("/login");
-          return;
-        }
-
-        const response = await axios.get(
-          `${BACKEND_URL}/api/user/auth/user`,
-          getAuthConfig()
-        );
+        const response = await userApi.get("/api/user/auth/user");
         setUser(response.data);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -129,10 +98,7 @@ const FavouriteFoodPageContent: React.FC = () => {
   useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const response = await axios.get(
-          `${BACKEND_URL}/api/user/auth/list`,
-          getAuthConfig()
-        );
+        const response = await userApi.get("/api/user/auth/list");
         setColleges(response.data);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -151,10 +117,10 @@ const FavouriteFoodPageContent: React.FC = () => {
       try {
         setLoading(true);
         const url = selectedCollege
-          ? `${BACKEND_URL}/fav/${user._id}/${selectedCollege._id}`
-          : `${BACKEND_URL}/fav/${user._id}`;
+          ? `/fav/${user._id}/${selectedCollege._id}`
+          : `/fav/${user._id}`;
 
-        const response = await axios.get(url, getAuthConfig());
+        const response = await userApi.get(url);
         setFavorites(response.data.favourites);
         setFavoriteIds(response.data.favourites.map((f: FoodItem) => `${f._id}-${f.vendorId}`));
       } catch (error) {
@@ -181,11 +147,9 @@ const FavouriteFoodPageContent: React.FC = () => {
       vendorId: item.vendorId,
       collegeId: item.uniId,
       collegeName: colleges.find(c => c._id === item.uniId)?.fullName || "",
-      // For favorites, we might not have all details like isVeg or description here
-      // but DishListItemV2 can handle defaults
       isVeg: (item as unknown as { isVeg?: boolean }).isVeg,
       description: "",
-      isAvailable: 'Y' // Assuming favorites are generally available or handled by stock badge
+      isAvailable: 'Y'
     };
   };
 
@@ -206,17 +170,9 @@ const FavouriteFoodPageContent: React.FC = () => {
       );
 
       // Make PATCH request
-      const res = await fetch(
-        `${BACKEND_URL}/fav/${userId}/${itemId}/${kind}/${vendorId}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-          },
-        }
-      );
+      const res = await userApi.patch(`/fav/${userId}/${itemId}/${kind}/${vendorId}`);
 
-      if (!res.ok) {
+      if (res.status !== 200) {
         throw new Error("Failed to update favorite");
       }
 
@@ -239,13 +195,10 @@ const FavouriteFoodPageContent: React.FC = () => {
     const fetchVendors = async () => {
       try {
         if (selectedCollege) {
-          const response = await axios.get(
-            `${BACKEND_URL}/api/vendor/list/uni/${selectedCollege._id}`,
-            getAuthConfig()
-          );
+          const response = await userApi.get(`/api/vendor/list/uni/${selectedCollege._id}`);
           const vendorsMap = response.data.reduce(
             (acc: { [key: string]: string }, vendor: Vendor) => {
-              acc[vendor._id] = vendor.name;
+              acc[vendor._id] = (vendor as unknown as { fullName: string }).fullName || vendor.name;
               return acc;
             },
             {}
@@ -254,10 +207,7 @@ const FavouriteFoodPageContent: React.FC = () => {
         } else {
           // Fetch all vendors for all colleges
           const vendorPromises = colleges.map((college) =>
-            axios.get(
-              `${BACKEND_URL}/api/vendor/list/uni/${college._id}`,
-              getAuthConfig()
-            )
+            userApi.get(`/api/vendor/list/uni/${college._id}`)
           );
 
           const responses = await Promise.all(vendorPromises);
@@ -267,7 +217,7 @@ const FavouriteFoodPageContent: React.FC = () => {
           const vendorsMap = allVendors.reduce(
             (acc: { [key: string]: string }, vendor: Vendor) => {
               if (!acc[vendor._id]) {
-                acc[vendor._id] = vendor.name;
+                acc[vendor._id] = (vendor as unknown as { fullName: string }).fullName || vendor.name;
               }
               return acc;
             },
@@ -292,10 +242,7 @@ const FavouriteFoodPageContent: React.FC = () => {
       if (!user?._id) return;
 
       try {
-        const response = await axios.get(
-          `${BACKEND_URL}/cart/${user._id}`,
-          getAuthConfig()
-        );
+        const response = await userApi.get(`/cart/${user._id}`);
         const cartData = response.data.cart || [];
         const formattedCartItems = cartData.map((item: CartResponseItem) => ({
           _id: item.itemId,
@@ -376,16 +323,13 @@ const FavouriteFoodPageContent: React.FC = () => {
       const isRetail = kind === "Retail";
       const isProduce = kind === "Produce";
 
-      const response = await fetch(`${BACKEND_URL}/api/item/vendors/${itemId}`, {
-        credentials: "include",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      const response = await userApi.get(`/api/item/vendors/${itemId}`);
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         return false;
       }
 
-      const vendors = await response.json() as Vendor[];
+      const vendors = response.data as Vendor[];
 
       const vendor = vendors.find((v) => v._id === vendorId);
 
@@ -440,34 +384,23 @@ const FavouriteFoodPageContent: React.FC = () => {
 
       if (existingItem) {
         // If item exists, increase quantity
-        await axios.post(
-          `${BACKEND_URL}/cart/add-one/${user._id}`,
-          {
-            itemId: foodItem._id,
-            kind: foodItem.kind,
-            vendorId: foodItem.vendorId
-          },
-          getAuthConfig()
-        );
+        await userApi.post(`/cart/add-one/${user._id}`, {
+          itemId: foodItem._id,
+          kind: foodItem.kind,
+          vendorId: foodItem.vendorId
+        });
       } else {
         // If item doesn't exist, add new item
-        await axios.post(
-          `${BACKEND_URL}/cart/add/${user._id}`,
-          {
-            itemId: foodItem._id,
-            kind: foodItem.kind,
-            quantity: 1,
-            vendorId: foodItem.vendorId
-          },
-          getAuthConfig()
-        );
+        await userApi.post(`/cart/add/${user._id}`, {
+          itemId: foodItem._id,
+          kind: foodItem.kind,
+          quantity: 1,
+          vendorId: foodItem.vendorId
+        });
       }
 
       // Fetch updated cart after adding item
-      const response = await axios.get(
-        `${BACKEND_URL}/cart/${user._id}`,
-        getAuthConfig()
-      );
+      const response = await userApi.get(`/cart/${user._id}`);
       const cartData = response.data.cart || [];
 
       // Update cart items with correct vendor information
@@ -514,21 +447,14 @@ const FavouriteFoodPageContent: React.FC = () => {
         return;
       }
 
-      await axios.post(
-        `${BACKEND_URL}/cart/add-one/${user._id}`,
-        {
-          itemId: foodItem._id,
-          kind: foodItem.kind,
-          vendorId: foodItem.vendorId
-        },
-        getAuthConfig()
-      );
+      await userApi.post(`/cart/add-one/${user._id}`, {
+        itemId: foodItem._id,
+        kind: foodItem.kind,
+        vendorId: foodItem.vendorId
+      });
 
       // Fetch updated cart after increasing quantity
-      const response = await axios.get(
-        `${BACKEND_URL}/cart/${user._id}`,
-        getAuthConfig()
-      );
+      const response = await userApi.get(`/cart/${user._id}`);
       const cartData = response.data.cart || [];
 
       // Update cart items with correct vendor information
@@ -562,21 +488,14 @@ const FavouriteFoodPageContent: React.FC = () => {
     if (!user?._id) return;
 
     try {
-      await axios.post(
-        `${BACKEND_URL}/cart/remove-one/${user._id}`,
-        {
-          itemId: foodItem._id,
-          kind: foodItem.kind,
-          vendorId: foodItem.vendorId
-        },
-        getAuthConfig()
-      );
+      await userApi.post(`/cart/remove-one/${user._id}`, {
+        itemId: foodItem._id,
+        kind: foodItem.kind,
+        vendorId: foodItem.vendorId
+      });
 
       // Fetch updated cart after decreasing quantity
-      const response = await axios.get(
-        `${BACKEND_URL}/cart/${user._id}`,
-        getAuthConfig()
-      );
+      const response = await userApi.get(`/cart/${user._id}`);
       const cartData = response.data.cart || [];
 
       // Update cart items with correct vendor information
@@ -584,8 +503,8 @@ const FavouriteFoodPageContent: React.FC = () => {
         _id: item.itemId,
         quantity: item.quantity,
         kind: item.kind,
-        vendorId: foodItem.vendorId, // Use the vendor ID from the food item
-        vendorName: foodItem.vendorName || getVendorName(foodItem.vendorId) // Use the vendor name from the food item or look it up
+        vendorId: foodItem.vendorId,
+        vendorName: foodItem.vendorName || getVendorName(foodItem.vendorId)
       }));
 
       setCartItems(formattedCartItems);
@@ -616,29 +535,6 @@ const FavouriteFoodPageContent: React.FC = () => {
     return vendorName;
   };
 
-  // Add a function to clear cart
-  // const clearCart = async () => {
-  //   if (!user?._id) return;
-
-  //   try {
-  //     await axios.post(
-  //       `${BACKEND_URL}/cart/clear/${user._id}`,
-  //       {},
-  //       getAuthConfig()
-  //     );
-  //     setCartItems([]);
-  //     setCurrentVendorId(null);
-  //     toast.success("Cart cleared successfully");
-  //   } catch {
-  //     toast.error("Failed to clear cart");
-  //   }
-  // };
-
-  // Add a function to check if cart is empty
-  // const isCartEmpty = () => {
-  //   return cartItems.length === 0;
-  // };
-
   return (
     <div className={styles.container}>
       <ToastContainer
@@ -655,14 +551,6 @@ const FavouriteFoodPageContent: React.FC = () => {
       />
       <div className={styles.header}>
         <h1>Your Favorites</h1>
-        {/* {!isCartEmpty() && (
-          <button
-            className={styles.clearCartButton}
-            onClick={clearCart}
-          >
-            Clear Cart
-          </button>
-        )} */}
       </div>
 
       <div className={styles.dropdownContainer} ref={dropdownRef}>

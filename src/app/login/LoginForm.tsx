@@ -7,6 +7,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import dynamic from "next/dynamic";
 import styles from "./styles/Login.module.scss";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import api from "@/utils/apiUtils";
 import { TransitionOverlay } from "../components/shared/Skeleton/TransitionOverlay";
 // import GoogleLogin from "./GoogleLogin";
 
@@ -60,17 +61,12 @@ export default function LoginForm() {
     try {
       setIsLoading(true);
 
-      const res = await fetch(`${BACKEND_URL}/api/user/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(formData),
-      });
+      const res = await api.post("/api/user/auth/login", formData);
 
-      const data = await res.json();
+      const data = res.data;
 
       if (res.status === 400 && data.redirectTo) {
-        // If user is unverified, redirect them to /otpverification
+        // ... (OTP redirect logic remains the same)
         notify("Account not verified. OTP sent to email.", "error");
         setTimeout(() => {
           router.push(
@@ -82,7 +78,7 @@ export default function LoginForm() {
         return;
       }
 
-      if (!res.ok) {
+      if (res.status !== 200) {
         notify(data.message || "Login failed. Please try again.", "error");
         return;
       }
@@ -94,13 +90,7 @@ export default function LoginForm() {
 
       // Optionally, call refresh API immediately after login
       try {
-        await fetch(`${BACKEND_URL}/api/user/auth/refresh`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${data.token}`,
-          },
-        });
+        await api.get("/api/user/auth/refresh");
       } catch {
         // Ignore refresh errors here
       }
@@ -110,23 +100,17 @@ export default function LoginForm() {
 
       // Get user data to determine university slug for redirect
       try {
-        const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${data.token}`,
-          },
-        });
+        const userResponse = await api.get("/api/user/auth/user");
 
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
+        if (userResponse.status === 200) {
+          const userData = userResponse.data;
           const uniId = userData?.uniID || userData?.college?._id;
 
           if (uniId) {
             // Fetch college data to get the slug
-            const collegeResponse = await fetch(`${BACKEND_URL}/api/user/auth/list`);
-            if (collegeResponse.ok) {
-              const colleges = await collegeResponse.json();
+            const collegeResponse = await api.get("/api/user/auth/list");
+            if (collegeResponse.status === 200) {
+              const colleges = collegeResponse.data;
               const userCollege = colleges.find((college: { _id: string; fullName: string }) => college._id === uniId);
 
               if (userCollege) {
@@ -168,20 +152,11 @@ export default function LoginForm() {
   // Auto-refresh token on visit
   const checkSession = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${BACKEND_URL}/api/user/auth/refresh`, {
-        method: "GET",
-        credentials: "include",
-        headers: token
-          ? {
-            Authorization: `Bearer ${token}`,
-          }
-          : {},
-      });
+      const res = await api.get("/api/user/auth/refresh");
 
-      if (res.ok) {
+      if (res.status === 200) {
         console.log("✅ Session refreshed successfully");
-        const data = await res.json();
+        const data = res.data;
         if (data.token) {
           localStorage.setItem("token", data.token);
         }

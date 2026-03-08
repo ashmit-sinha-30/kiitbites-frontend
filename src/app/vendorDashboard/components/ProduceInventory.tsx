@@ -4,8 +4,7 @@
 import React, { useEffect, useState } from "react";
 import styles from "../styles/ProduceInventory.module.scss";
 import * as Switch from '@radix-ui/react-switch';
-
-const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import api from "@/utils/apiUtils";
 
 interface ProduceApiItem {
   itemId: string;
@@ -38,13 +37,8 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${BASE}/api/item/getvendors/${vendorId}/produce`);
-        if (!res.ok) {
-          throw new Error(
-            `Failed to fetch produce items (status ${res.status})`
-          );
-        }
-        const json = await res.json() as unknown;
+        const res = await api.get(`/api/item/getvendors/${vendorId}/produce`);
+        const json = res.data;
         let rawItems: unknown[] = [];
         function isObject(val: unknown): val is Record<string, unknown> {
           return typeof val === 'object' && val !== null;
@@ -69,8 +63,8 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
             typeof it.price === "number"
               ? it.price
               : typeof it.price === "string"
-              ? parseFloat(it.price) || 0
-              : 0,
+                ? parseFloat(it.price) || 0
+                : 0,
           isAvailable: it.isAvailable === "Y" ? "Y" : "N",
           type: it.type ?? "",
           isSpecial: it.isSpecial === "Y" ? "Y" : "N",
@@ -185,12 +179,10 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
                       onCheckedChange={async (checked: boolean) => {
                         const newAvailable = checked ? 'Y' : 'N';
                         try {
-                          const res = await fetch(`${BASE}/api/vendor/${vendorId}/item/${item.itemId}/produce/available`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ isAvailable: newAvailable }),
+                          const res = await api.patch(`/api/vendor/${vendorId}/item/${item.itemId}/produce/available`, {
+                            isAvailable: newAvailable
                           });
-                          if (!res.ok) throw new Error('Failed to update available status');
+                          if (res.status !== 200) throw new Error('Failed to update available status');
                           setItems(prev => prev.map(it => it.itemId === item.itemId ? { ...it, isAvailable: newAvailable } : it));
                         } catch {
                           alert('Failed to update available status');
@@ -211,12 +203,10 @@ export const ProduceInventory: React.FC<ProduceInventoryProps> = ({
                       onCheckedChange={async (checked: boolean) => {
                         const newSpecial = checked ? 'Y' : 'N';
                         try {
-                          const res = await fetch(`${BASE}/api/vendor/${vendorId}/item/${item.itemId}/produce/special`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ isSpecial: newSpecial }),
+                          const res = await api.patch(`/api/vendor/${vendorId}/item/${item.itemId}/produce/special`, {
+                            isSpecial: newSpecial
                           });
-                          if (!res.ok) throw new Error('Failed to update special status');
+                          if (res.status !== 200) throw new Error('Failed to update special status');
                           setItems(prev => prev.map(it => it.itemId === item.itemId ? { ...it, isSpecial: newSpecial } : it));
                         } catch {
                           alert('Failed to update special status');

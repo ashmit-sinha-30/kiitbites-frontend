@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AiOutlineSend, AiOutlineInbox, AiOutlineCheck, AiOutlineClose } from "react-icons/ai";
+import api from "@/utils/apiUtils";
 import styles from "../styles/InventoryTransfer.module.scss";
-
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 interface TransferItem {
   itemId: string;
@@ -46,39 +45,33 @@ export const InventoryTransfer: React.FC<InventoryTransferProps> = ({ vendorId }
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  useEffect(() => {
-    fetchVendors();
-    fetchAvailableItems();
-    fetchTransferOrders();
-  }, []);
 
   // Load vendors of same university (excluding self)
-  const fetchVendors = async () => {
+  const fetchVendors = useCallback(async () => {
     try {
       // First get current vendor's uniID
-      const vendorResp = await fetch(`${BASE_URL}/api/item/getvendors/${vendorId}`);
-      if (!vendorResp.ok) return;
-      const vendorJson = await vendorResp.json();
+      const vendorResp = await api.get(`/api/item/getvendors/${vendorId}`);
+      const vendorJson = vendorResp.data;
       const uniId: string | undefined = vendorJson?.uniID;
       if (!uniId) return;
 
-      const response = await fetch(`${BASE_URL}/api/vendor/list/uni/${uniId}`);
-      if (response.ok) {
-        const data: Vendor[] = await response.json();
+      const response = await api.get(`/api/vendor/list/uni/${uniId}`);
+      if (response.status === 200) {
+        const data: Vendor[] = response.data;
         const otherVendors = data.filter((v) => v._id !== vendorId);
         setVendors(otherVendors);
       }
     } catch (error) {
       console.error("Error fetching vendors:", error);
     }
-  };
+  }, [vendorId]);
 
   // Load current vendor retail items (available to transfer)
-  const fetchAvailableItems = async () => {
+  const fetchAvailableItems = useCallback(async () => {
     try {
-      const response = await fetch(`${BASE_URL}/api/item/getvendors/${vendorId}/retail`);
-      if (response.ok) {
-        const json = await response.json();
+      const response = await api.get(`/api/item/getvendors/${vendorId}/retail`);
+      if (response.status === 200) {
+        const json = response.data;
         const rawItems = json?.data?.retailItems ?? json?.items ?? [];
         // Normalize shape to {_id, name, quantity}
         const normalized = (rawItems as { itemId?: string; _id?: string; name?: string; quantity?: number | string }[]).map((it) => ({
@@ -91,19 +84,19 @@ export const InventoryTransfer: React.FC<InventoryTransferProps> = ({ vendorId }
     } catch (error) {
       console.error("Error fetching available items:", error);
     }
-  };
+  }, [vendorId]);
 
   // Load pending transfers for this vendor as receiver
-  const fetchTransferOrders = async () => {
+  const fetchTransferOrders = useCallback(async () => {
     try {
-      const response = await fetch(`${BASE_URL}/api/transfer-orders/${vendorId}`);
-      if (response.ok) {
-        const data = await response.json();
+      const response = await api.get(`/api/transfer-orders/${vendorId}`);
+      if (response.status === 200) {
+        const data = response.data;
         const orders = (data?.orders ?? []).map((o: { _id: string; status: string; items: Array<{ itemId: string; quantity: number; itemName?: string; itemType?: string; unit?: string }>; createdAt: string }) => ({
           orderId: o._id,
           status: o.status,
-          items: (o.items ?? []).map((it: { itemId: string; quantity: number; itemName?: string; itemType?: string; unit?: string }) => ({ 
-            itemId: String(it.itemId), 
+          items: (o.items ?? []).map((it: { itemId: string; quantity: number; itemName?: string; itemType?: string; unit?: string }) => ({
+            itemId: String(it.itemId),
             quantity: Number(it.quantity),
             itemName: it.itemName,
             itemType: it.itemType,
@@ -116,7 +109,7 @@ export const InventoryTransfer: React.FC<InventoryTransferProps> = ({ vendorId }
     } catch (error) {
       console.error("Error fetching transfer orders:", error);
     }
-  };
+  }, [vendorId]);
 
   const handleItemSelection = (itemId: string, quantity: number) => {
     setSelectedItems((prev) => {
@@ -144,15 +137,9 @@ export const InventoryTransfer: React.FC<InventoryTransferProps> = ({ vendorId }
         items: selectedItems.filter((i) => i.quantity > 0),
       };
 
-      const response = await fetch(`${BASE_URL}/api/transfer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(transferRequest),
-      });
+      const response = await api.post("/api/transfer", transferRequest);
 
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         setMessage({ type: "success", text: "Transfer request sent successfully!" });
         // Clear all form data and selections
         setSelectedItems([]);
@@ -165,7 +152,7 @@ export const InventoryTransfer: React.FC<InventoryTransferProps> = ({ vendorId }
         fetchTransferOrders();
         fetchVendors();
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = response.data || {};
         setMessage({ type: "error", text: errorData.error || errorData.message || "Failed to send transfer" });
       }
     } catch {
@@ -177,29 +164,29 @@ export const InventoryTransfer: React.FC<InventoryTransferProps> = ({ vendorId }
 
   const handleConfirmTransfer = async (orderId: string) => {
     try {
-      const response = await fetch(`${BASE_URL}/api/confirm-transfer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderId,
-          receiverVendorId: vendorId,
-        }),
+      const response = await api.post("/api/confirm-transfer", {
+        orderId,
+        receiverVendorId: vendorId,
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         setMessage({ type: "success", text: "Transfer confirmed successfully!" });
         fetchAvailableItems();
         fetchTransferOrders();
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = response.data || {};
         setMessage({ type: "error", text: errorData.error || errorData.message || "Failed to confirm transfer" });
       }
     } catch {
       setMessage({ type: "error", text: "Error confirming transfer" });
     }
   };
+
+  useEffect(() => {
+    fetchVendors();
+    fetchAvailableItems();
+    fetchTransferOrders();
+  }, [fetchVendors, fetchAvailableItems, fetchTransferOrders]);
 
   const removeSelectedItem = (itemId: string) => {
     setSelectedItems((prev) => prev.filter((item) => item.itemId !== itemId));

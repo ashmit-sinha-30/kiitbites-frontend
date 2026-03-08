@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AiOutlinePoweroff, AiOutlineCheckCircle } from 'react-icons/ai';
+import api from '@/utils/apiUtils';
 import styles from '../styles/VendorAvailabilityToggle.module.scss';
 
 interface VendorAvailabilityToggleProps {
@@ -15,15 +16,13 @@ const VendorAvailabilityToggle: React.FC<VendorAvailabilityToggleProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-
   // Fetch current availability status
   useEffect(() => {
     const fetchAvailability = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/vendor/${vendorId}/availability`);
-        if (response.ok) {
-          const data = await response.json();
+        const response = await api.get(`/api/vendor/${vendorId}/availability`);
+        if (response.status === 200) {
+          const data = response.data;
           if (data.success) {
             setIsAvailable(data.data.isAvailable);
           }
@@ -33,32 +32,31 @@ const VendorAvailabilityToggle: React.FC<VendorAvailabilityToggleProps> = ({
       }
     };
 
-    if (vendorId) {
+    if (vendorId && vendorId !== "—") {
       fetchAvailability();
     }
   }, [vendorId]);
 
   const toggleAvailability = async () => {
+    if (!vendorId || vendorId === "—") {
+      setError("Vendor ID is missing");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const newAvailability = !isAvailable;
-      const response = await fetch(
-        `${BACKEND_URL}/api/vendor/${vendorId}/toggle-availability`,
+      const response = await api.patch(
+        `/api/vendor/${vendorId}/toggle-availability`,
         {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            isAvailable: newAvailability ? 'Y' : 'N'
-          })
+          isAvailable: newAvailability ? 'Y' : 'N'
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
+      if (response.status === 200) {
+        const data = response.data;
         if (data.success) {
           setIsAvailable(newAvailability);
           onAvailabilityChange?.(newAvailability);
@@ -66,7 +64,7 @@ const VendorAvailabilityToggle: React.FC<VendorAvailabilityToggleProps> = ({
           setError(data.message || 'Failed to update availability');
         }
       } else {
-        const errorData = await response.json();
+        const errorData = response.data;
         setError(errorData.message || 'Failed to update availability');
       }
     } catch (err) {
@@ -99,7 +97,7 @@ const VendorAvailabilityToggle: React.FC<VendorAvailabilityToggleProps> = ({
             {isAvailable ? 'Available' : 'Unavailable'}
           </span>
         </button>
-        
+
         {loading && (
           <div className={styles.loadingOverlay}>
             <div className={styles.spinner}></div>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import styles from "../styles/UniversityRecipes.module.scss";
+import api from "@/utils/apiUtils";
 
 interface Ingredient {
   name: string;
@@ -90,52 +91,42 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
   const [cuisineFilter, setCuisineFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
   const [vendorFilter, setVendorFilter] = useState("");
-  const [vendors, setVendors] = useState<Array<{_id: string, fullName: string, vendorName?: string}>>([]);
+  const [vendors, setVendors] = useState<Array<{ _id: string, fullName: string, vendorName?: string }>>([]);
   const [sortBy, setSortBy] = useState("newest");
   const { toast } = useToast();
 
   const fetchRecipes = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-      
-      let url = `${backendUrl}/api/recipes/university`;
-      const params = new URLSearchParams();
-      // Don't filter by status - show all recipes (draft, published, archived)
-      if (categoryFilter) params.append("category", categoryFilter);
-      if (cuisineFilter) params.append("cuisine", cuisineFilter);
-      if (vendorFilter) params.append("vendorId", vendorFilter);
-      if (searchTerm) params.append("search", searchTerm);
-      if (params.toString()) url += `?${params.toString()}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+      const response = await api.get("/api/recipes/university", {
+        params: {
+          category: categoryFilter || undefined,
+          cuisine: cuisineFilter || undefined,
+          vendorId: vendorFilter || undefined,
+          search: searchTerm || undefined
         }
       });
 
-      if (response.ok) {
-        const json = await response.json();
+      if (response.status === 200) {
+        const json = response.data;
         if (json.success) {
           let filteredRecipes = json.data;
-          
+
           // Apply difficulty filter
           if (difficultyFilter) {
-            filteredRecipes = filteredRecipes.filter((recipe: Recipe) => 
+            filteredRecipes = filteredRecipes.filter((recipe: Recipe) =>
               recipe.difficulty === difficultyFilter
             );
           }
-          
+
           // Apply sorting
           switch (sortBy) {
             case "newest":
-              filteredRecipes.sort((a: Recipe, b: Recipe) => 
+              filteredRecipes.sort((a: Recipe, b: Recipe) =>
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               );
               break;
             case "oldest":
-              filteredRecipes.sort((a: Recipe, b: Recipe) => 
+              filteredRecipes.sort((a: Recipe, b: Recipe) =>
                 new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
               );
               break;
@@ -155,7 +146,7 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
               filteredRecipes.sort((a: Recipe, b: Recipe) => a.cookTime - b.cookTime);
               break;
           }
-          
+
           setRecipes(filteredRecipes);
         }
       }
@@ -173,18 +164,14 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
 
   const fetchVendors = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-      
-      const response = await fetch(`${backendUrl}/api/recipes/university?vendorId=all`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+      const response = await api.get("/api/recipes/university", {
+        params: {
+          vendorId: "all"
         }
       });
 
-      if (response.ok) {
-        const json = await response.json();
+      if (response.status === 200) {
+        const json = response.data;
         if (json.success) {
           // Extract unique vendors from recipes
           const vendorMap = new Map();
@@ -208,33 +195,23 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
 
   const handleStatusChange = async (recipeId: string, newStatus: string) => {
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+      const response = await api.patch(`/api/recipes/university/${recipeId}/status`, { status: newStatus });
 
-      const response = await fetch(`${backendUrl}/api/recipes/university/${recipeId}/status`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      const json = await response.json();
+      const json = response.data;
 
       if (json.success) {
         toast({
           title: "Success",
           description: `Recipe ${newStatus} successfully`
         });
-        
+
         // Update the recipe in the list
-        setRecipes(prev => prev.map(recipe => 
-          recipe._id === recipeId 
+        setRecipes(prev => prev.map(recipe =>
+          recipe._id === recipeId
             ? { ...recipe, status: newStatus as 'draft' | 'published' | 'archived' }
             : recipe
         ));
-        
+
         // Update the viewing recipe if it's the same one
         if (viewingRecipe && viewingRecipe._id === recipeId) {
           setViewingRecipe(prev => prev ? { ...prev, status: newStatus as 'draft' | 'published' | 'archived' } : null);
@@ -319,7 +296,7 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
             Clear Filters
           </button>
         </div>
-        
+
         <div className={styles.filtersRow}>
           <select
             value={categoryFilter}
@@ -330,7 +307,7 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
               <option key={cat} value={cat}>{cat.replace('_', ' ').toUpperCase()}</option>
             ))}
           </select>
-          
+
           <select
             value={cuisineFilter}
             onChange={(e) => setCuisineFilter(e.target.value)}
@@ -340,7 +317,7 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
               <option key={cuisine} value={cuisine}>{cuisine.replace('_', ' ').toUpperCase()}</option>
             ))}
           </select>
-          
+
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value)}
@@ -350,7 +327,7 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
               <option key={diff} value={diff}>{diff.toUpperCase()}</option>
             ))}
           </select>
-          
+
           <select
             value={vendorFilter}
             onChange={(e) => setVendorFilter(e.target.value)}
@@ -362,7 +339,7 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
               </option>
             ))}
           </select>
-          
+
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -398,13 +375,13 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
               <div className={styles.cardHeader}>
                 <h3>{recipe.title}</h3>
                 <div className={styles.badges}>
-                  <span 
+                  <span
                     className={styles.badge}
                     style={{ backgroundColor: getStatusColor(recipe.status) }}
                   >
                     {recipe.status.toUpperCase()}
                   </span>
-                  <span 
+                  <span
                     className={styles.badge}
                     style={{ backgroundColor: getDifficultyColor(recipe.difficulty) }}
                   >
@@ -412,17 +389,17 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
                   </span>
                 </div>
               </div>
-              
+
               <div className={styles.vendorInfo}>
                 <span className={styles.vendorName}>
                   By: {recipe.vendorId.vendorName || recipe.vendorId.fullName}
                 </span>
               </div>
-              
+
               <p className={styles.description}>
                 {recipe.shortDescription || recipe.description}
               </p>
-              
+
               <div className={styles.meta}>
                 <div className={styles.timeInfo}>
                   <span>Prep: {formatTime(recipe.prepTime)}</span>
@@ -430,7 +407,7 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
                   <span>Serves: {recipe.servings}</span>
                 </div>
               </div>
-              
+
               <div className={styles.tags}>
                 <span className={styles.categoryTag}>
                   {recipe.category.replace('_', ' ').toUpperCase()}
@@ -439,9 +416,9 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
                   {recipe.cuisine.replace('_', ' ').toUpperCase()}
                 </span>
               </div>
-              
+
               <div className={styles.actions}>
-                <button 
+                <button
                   onClick={() => setViewingRecipe(recipe)}
                   className={styles.viewButton}
                 >
@@ -459,14 +436,14 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h3>{viewingRecipe.title}</h3>
-              <button 
+              <button
                 onClick={() => setViewingRecipe(null)}
                 className={styles.closeButton}
               >
                 ✕
               </button>
             </div>
-            
+
             <div className={styles.recipeDetails}>
               <div className={styles.recipeMeta}>
                 <div className={styles.metaRow}>
@@ -587,13 +564,13 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
               <div className={styles.statusActions}>
                 {viewingRecipe.status === 'draft' && (
                   <>
-                    <button 
+                    <button
                       onClick={() => handleStatusChange(viewingRecipe._id, 'published')}
                       className={styles.publishButton}
                     >
                       ✓ Publish Recipe
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleStatusChange(viewingRecipe._id, 'archived')}
                       className={styles.archiveButton}
                     >
@@ -603,13 +580,13 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
                 )}
                 {viewingRecipe.status === 'published' && (
                   <>
-                    <button 
+                    <button
                       onClick={() => handleStatusChange(viewingRecipe._id, 'draft')}
                       className={styles.draftButton}
                     >
                       📝 Move to Draft
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleStatusChange(viewingRecipe._id, 'archived')}
                       className={styles.archiveButton}
                     >
@@ -619,13 +596,13 @@ export default function UniversityRecipes({ }: UniversityRecipesProps) {
                 )}
                 {viewingRecipe.status === 'archived' && (
                   <>
-                    <button 
+                    <button
                       onClick={() => handleStatusChange(viewingRecipe._id, 'draft')}
                       className={styles.draftButton}
                     >
                       📝 Restore to Draft
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleStatusChange(viewingRecipe._id, 'published')}
                       className={styles.publishButton}
                     >

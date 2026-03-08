@@ -1,4 +1,5 @@
 import { RAZORPAY_CONFIG, getRazorpayCredentials, hasRazorpayCredentials } from '../config/razorpay';
+import api from './apiUtils';
 
 interface RazorpayInvoiceResponse {
   id: string;
@@ -81,9 +82,9 @@ export const fetchRazorpayInvoice = async (invoiceId: string): Promise<RazorpayI
       // Direct API call to Razorpay - This will hit https://api.razorpay.com/v1/invoices/{inv_id}
       const credentials = getRazorpayCredentials()!;
       const apiUrl = `${RAZORPAY_CONFIG.API_BASE}${RAZORPAY_CONFIG.ENDPOINTS.INVOICE_BY_ID(invoiceId)}`;
-      
+
       console.log('🔗 Calling Razorpay API directly:', apiUrl);
-      
+
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -102,20 +103,8 @@ export const fetchRazorpayInvoice = async (invoiceId: string): Promise<RazorpayI
     } else {
       // Fallback to backend proxy
       console.log('🔄 Using backend proxy for Razorpay API call');
-      const response = await fetch(`/razorpay/invoices/${invoiceId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Backend proxy error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await api.get(`/razorpay/invoices/${invoiceId}`);
+      return response.data.data;
     }
   } catch (error) {
     console.error('Error fetching Razorpay invoice:', error);
@@ -134,9 +123,9 @@ export const getRazorpayInvoicePdf = async (invoiceId: string): Promise<string> 
       // Direct API call to Razorpay - This will hit https://api.razorpay.com/v1/invoices/{inv_id}/pdf
       const credentials = getRazorpayCredentials()!;
       const apiUrl = `${RAZORPAY_CONFIG.API_BASE}${RAZORPAY_CONFIG.ENDPOINTS.INVOICE_PDF(invoiceId)}`;
-      
+
       console.log('🔗 Calling Razorpay PDF API directly:', apiUrl);
-      
+
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -156,20 +145,8 @@ export const getRazorpayInvoicePdf = async (invoiceId: string): Promise<string> 
     } else {
       // Fallback to backend proxy
       console.log('🔄 Using backend proxy for Razorpay PDF API call');
-      const response = await fetch(`/razorpay/invoices/${invoiceId}/pdf`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Backend proxy error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return data.pdfUrl;
+      const response = await api.get(`/razorpay/invoices/${invoiceId}/pdf`);
+      return response.data.pdfUrl;
     }
   } catch (error) {
     console.error('Error getting invoice PDF:', error);
@@ -188,9 +165,9 @@ export const createRazorpayInvoice = async (invoiceData: RazorpayInvoiceCreateDa
       // Direct API call to Razorpay - This will hit https://api.razorpay.com/v1/invoices
       const credentials = getRazorpayCredentials()!;
       const apiUrl = `${RAZORPAY_CONFIG.API_BASE}${RAZORPAY_CONFIG.ENDPOINTS.INVOICES}`;
-      
+
       console.log('🔗 Creating invoice directly on Razorpay:', apiUrl);
-      
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -210,21 +187,8 @@ export const createRazorpayInvoice = async (invoiceData: RazorpayInvoiceCreateDa
     } else {
       // Fallback to backend proxy
       console.log('🔄 Using backend proxy to create invoice');
-      const response = await fetch(`/razorpay/invoices`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(invoiceData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Backend proxy error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await api.post(`/razorpay/invoices`, invoiceData);
+      return response.data.data;
     }
   } catch (error) {
     console.error('Error creating Razorpay invoice:', error);

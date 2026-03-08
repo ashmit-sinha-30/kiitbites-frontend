@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import styles from "./styles/OtpVerification.module.scss";
+import api from '@/utils/apiUtils';
 
 export default function UniOtpVerificationClient() {
   const [email, setEmail] = useState<string | null>(null);
@@ -50,7 +51,6 @@ function OtpForm({
   const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
   const router = useRouter();
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -96,16 +96,11 @@ function OtpForm({
 
     try {
       setIsLoading(true);
-      const res = await fetch(`${BACKEND_URL}/api/uni/auth/otpverification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, otp: otpString }),
-      });
+      const res = await api.post("/api/uni/auth/otpverification", { email, otp: otpString });
 
-      const data = await res.json();
+      const data = res.data;
 
-      if (res.ok) {
+      if (res.status === 200) {
         // Store token first
         localStorage.setItem("token", data.token);
 
@@ -134,15 +129,11 @@ function OtpForm({
     if (!email || countdown > 0) return;
     setResendLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/uni/auth/resendotp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const res = await api.post("/api/uni/auth/resendotp", { email });
 
-      const data = await res.json();
+      const data = res.data;
 
-      if (res.ok) {
+      if (res.status === 200) {
         setCountdown(60);
         toast.success("OTP resent successfully!");
       } else {

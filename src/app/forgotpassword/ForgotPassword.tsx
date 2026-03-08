@@ -6,6 +6,7 @@ import styles from "./styles/ForgotPassword.module.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import api from "@/utils/apiUtils";
 
 export default function ForgotPassword() {
   // Redirect if user is already authenticated
@@ -26,24 +27,11 @@ export default function ForgotPassword() {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/auth/forgotpassword`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ identifier }),
-        }
-      );
+      const response = await api.post("/api/user/auth/forgotpassword", { identifier });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch (err) {
-        console.error("Invalid JSON response:", err);
-        throw new Error("Unexpected server response.");
-      }
+      const data = response.data;
 
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success("OTP sent successfully! Check your registered email.");
         setTimeout(
           () => router.push(`/otpverification?email=${encodeURIComponent(data.email)}&from=forgotpassword`),

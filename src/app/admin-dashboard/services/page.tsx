@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { ENV_CONFIG } from '@/config/environment';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import api from '@/utils/apiUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -10,7 +10,6 @@ type Feature = { _id: string; name: string; description?: string; isActive: bool
 type Service = { _id: string; name: string; description?: string; feature: Feature | string; isActive: boolean; basePrice?: number };
 
 const ServicesManagementPage: React.FC = () => {
-  const baseUrl = useMemo(() => `${ENV_CONFIG.BACKEND.URL}/api/admin`, []);
   const [features, setFeatures] = useState<Feature[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
@@ -21,11 +20,11 @@ const ServicesManagementPage: React.FC = () => {
     setLoading(true);
     try {
       const [fRes, sRes] = await Promise.all([
-        fetch(`${baseUrl}/features`, { credentials: 'include' }),
-        fetch(`${baseUrl}/services`, { credentials: 'include' }),
+        api.get('/api/admin/features'),
+        api.get('/api/admin/services'),
       ]);
-      const fJson = await fRes.json();
-      const sJson = await sRes.json();
+      const fJson = fRes.data;
+      const sJson = sRes.data;
       if (fJson.success) setFeatures(fJson.data);
       if (sJson.success) setServices(sJson.data);
     } finally {
@@ -37,13 +36,11 @@ const ServicesManagementPage: React.FC = () => {
 
   const createFeature = async () => {
     if (!featureForm.name.trim()) return;
-    const res = await fetch(`${baseUrl}/features`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ name: featureForm.name.trim(), description: featureForm.description.trim() || undefined })
+    const res = await api.post('/api/admin/features', {
+      name: featureForm.name.trim(),
+      description: featureForm.description.trim() || undefined
     });
-    const json = await res.json();
+    const json = res.data;
     if (json.success) {
       setFeatureForm({ name: '', description: '' });
       fetchAll();
@@ -54,18 +51,13 @@ const ServicesManagementPage: React.FC = () => {
 
   const createService = async () => {
     if (!serviceForm.name.trim() || !serviceForm.feature) return;
-    const res = await fetch(`${baseUrl}/services`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        name: serviceForm.name.trim(),
-        description: serviceForm.description.trim() || undefined,
-        feature: serviceForm.feature,
-        basePrice: serviceForm.basePrice ? Number(serviceForm.basePrice) : undefined
-      })
+    const res = await api.post('/api/admin/services', {
+      name: serviceForm.name.trim(),
+      description: serviceForm.description.trim() || undefined,
+      feature: serviceForm.feature,
+      basePrice: serviceForm.basePrice ? Number(serviceForm.basePrice) : undefined
     });
-    const json = await res.json();
+    const json = res.data;
     if (json.success) {
       setServiceForm({ name: '', description: '', feature: '', basePrice: '' });
       fetchAll();

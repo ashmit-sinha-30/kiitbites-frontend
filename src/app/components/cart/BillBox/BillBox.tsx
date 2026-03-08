@@ -1,8 +1,9 @@
 import React, { FormEvent, useState, useEffect } from "react";
-import axios from "axios";
+import { userApi } from "@/utils/apiUtils";
 import { toast } from "react-toastify";
 import { CartItem, OrderType, OrderData } from "../../../cart/types";
 import styles from "./BillBox.module.scss";
+import axios from "axios";
 
 interface RazorpayResponse {
   razorpay_order_id: string;
@@ -74,10 +75,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
         console.log("🔄 Fetching charges and delivery settings for userId:", userId);
 
         // Get user's cart to find vendorId
-        const cartResponse = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart/${userId}`,
-          { withCredentials: true }
-        );
+        const cartResponse = await userApi.get(`/cart/${userId}`);
 
         console.log("📦 Cart response:", cartResponse.data);
 
@@ -86,10 +84,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
           // Fetch vendor delivery settings
           try {
-            const deliverySettingsResponse = await axios.get(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/vendor/${vendorId}/delivery-settings`,
-              { withCredentials: true }
-            );
+            const deliverySettingsResponse = await userApi.get(`/api/vendor/${vendorId}/delivery-settings`);
 
             console.log("🚚 Delivery settings response:", deliverySettingsResponse.data);
 
@@ -103,19 +98,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           }
 
           // Get vendor to find university
-          const vendorResponse = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/getvendors/${vendorId}`,
-            { withCredentials: true }
-          );
+          const vendorResponse = await userApi.get(`/api/item/getvendors/${vendorId}`);
 
           console.log("🏪 Vendor response:", vendorResponse.data);
 
           if (vendorResponse.data.uniID) {
             // Get university charges
-            const chargesResponse = await axios.get(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${vendorResponse.data.uniID}`,
-              { withCredentials: true }
-            );
+            const chargesResponse = await userApi.get(`/api/university/charges/${vendorResponse.data.uniID}`);
 
             console.log("💰 Charges response:", chargesResponse.data);
 
@@ -274,13 +263,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
     let orderResp;
     try {
-      orderResp = await axios.post<OrderResponse>(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/order/${userId}`,
-        payload,
-        {
-          withCredentials: true,
-        }
-      );
+      orderResp = await userApi.post<OrderResponse>(`/order/${userId}`, payload);
 
       console.log("🧾 Order response:", orderResp.data);
     } catch (error) {
@@ -320,11 +303,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
 
           console.log("📨 Sending for verification:", verifyPayload);
 
-          const verifyResponse = await axios.post(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/payment/verify`,
-            verifyPayload,
-            { withCredentials: true }
-          );
+          const verifyResponse = await userApi.post('/payment/verify', verifyPayload);
 
           console.log("✅ Payment verified successfully:", verifyResponse.data);
           toast.success("Payment successful!");
@@ -352,11 +331,7 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
           if (orderId) {
             try {
               // Cancel the order and release locks
-              await axios.post(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/order/${orderId}/cancel`,
-                {},
-                { withCredentials: true }
-              );
+              await userApi.post(`/order/${orderId}/cancel`, {});
 
               console.log("✅ Order cancelled successfully");
               toast.success("Payment cancelled. You can try ordering again.");

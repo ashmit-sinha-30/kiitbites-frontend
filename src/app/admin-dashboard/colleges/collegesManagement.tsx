@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ENV_CONFIG } from '@/config/environment';
+
+import api from '@/utils/apiUtils';
 import styles from './styles/collegesManagement.module.scss';
 
 // Icons as React components
@@ -88,15 +89,14 @@ const CollegesManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredUniversities, setFilteredUniversities] = useState<University[]>([]);
 
-  // Fetch universities from API
   const fetchUniversities = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/admin/universities`);
-      const data = await response.json();
-      
+
+      const response = await api.get('/admin/universities');
+      const data = response.data;
+
       if (data.success) {
         setUniversities(data.data);
         setFilteredUniversities(data.data);
@@ -156,16 +156,16 @@ const CollegesManagement: React.FC = () => {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerContent}>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={goBack}
             className={styles.backButton}
           >
             <ArrowLeftIcon />
             Back to Dashboard
           </Button>
-          
+
           <div className={styles.headerInfo}>
             <div className={styles.headerTitle}>
               <BuildingIcon />
@@ -188,8 +188,8 @@ const CollegesManagement: React.FC = () => {
               className={styles.searchInput}
             />
           </div>
-          
-          <Button 
+
+          <Button
             onClick={fetchUniversities}
             disabled={loading}
             variant="outline"
@@ -272,8 +272,8 @@ const CollegesManagement: React.FC = () => {
             </div>
           ) : (
             filteredUniversities.map((uni) => (
-              <Card 
-                key={uni._id} 
+              <Card
+                key={uni._id}
                 className={`${styles.universityCard} ${styles.clickableCard}`}
                 onClick={() => viewCollegeDetails(uni._id)}
               >
@@ -307,7 +307,7 @@ const CollegesManagement: React.FC = () => {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className={styles.cardContent}>
                   <div className={styles.detailsGrid}>
                     <div className={styles.detailItem}>
@@ -317,7 +317,7 @@ const CollegesManagement: React.FC = () => {
                         <p>{uni.email}</p>
                       </div>
                     </div>
-                    
+
                     <div className={styles.detailItem}>
                       <PhoneIcon />
                       <div>
@@ -325,7 +325,7 @@ const CollegesManagement: React.FC = () => {
                         <p>{uni.phone}</p>
                       </div>
                     </div>
-                    
+
                     <div className={styles.detailItem}>
                       <ReceiptIcon />
                       <div>
@@ -333,7 +333,7 @@ const CollegesManagement: React.FC = () => {
                         <p>{uni.gstNumber}</p>
                       </div>
                     </div>
-                    
+
                     <div className={styles.detailItem}>
                       <ReceiptIcon />
                       <div>
@@ -341,7 +341,7 @@ const CollegesManagement: React.FC = () => {
                         <p>₹{uni.packingCharge}</p>
                       </div>
                     </div>
-                    
+
                     <div className={styles.detailItem}>
                       <ReceiptIcon />
                       <div>
@@ -349,7 +349,7 @@ const CollegesManagement: React.FC = () => {
                         <p>₹{uni.deliveryCharge}</p>
                       </div>
                     </div>
-                    
+
                     <div className={styles.detailItem}>
                       <CalendarIcon />
                       <div>

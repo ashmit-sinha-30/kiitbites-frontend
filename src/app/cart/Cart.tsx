@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import api from "@/utils/apiUtils";
 import DishListItemV2 from "../components/food/DishListItem/DishListItemV2";
 // Import both BillBoxApproval (for vendors with pending order service) and BillBox (for others)
 import BillBoxApproval from "../components/cart/BillBoxApproval/BillBoxApproval";
@@ -16,7 +16,7 @@ import Script from "next/script";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CART_COUNT_UPDATE_EVENT } from "../hooks/useCartCount";
 import { Skeleton, SkeletonCircle, SkeletonText } from "../components/shared/Skeleton/Skeleton";
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
+
 
 interface ExtraItem {
   itemId: string;
@@ -53,16 +53,6 @@ interface GuestCartItem extends Omit<CartItem, 'category'> {
   kind: string;
 }
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return { headers: {}, withCredentials: true };
-  }
-  return {
-    headers: { Authorization: `Bearer ${token}` },
-    withCredentials: true,
-  };
-};
 
 const getVendorName = (vendorName: string | undefined) => {
   if (!vendorName) {
@@ -97,9 +87,8 @@ export default function Cart() {
       if (!userData?._id) return;
 
       try {
-        const response = await axios.get<ExtrasResponse>(
-          `${BACKEND_URL}/cart/extras/${userData._id}`,
-          getAuthHeaders()
+        const response = await api.get<ExtrasResponse>(
+          `/cart/extras/${userData._id}`
         );
 
         if (response.data.extras) {
@@ -146,33 +135,13 @@ export default function Cart() {
       }
 
       try {
-        const authUrl = `${BACKEND_URL}/api/user/auth/user`;
-        const res = await fetch(authUrl, {
-          credentials: "include",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-          localStorage.removeItem("token");
-          setUserLoggedIn(false);
-          const rawGuest2 = localStorage.getItem("guest_cart") || "[]";
-          try {
-            setCart(JSON.parse(rawGuest2));
-          } catch {
-            setCart([]);
-          }
-          return;
-        }
-
-        const userData = await res.json();
+        const res = await api.get("/api/user/auth/user");
+        const userData = res.data;
         setUserLoggedIn(true);
         setUserData(userData);
 
         /** ─── GET /cart ─── **/
-        const cartRes = await axios.get<CartResponse>(
-          `${BACKEND_URL}/cart/${userData._id}`,
-          getAuthHeaders()
-        );
+        const cartRes = await api.get<CartResponse>(`/cart/${userData._id}`);
 
         const rawCart = cartRes.data.cart || [];
         const detailedCart: CartItem[] = rawCart.map((c) => {
@@ -207,9 +176,8 @@ export default function Cart() {
 
         if (cartRes.data.vendorId) {
           try {
-            const vendorServicesRes = await axios.get(
-              `${BACKEND_URL}/api/vendor/${cartRes.data.vendorId}/assignments`,
-              getAuthHeaders()
+            const vendorServicesRes = await api.get(
+              `/api/vendor/${cartRes.data.vendorId}/assignments`
             );
             if (vendorServicesRes.data.success && vendorServicesRes.data.data.services) {
               const services = vendorServicesRes.data.data.services || [];
@@ -243,9 +211,8 @@ export default function Cart() {
     if (userData?._id && cart.length > 0) {
       const fetchExtras = async () => {
         try {
-          const response = await axios.get<ExtrasResponse>(
-            `${BACKEND_URL}/cart/extras/${userData._id}`,
-            getAuthHeaders()
+          const response = await api.get<ExtrasResponse>(
+            `/cart/extras/${userData._id}`
           );
 
           if (response.data.extras) {
@@ -290,9 +257,8 @@ export default function Cart() {
       }
 
       try {
-        const vendorServicesRes = await axios.get(
-          `${BACKEND_URL}/api/vendor/${vendorId}/assignments`,
-          getAuthHeaders()
+        const vendorServicesRes = await api.get(
+          `/api/vendor/${vendorId}/assignments`
         );
         if (vendorServicesRes.data.success && vendorServicesRes.data.data.services) {
           const services = vendorServicesRes.data.data.services || [];
@@ -318,9 +284,8 @@ export default function Cart() {
   const reFetchCart = async () => {
     try {
       if (!userData) return;
-      const cartRes = await axios.get<CartResponse>(
-        `${BACKEND_URL}/cart/${userData._id}`,
-        getAuthHeaders()
+      const cartRes = await api.get<CartResponse>(
+        `/cart/${userData._id}`
       );
       const raw = cartRes.data.cart || [];
       const updated: CartItem[] = raw.map((c) => {
@@ -362,10 +327,9 @@ export default function Cart() {
 
     try {
       // Silently cancel pending orders - don't show toast if none exist
-      await axios.post(
-        `${BACKEND_URL}/order-approval/cancel-all/${userData._id}`,
-        {},
-        getAuthHeaders()
+      await api.post(
+        `/order-approval/cancel-all/${userData._id}`,
+        {}
       );
       // Also hide waiting screen if it's showing
       setShowWaitingScreen(false);
@@ -388,11 +352,10 @@ export default function Cart() {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
 
-      axios
+      api
         .post(
-          `${BACKEND_URL}/cart/add-one/${userData._id}`,
-          { itemId: id, kind: thisItem.kind },
-          getAuthHeaders()
+          `/cart/add-one/${userData._id}`,
+          { itemId: id, kind: thisItem.kind }
         )
         .then(() => {
           toast.success(`Increased quantity of ${thisItem.name}`);
@@ -443,11 +406,10 @@ export default function Cart() {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
 
-      axios
+      api
         .post(
-          `${BACKEND_URL}/cart/remove-one/${userData._id}`,
-          { itemId: id, kind: thisItem.kind },
-          getAuthHeaders()
+          `/cart/remove-one/${userData._id}`,
+          { itemId: id, kind: thisItem.kind }
         )
         .then(() => {
           toast.info(`Decreased quantity of ${thisItem.name}`);
@@ -484,11 +446,10 @@ export default function Cart() {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
 
-      axios
+      api
         .post(
-          `${BACKEND_URL}/cart/remove-item/${userData._id}`,
-          { itemId: id, kind: thisItem.kind },
-          getAuthHeaders()
+          `/cart/remove-item/${userData._id}`,
+          { itemId: id, kind: thisItem.kind }
         )
         .then(() => {
           toast.error(`${thisItem.name} removed from cart`);
@@ -526,16 +487,15 @@ export default function Cart() {
       // Cancel any pending orders when cart changes
       cancelPendingOrders();
 
-      axios
+      api
         .post(
-          `${BACKEND_URL}/cart/add/${userData._id}`,
+          `/cart/add/${userData._id}`,
           {
             itemId: item._id,
             kind: item.kind,
             quantity: 1,
             vendorId: vendorId,
-          },
-          getAuthHeaders()
+          }
         )
         .then(() => {
           toast.success(`${item.name} added to cart!`);

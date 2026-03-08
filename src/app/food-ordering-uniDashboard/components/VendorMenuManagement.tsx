@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import styles from "../styles/VendorMenuManagement.module.scss";
+import api from "@/utils/apiUtils";
 import Modal from "react-modal";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
 
 interface Vendor {
   _id: string;
@@ -70,23 +71,23 @@ export function VendorMenuManagement({ vendorId }: Props) {
   const [types, setTypes] = useState<string[]>([]);
   const [cloudName, setCloudName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [hsnSuggestions, setHsnSuggestions] = useState<Array<{hsnCode: string, count: number, gstPercentage: number, items: string[]}>>([]);
+  const [hsnSuggestions, setHsnSuggestions] = useState<Array<{ hsnCode: string, count: number, gstPercentage: number, items: string[] }>>([]);
   const [showHsnSuggestions, setShowHsnSuggestions] = useState(false);
   const [loadingHsnSuggestions, setLoadingHsnSuggestions] = useState(false);
 
   // Calculate tax details
   const calculateTaxDetails = () => {
     if (!formData.priceIncludingTax || !formData.gstPercentage) return null;
-    
+
     const priceIncludingTaxNum = parseFloat(formData.priceIncludingTax);
     const gstPercentageNum = parseFloat(formData.gstPercentage);
-    
+
     if (isNaN(priceIncludingTaxNum) || isNaN(gstPercentageNum)) return null;
-    
+
     const priceExcludingTax = priceIncludingTaxNum / (1 + gstPercentageNum / 100);
     const sgstPercentage = gstPercentageNum / 2;
     const cgstPercentage = gstPercentageNum / 2;
-    
+
     return {
       priceExcludingTax: Math.round(priceExcludingTax * 100) / 100,
       sgstPercentage: Math.round(sgstPercentage * 100) / 100,
@@ -111,12 +112,12 @@ export function VendorMenuManagement({ vendorId }: Props) {
     try {
       // First try to get suggestions from the specific category
       const categoryEndpoint = `/api/item/hsn-suggestions/${activeTab}/${selectedType}`;
-      const categoryRes = await fetch(`${BACKEND_URL}${categoryEndpoint}`);
-      
-      if (categoryRes.ok) {
-        const categoryData = await categoryRes.json();
+      const categoryRes = await api.get(categoryEndpoint);
+
+      if (categoryRes.status === 200) {
+        const categoryData = categoryRes.data;
         console.log('Category HSN suggestions response:', categoryData); // Debug log
-        
+
         if (categoryData.success && categoryData.suggestions.length > 0) {
           setHsnSuggestions(categoryData.suggestions);
           setShowHsnSuggestions(true);
@@ -124,15 +125,15 @@ export function VendorMenuManagement({ vendorId }: Props) {
           return;
         }
       }
-      
+
       // If no category-specific suggestions, try common HSN codes
       const commonEndpoint = `/api/item/common-hsn/${selectedType}`;
-      const commonRes = await fetch(`${BACKEND_URL}${commonEndpoint}`);
-      
-      if (commonRes.ok) {
-        const commonData = await commonRes.json();
+      const commonRes = await api.get(commonEndpoint);
+
+      if (commonRes.status === 200) {
+        const commonData = commonRes.data;
         console.log('Common HSN suggestions response:', commonData); // Debug log
-        
+
         if (commonData.success && commonData.suggestions.length > 0) {
           setHsnSuggestions(commonData.suggestions);
           setShowHsnSuggestions(true);
@@ -162,15 +163,15 @@ export function VendorMenuManagement({ vendorId }: Props) {
   };
 
   // Handle HSN code selection from suggestions
-  const handleHsnSuggestionClick = (suggestion: {hsnCode: string, count: number, gstPercentage: number, items: string[]}) => {
+  const handleHsnSuggestionClick = (suggestion: { hsnCode: string, count: number, gstPercentage: number, items: string[] }) => {
     console.log('HSN Suggestion clicked:', suggestion); // Debug log
-    
+
     // Additional safety check
     if (!suggestion || !suggestion.hsnCode) {
       console.error('Invalid suggestion object:', suggestion);
       return;
     }
-    
+
     // Validate GST percentage before setting it
     let gstPercentageValue = "";
     if (suggestion.gstPercentage != null && suggestion.gstPercentage !== undefined) {
@@ -178,10 +179,10 @@ export function VendorMenuManagement({ vendorId }: Props) {
     } else {
       console.warn('GST percentage is undefined or null for suggestion:', suggestion);
     }
-    
-    setFormData({ 
-      ...formData, 
-      hsnCode: suggestion.hsnCode, 
+
+    setFormData({
+      ...formData,
+      hsnCode: suggestion.hsnCode,
       gstPercentage: gstPercentageValue
     });
     setShowHsnSuggestions(false);
@@ -193,18 +194,18 @@ export function VendorMenuManagement({ vendorId }: Props) {
       setError(null);
 
       // Fetch vendor details
-      const vendorResponse = await fetch(`${BACKEND_URL}/api/vendor/list/uni/${universityId}`);
-      if (!vendorResponse.ok) throw new Error("Failed to fetch vendor data");
-      const vendors = await vendorResponse.json();
+      const vendorResponse = await api.get(`/api/vendor/list/uni/${universityId}`);
+      if (vendorResponse.status !== 200) throw new Error("Failed to fetch vendor data");
+      const vendors = vendorResponse.data;
       const currentVendor = vendors.find((v: Vendor) => v._id === vendorId);
       if (!currentVendor) throw new Error("Vendor not found");
       setVendor(currentVendor);
 
       // Fetch vendor's retail items using the correct endpoint
-      const retailResponse = await fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}/retail`);
+      const retailResponse = await api.get(`/api/item/getvendors/${vendorId}/retail`);
       console.log('Retail response status:', retailResponse.status);
-      if (retailResponse.ok) {
-        const retailData = await retailResponse.json();
+      if (retailResponse.status === 200) {
+        const retailData = retailResponse.data;
         console.log('Retail data:', retailData);
         if (retailData.success) {
           setRetailItems(retailData.data.retailItems || []);
@@ -218,10 +219,10 @@ export function VendorMenuManagement({ vendorId }: Props) {
       }
 
       // Fetch vendor's produce items using the correct endpoint
-      const produceResponse = await fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}/produce`);
+      const produceResponse = await api.get(`/api/item/getvendors/${vendorId}/produce`);
       console.log('Produce response status:', produceResponse.status);
-      if (produceResponse.ok) {
-        const produceData = await produceResponse.json();
+      if (produceResponse.status === 200) {
+        const produceData = produceResponse.data;
         console.log('Produce data:', produceData);
         if (produceData.success) {
           setProduceItems(produceData.data.produceItems || []);
@@ -245,8 +246,8 @@ export function VendorMenuManagement({ vendorId }: Props) {
   const fetchTypes = useCallback(async () => {
     try {
       const endpoint = activeTab === "retail" ? "/api/item/types/retail" : "/api/item/types/produce";
-      const res = await fetch(`${BACKEND_URL}${endpoint}`);
-      const data = await res.json();
+      const res = await api.get(endpoint);
+      const data = res.data;
       setTypes(data.types || []);
     } catch (err) {
       console.error("Error fetching types:", err);
@@ -256,8 +257,8 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
   const fetchCloudName = async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/cloudinary/cloud-name`);
-      const data = await res.json();
+      const res = await api.get("/api/cloudinary/cloud-name");
+      const data = res.data;
       if (data.cloudName) setCloudName(data.cloudName);
     } catch (err) {
       console.error("Error fetching cloud name:", err);
@@ -270,7 +271,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
       alert("Please fill in all required fields");
       return;
     }
-    
+
     if (activeTab === "retail" && !formData.quantity) {
       alert("Please fill in quantity for retail items");
       return;
@@ -297,30 +298,26 @@ export function VendorMenuManagement({ vendorId }: Props) {
       }
 
       const endpoint = activeTab === "retail" ? "/api/item/retail" : "/api/item/produce";
-      const res = await fetch(`${BACKEND_URL}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          type: formData.type,
-          price: parseFloat(formData.priceIncludingTax),
-          priceExcludingTax: taxDetails?.priceExcludingTax,
-          quantity: activeTab === "retail" ? parseInt(formData.quantity) : undefined,
-          isSpecial: formData.isSpecial,
-          image: imageUrl,
-          uniId: universityId,
-          packable: formData.packable,
-          isVeg: formData.isVeg !== undefined ? formData.isVeg : true,
-          vendorId: vendorId, // Add vendor-specific flag
-          hsnCode: formData.hsnCode,
-          gstPercentage: parseFloat(formData.gstPercentage),
-          sgstPercentage: taxDetails?.sgstPercentage,
-          cgstPercentage: taxDetails?.cgstPercentage,
-        }),
+      const res = await api.post(endpoint, {
+        name: formData.name,
+        type: formData.type,
+        price: parseFloat(formData.priceIncludingTax),
+        priceExcludingTax: taxDetails?.priceExcludingTax,
+        quantity: activeTab === "retail" ? parseInt(formData.quantity) : undefined,
+        isSpecial: formData.isSpecial,
+        image: imageUrl,
+        uniId: universityId,
+        packable: formData.packable,
+        isVeg: formData.isVeg !== undefined ? formData.isVeg : true,
+        vendorId: vendorId, // Add vendor-specific flag
+        hsnCode: formData.hsnCode,
+        gstPercentage: parseFloat(formData.gstPercentage),
+        sgstPercentage: taxDetails?.sgstPercentage,
+        cgstPercentage: taxDetails?.cgstPercentage,
       });
 
-      if (!res.ok) throw new Error("Failed to create item");
-      
+      if (res.status !== 200 && res.status !== 201) throw new Error("Failed to create item");
+
       toast.success("Item added successfully!");
       setShowAddModal(false);
       resetForm();
@@ -334,12 +331,12 @@ export function VendorMenuManagement({ vendorId }: Props) {
   const handleEditItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem) return;
-    
+
     if (!formData.name || !formData.type || !formData.priceIncludingTax || !formData.hsnCode || !formData.gstPercentage) {
       alert("Please fill in all required fields");
       return;
     }
-    
+
     if (activeTab === "retail" && !formData.quantity) {
       alert("Please fill in quantity for retail items");
       return;
@@ -366,28 +363,24 @@ export function VendorMenuManagement({ vendorId }: Props) {
       }
 
       const endpoint = activeTab === "retail" ? "/api/item/retail" : "/api/item/produce";
-      const res = await fetch(`${BACKEND_URL}${endpoint}/${editingItem._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          type: formData.type,
-          price: parseFloat(formData.priceIncludingTax),
-          priceExcludingTax: taxDetails?.priceExcludingTax,
-          quantity: activeTab === "retail" ? parseInt(formData.quantity) : undefined,
-          isSpecial: formData.isSpecial,
-          image: imageUrl,
-          packable: formData.packable,
-          isVeg: formData.isVeg !== undefined ? formData.isVeg : true,
-          hsnCode: formData.hsnCode,
-          gstPercentage: parseFloat(formData.gstPercentage),
-          sgstPercentage: taxDetails?.sgstPercentage,
-          cgstPercentage: taxDetails?.cgstPercentage,
-        }),
+      const res = await api.put(`${endpoint}/${editingItem._id}`, {
+        name: formData.name,
+        type: formData.type,
+        price: parseFloat(formData.priceIncludingTax),
+        priceExcludingTax: taxDetails?.priceExcludingTax,
+        quantity: activeTab === "retail" ? parseInt(formData.quantity) : undefined,
+        isSpecial: formData.isSpecial,
+        image: imageUrl,
+        packable: formData.packable,
+        isVeg: formData.isVeg !== undefined ? formData.isVeg : true,
+        hsnCode: formData.hsnCode,
+        gstPercentage: parseFloat(formData.gstPercentage),
+        sgstPercentage: taxDetails?.sgstPercentage,
+        cgstPercentage: taxDetails?.cgstPercentage,
       });
 
-      if (!res.ok) throw new Error("Failed to update item");
-      
+      if (res.status !== 200) throw new Error("Failed to update item");
+
       toast.success("Item updated successfully!");
       setShowEditModal(false);
       setEditingItem(null);
@@ -404,12 +397,10 @@ export function VendorMenuManagement({ vendorId }: Props) {
 
     try {
       const endpoint = activeTab === "retail" ? "/api/item/retail" : "/api/item/produce";
-      const res = await fetch(`${BACKEND_URL}${endpoint}/${itemId}`, {
-        method: "DELETE",
-      });
+      const res = await api.delete(`${endpoint}/${itemId}`);
 
-      if (!res.ok) throw new Error("Failed to delete item");
-      
+      if (res.status !== 200) throw new Error("Failed to delete item");
+
       toast.success("Item deleted successfully!");
       fetchVendorData(); // Refresh the menu
     } catch (err) {
@@ -426,15 +417,13 @@ export function VendorMenuManagement({ vendorId }: Props) {
     try {
       const newStatus = currentStatus === "Y" ? "N" : "Y";
       const kind = activeTab === "retail" ? "retail" : "produce";
-      
-      const res = await fetch(`${BACKEND_URL}/api/vendor/${vendorId}/item/${itemId}/${kind}/available`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isAvailable: newStatus }),
+
+      const res = await api.patch(`/api/vendor/${vendorId}/item/${itemId}/${kind}/available`, {
+        isAvailable: newStatus
       });
 
-      if (!res.ok) throw new Error("Failed to update item availability");
-      
+      if (res.status !== 200) throw new Error("Failed to update item availability");
+
       toast.success("Item availability updated!");
       fetchVendorData(); // Refresh the menu
     } catch (err) {
@@ -483,16 +472,10 @@ export function VendorMenuManagement({ vendorId }: Props) {
   useEffect(() => {
     async function loadUni() {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-        const res = await fetch(`${BACKEND_URL}/api/uni/auth/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: "include",
-        });
-        if (!res.ok) return;
-        const user = await res.json();
+        const res = await api.get("/api/uni/auth/user");
+        const user = res.data;
         setUniversityId(user._id || user.id || "");
-      } catch {}
+      } catch { }
     }
     loadUni();
     fetchCloudName();
@@ -536,11 +519,11 @@ export function VendorMenuManagement({ vendorId }: Props) {
   }
 
   const currentItems = activeTab === "retail" ? retailItems : produceItems;
-  
+
   // Filter items based on search query
   const filteredItems = currentItems.filter(item => {
     if (!searchQuery.trim()) return true;
-    
+
     const query = searchQuery.toLowerCase();
     return (
       item.name.toLowerCase().includes(query) ||
@@ -552,7 +535,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
       ((item.isAvailable || item.inventory?.isAvailable) === "Y" ? "available" : "unavailable").includes(query)
     );
   });
-  
+
   // Debug logging
   console.log('Current items:', currentItems);
   console.log('Filtered items:', filteredItems);
@@ -617,14 +600,14 @@ export function VendorMenuManagement({ vendorId }: Props) {
         {filteredItems.length === 0 ? (
           <div className={styles.noItems}>
             <p>
-              {searchQuery 
-                ? `No ${activeTab} items found matching "${searchQuery}".` 
+              {searchQuery
+                ? `No ${activeTab} items found matching "${searchQuery}".`
                 : `No ${activeTab} items found for this vendor.`
               }
             </p>
             {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery("")} 
+              <button
+                onClick={() => setSearchQuery("")}
                 className={styles.clearSearchButton}
                 style={{ marginRight: "8px" }}
               >
@@ -664,7 +647,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
                 )}
                 {/* For image: if item.image is missing, show a placeholder. To show the real image, the backend must populate it or fetch by itemId. */}
                 {item.packable && <p><strong>Packable:</strong> Yes</p>}
-                <p style={{ 
+                <p style={{
                   color: (item.isVeg !== false) ? '#22c55e' : '#ef4444',
                   fontWeight: 'bold'
                 }}>
@@ -1111,7 +1094,7 @@ export function VendorMenuManagement({ vendorId }: Props) {
           </div>
         </form>
       </Modal>
-      
+
       <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
   );

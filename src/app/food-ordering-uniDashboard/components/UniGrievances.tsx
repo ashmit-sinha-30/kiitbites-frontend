@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import styles from "../styles/UniGrievances.module.scss";
+import api from "@/utils/apiUtils";
 
 const VENDOR_GRIEVANCE_CATEGORIES = [
   { value: "equipment_not_working", label: "Equipment Not Working" },
@@ -59,24 +60,15 @@ export default function UniGrievances({ universityId }: UniGrievancesProps) {
 
   const fetchGrievances = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-      
-      let url = `${backendUrl}/api/university/${universityId}/grievances`;
-      const params = new URLSearchParams();
-      if (statusFilter) params.append("status", statusFilter);
-      if (severityFilter) params.append("severity", severityFilter);
-      if (params.toString()) url += `?${params.toString()}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+      const response = await api.get(`/api/university/${universityId}/grievances`, {
+        params: {
+          status: statusFilter || undefined,
+          severity: severityFilter || undefined
         }
       });
 
-      if (response.ok) {
-        const json = await response.json();
+      if (response.status === 200) {
+        const json = response.data;
         if (json.success) {
           setGrievances(json.data);
         }
@@ -99,23 +91,13 @@ export default function UniGrievances({ universityId }: UniGrievancesProps) {
     setUpdating(true);
 
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-
-      const response = await fetch(`${backendUrl}/api/grievances/${selectedGrievance._id}/status`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          status: updateStatus,
-          remarks: remarks,
-          universityId: universityId
-        })
+      const response = await api.patch(`/api/grievances/${selectedGrievance._id}/status`, {
+        status: updateStatus,
+        remarks: remarks,
+        universityId: universityId
       });
 
-      const json = await response.json();
+      const json = response.data;
 
       if (json.success) {
         toast({
@@ -241,13 +223,13 @@ export default function UniGrievances({ universityId }: UniGrievancesProps) {
                   </p>
                 </div>
                 <div className={styles.badges}>
-                  <span 
+                  <span
                     className={styles.badge}
                     style={{ backgroundColor: getSeverityColor(grievance.severity) }}
                   >
                     {grievance.severity.toUpperCase()}
                   </span>
-                  <span 
+                  <span
                     className={styles.badge}
                     style={{ backgroundColor: getStatusColor(grievance.status) }}
                   >
@@ -287,7 +269,7 @@ export default function UniGrievances({ universityId }: UniGrievancesProps) {
         <div className={styles.modal} onClick={() => setShowModal(false)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <h3>Update Grievance Status</h3>
-            
+
             <div className={styles.modalForm}>
               <div className={styles.formGroup}>
                 <label>Status *</label>

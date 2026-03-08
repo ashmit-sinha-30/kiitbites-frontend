@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ENV_CONFIG } from "@/config/environment";
+
+import api from "@/utils/apiUtils";
 import styles from "../styles/Review.module.scss";
 
 interface Props {
@@ -33,8 +34,8 @@ export default function Review({ universityId }: Props) {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/reviews/university/${universityId}`);
-        const json = await res.json();
+        const res = await api.get(`/api/reviews/university/${universityId}`);
+        const json = res.data;
         if (json.success) setReviews(json.data);
         else setError(json.message || "Failed to load reviews");
       } catch {

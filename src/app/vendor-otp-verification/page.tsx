@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from './styles/vendorOtpVerification.module.scss';
+import api from '@/utils/apiUtils';
 
 const VendorOtpVerificationContent: React.FC = () => {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
@@ -70,28 +71,11 @@ const VendorOtpVerificationContent: React.FC = () => {
     setLoading(true);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      const response = await fetch(`${backendUrl}/api/vendor/auth/otpverification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, otp: otpString }),
-      });
+      const response = await api.post("/api/vendor/auth/otpverification", { email, otp: otpString });
 
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text);
-        toast.error('Server returned invalid response. Please check if backend is running.');
-        return;
-      }
+      const data = response.data;
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.status === 200) {
         // Store token first to maintain compatibility with existing flows
         localStorage.setItem('token', data.token);
         localStorage.setItem('vendorRole', 'seller'); // Default role
@@ -119,28 +103,11 @@ const VendorOtpVerificationContent: React.FC = () => {
     setResendLoading(true);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      const response = await fetch(`${backendUrl}/api/vendor/auth/forgotpassword`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ identifier: email }),
-      });
+      const response = await api.post("/api/vendor/auth/forgotpassword", { identifier: email });
 
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response for resend OTP:', text);
-        toast.error('Server returned invalid response. Please check if backend is running.');
-        return;
-      }
+      const data = response.data;
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.status === 200) {
         setCountdown(60); // 60 seconds cooldown
         toast.success('OTP resent successfully!');
       } else {

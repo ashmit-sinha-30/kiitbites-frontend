@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styles from "../styles/VendorManagement.module.scss";
+import api from "@/utils/apiUtils";
 
 interface Vendor {
   _id: string;
@@ -26,11 +27,8 @@ export const DeleteVendorList: React.FC<DeleteVendorListProps> = ({ universityId
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(
-        process.env.NEXT_PUBLIC_BACKEND_URL + `/api/vendor/availability/uni/${universityId}`
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch vendors");
+      const res = await api.get(`/api/vendor/availability/uni/${universityId}`);
+      const data = res.data;
       setVendors(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to fetch vendors");
@@ -48,12 +46,9 @@ export const DeleteVendorList: React.FC<DeleteVendorListProps> = ({ universityId
     setSuccess("");
     setError("");
     try {
-      const res = await fetch(
-        process.env.NEXT_PUBLIC_BACKEND_URL + `/api/vendor/delete/uni/${universityId}/vendor/${vendorId}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to delete vendor");
+      const res = await api.delete(`/api/vendor/delete/uni/${universityId}/vendor/${vendorId}`);
+      const data = res.data;
+      if (res.status !== 200) throw new Error(data.error || "Failed to delete vendor");
       setSuccess("Vendor deleted successfully.");
       setVendors(vendors.filter(v => v._id !== vendorId));
     } catch (err: unknown) {

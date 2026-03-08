@@ -26,6 +26,8 @@ import VendorModal from "./components/VendorModal";
 import FavoritesSection from "./components/FavoritesSection";
 import { VendorSkeleton, CategorySkeleton } from "@/app/components/skeleton/SkeletonLoader/SkeletonLoader";
 
+import api from "@/utils/apiUtils";
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 // Categories will be dynamically generated from fetched items
@@ -148,11 +150,8 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
   // Get college list and match collegeName to get actual college id
   const fetchCollegesAndSetUniId = useCallback(async (collegeSlug: string) => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/user/auth/list`, {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to fetch colleges");
-      const colleges = (await response.json()) as College[];
+      const response = await api.get("/api/user/auth/list");
+      const colleges = response.data as College[];
 
       // Normalize the input slug
       const normalizedSlug = normalizeName(collegeSlug);
@@ -199,11 +198,8 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
       if (cid) {
         if (cid.length < 10) {
           try {
-            const response = await fetch(`${BACKEND_URL}/api/user/auth/list`, {
-              credentials: "include",
-            });
-            if (!response.ok) throw new Error("Failed to fetch colleges");
-            const colleges = (await response.json()) as College[];
+            const response = await api.get("/api/user/auth/list");
+            const colleges = response.data as College[];
             const found = colleges.find((c) => c._id.startsWith(cid));
             if (found && isMounted) {
               setUniId(found._id);
@@ -216,7 +212,9 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
               updateUrlWithCollegeId(found._id);
               return;
             }
-          } catch { }
+          } catch (err) {
+            console.error("Error matching shortened CID:", err);
+          }
         } else {
           if (isMounted) {
             setUniId(cid);
@@ -251,9 +249,9 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
 
     const fetchUniProfile = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/university/${uniId}/profile`);
-        if (response.ok) {
-          const data = await response.json();
+        const response = await api.get(`/api/university/${uniId}/profile`);
+        if (response.data) {
+          const data = response.data;
           setCollegeImages({
             retail: data.retailImage,
             produce: data.produceImage,
@@ -299,27 +297,15 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
         if (!token) return;
 
         // Fetch user data
-        const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-          credentials: "include",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!userResponse.ok) return;
-        const userData = await userResponse.json();
+        const userResponse = await api.get("/api/user/auth/user");
+        const userData = userResponse.data;
         setUserFullName(userData.fullName);
         setUserId(userData._id); // Ensure state is synced with fetched user
 
         if (uniId) {
           // Fetch favorites using the new API endpoint
-          const favoritesResponse = await fetch(
-            `${BACKEND_URL}/fav/${userData._id}/${uniId}`,
-            {
-              credentials: "include",
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          if (!favoritesResponse.ok) return;
-          const favoritesData =
-            (await favoritesResponse.json()) as ApiFavoritesResponse;
+          const favoritesResponse = await api.get(`/fav/${userData._id}/${uniId}`);
+          const favoritesData = favoritesResponse.data as ApiFavoritesResponse;
           setUserFavorites(favoritesData.favourites);
         }
       } catch (err) {
@@ -337,10 +323,9 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
     if (!uniId) return;
     const getVendors = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/vendor/list/uni/${uniId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setVendors(data);
+        const response = await api.get(`/api/vendor/list/uni/${uniId}`);
+        if (response.data) {
+          setVendors(response.data);
         }
       } catch (err) {
         console.error("Error fetching vendors:", err);
@@ -368,13 +353,12 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
       try {
         // Fetch all retail and produce items for the university (like uniDashboard)
         const [retailRes, produceRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/api/item/retail/uni/${uniId}?limit=1000`),
-          fetch(`${BACKEND_URL}/api/item/produce/uni/${uniId}?limit=1000`),
+          api.get(`/api/item/retail/uni/${uniId}?limit=1000`),
+          api.get(`/api/item/produce/uni/${uniId}?limit=1000`),
         ]);
 
-        // Parse JSON only if response is ok, otherwise use empty data
-        const retailData = retailRes.ok ? await retailRes.json() : { items: [] };
-        const produceData = produceRes.ok ? await produceRes.json() : { items: [] };
+        const retailData = retailRes.data || { items: [] };
+        const produceData = produceRes.data || { items: [] };
 
         const retailItems: FoodItem[] = (retailData.items || []).map((item: Record<string, unknown>) => ({
           id: item._id as string,
@@ -720,13 +704,8 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
 
         // Check if item is available in this specific vendor
         setLoadingItemId(item.id); // Set loading state here
-        const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id}`);
-        if (!response.ok) {
-          toast.error("Failed to check item availability");
-          setLoadingItemId(null); // Clear loading on error
-          return;
-        }
-        const fetchedVendors: VendorType[] = await response.json();
+        const response = await api.get(`/api/item/vendors/${item.id}`);
+        const fetchedVendors: VendorType[] = response.data;
         const vendor = fetchedVendors?.find(v => v._id === item.vendorId);
 
         if (vendor) {
@@ -741,15 +720,8 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
       }
 
       setLoadingItemId(item.id); // Set loading state here for items without pre-selected vendor
-      const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id}`);
-      if (!response.ok) {
-        const errData = await response.json();
-        toast.error(errData.message || "No vendors available for this item");
-        setLoadingItemId(null); // Clear loading on error
-        return;
-      }
-
-      const fetchedVendors: VendorType[] = await response.json();
+      const response = await api.get(`/api/item/vendors/${item.id}`);
+      const fetchedVendors: VendorType[] = response.data;
 
       if (!fetchedVendors || fetchedVendors.length === 0) {
         toast.error("No vendors available for this item");

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "../styles/ManageCharges.module.scss";
+import api from "@/utils/apiUtils";
 
 interface ManageChargesProps {
   universityId: string;
@@ -17,7 +18,7 @@ const ManageCharges: React.FC<ManageChargesProps> = ({ universityId }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     packingCharge: 0,
     deliveryCharge: 0,
@@ -31,14 +32,9 @@ const ManageCharges: React.FC<ManageChargesProps> = ({ universityId }) => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${universityId}`);
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch charges");
-      }
-
-      const data = await response.json();
+      const response = await api.get(`/api/university/charges/${universityId}`);
+      const data = response.data;
       setCharges(data);
       setFormData({
         packingCharge: data.packingCharge,
@@ -53,31 +49,18 @@ const ManageCharges: React.FC<ManageChargesProps> = ({ universityId }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setSaving(true);
       setError(null);
       setSuccess(null);
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/university/charges/${universityId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update charges");
-      }
+      const response = await api.put(`/api/university/charges/${universityId}`, formData);
 
-      const data = await response.json();
+      const data = response.data;
       setCharges(data);
       setSuccess("Charges updated successfully!");
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -90,7 +73,7 @@ const ManageCharges: React.FC<ManageChargesProps> = ({ universityId }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const numValue = parseFloat(value) || 0;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: numValue,

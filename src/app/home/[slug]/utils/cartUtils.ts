@@ -1,8 +1,7 @@
 import { toast } from "react-toastify";
 import { FoodItem, CartItem, Vendor } from "../types";
 import { SearchResult } from '@/app/components/search/SearchBar/SearchBar';
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import { userApi } from "@/utils/apiUtils";
 
 export const checkItemAvailability = async (
   item: FoodItem,
@@ -10,18 +9,13 @@ export const checkItemAvailability = async (
   categories?: { retail: string[]; produce: string[] }
 ): Promise<{ isAvailable: boolean; vendors: Vendor[] | undefined }> => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item.id}`, {
-      credentials: "include",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const response = await userApi.get(`/api/item/vendors/${item.id}`);
 
-    if (!response.ok) {
+    if (response.status !== 200) {
       return { isAvailable: false, vendors: undefined };
     }
 
-    const vendors = await response.json();
+    const vendors = response.data;
 
     if (!vendors || vendors.length === 0) {
       return { isAvailable: false, vendors: undefined };
@@ -74,27 +68,17 @@ export const addToCart = async (
 ): Promise<boolean> => {
   try {
     const kind = item.type === "retail" ? "Retail" : "Produce";
-    const response = await fetch(`${BACKEND_URL}/cart/add/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item.id,
-        kind: kind,
-        quantity: 1,
-        vendorId: vendorId,
-      }),
+    const response = await userApi.post(`/cart/add/${userId}`, {
+      itemId: item.id,
+      kind: kind,
+      quantity: 1,
+      vendorId: vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (response.status !== 200) {
+      const error = response.data;
       throw new Error(error.message);
     }
-
-    await response.json();
 
     toast.success(`${item.title} added to cart!`);
     return true;
@@ -112,26 +96,16 @@ export const increaseQuantity = async (
 ): Promise<boolean> => {
   try {
     const kind = item.type === "retail" ? "Retail" : "Produce";
-    const response = await fetch(`${BACKEND_URL}/cart/add-one/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item.id,
-        kind: kind,
-        vendorId: item.vendorId,
-      }),
+    const response = await userApi.post(`/cart/add-one/${userId}`, {
+      itemId: item.id,
+      kind: kind,
+      vendorId: item.vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (response.status !== 200) {
+      const error = response.data;
       throw new Error(error.message);
     }
-
-    await response.json();
 
     toast.success(`Increased quantity of ${item.title}`);
     return true;
@@ -149,26 +123,16 @@ export const decreaseQuantity = async (
 ): Promise<boolean> => {
   try {
     const kind = item.type === "retail" ? "Retail" : "Produce";
-    const response = await fetch(`${BACKEND_URL}/cart/remove-one/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item.id,
-        kind: kind,
-        vendorId: item.vendorId,
-      }),
+    const response = await userApi.post(`/cart/remove-one/${userId}`, {
+      itemId: item.id,
+      kind: kind,
+      vendorId: item.vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (response.status !== 200) {
+      const error = response.data;
       throw new Error(error.message);
     }
-
-    await response.json();
 
     toast.info(`Decreased quantity of ${item.title}`);
     return true;
@@ -182,22 +146,18 @@ export const decreaseQuantity = async (
 
 export const fetchCartItems = async (userId: string): Promise<CartItem[]> => {
   try {
-    const response = await fetch(`${BACKEND_URL}/cart/${userId}`, {
-      credentials: "include",
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
+    const response = await userApi.get(`/cart/${userId}`);
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (response.status !== 200) {
+      const error = response.data;
       throw new Error(error.message);
     }
 
-    const data = await response.json();
-
+    const data = response.data;
     const cartItems = data.cart || [];
 
     return cartItems;
   } catch {
     return [];
   }
-}; 
+};

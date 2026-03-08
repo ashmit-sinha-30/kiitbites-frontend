@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ENV_CONFIG } from '@/config/environment';
+
 import styles from '../styles/collegeDetails.module.scss';
+import api from '@/utils/apiUtils';
 
 // Icons as React components
 const BuildingIcon = () => (
@@ -142,17 +143,17 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/admin/universities/${uniId}`);
-      const data = await response.json();
-      
+
+      const response = await api.get(`/admin/universities/${uniId}`);
+      const data = response.data;
+
       if (data.success) {
         setUniversity(data.data);
         setFilteredVendors(data.data.vendors);
         // Load current assignments
         try {
-          const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
-          const assignJson = await assignRes.json();
+          const assignRes = await api.get(`/api/university/universities/${uniId}/assignments`);
+          const assignJson = assignRes.data;
           if (assignJson.success) {
             setSelectedFeatureIds(assignJson.data.features.map((f: { _id: string }) => f._id));
             setSelectedServiceIds(assignJson.data.services.map((s: { _id: string }) => s._id));
@@ -175,11 +176,11 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   const fetchFeatureAndServiceCatalog = useCallback(async () => {
     try {
       const [fRes, sRes] = await Promise.all([
-        fetch(`${ENV_CONFIG.BACKEND.URL}/api/admin/features`),
-        fetch(`${ENV_CONFIG.BACKEND.URL}/api/admin/services`),
+        api.get('/api/admin/features'),
+        api.get('/api/admin/services'),
       ]);
-      const fJson = await fRes.json();
-      const sJson = await sRes.json();
+      const fJson = fRes.data;
+      const sJson = sRes.data;
       if (fJson.success) setAllFeatures(fJson.data);
       if (sJson.success) setAllServices(sJson.data);
     } catch (e) {
@@ -194,11 +195,11 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       setAssignOpen(true);
       // load allowed services for this uni
       const [allowedRes, vendorRes] = await Promise.all([
-        fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/allowed-services`),
-        fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/vendors/${vendorId}/services`),
+        api.get(`/api/university/universities/${uniId}/allowed-services`),
+        api.get(`/api/university/universities/${uniId}/vendors/${vendorId}/services`),
       ]);
-      const allowedJson = await allowedRes.json();
-      const vendorJson = await vendorRes.json();
+      const allowedJson = allowedRes.data;
+      const vendorJson = vendorRes.data;
       if (allowedJson.success) setAllowedServices(allowedJson.data?.services || []);
       if (vendorJson.success) {
         const services = vendorJson.data?.services || [];
@@ -216,12 +217,10 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   const saveVendorServices = async () => {
     try {
       setSavingVendorServices(true);
-      const res = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/vendors/${assignVendorId}/services`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ services: vendorServices })
+      const res = await api.patch(`/api/university/universities/${uniId}/vendors/${assignVendorId}/services`, {
+        services: vendorServices
       });
-      const json = await res.json();
+      const json = res.data;
       if (!json.success) throw new Error(json.message || 'Failed to update vendor services');
       setAssignOpen(false);
     } catch (e) {
@@ -235,21 +234,17 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   // Toggle university availability
   const toggleAvailability = async () => {
     if (!university) return;
-    
+
     try {
       setUpdatingAvailability(true);
       const newAvailability = university.isAvailable === 'Y' ? 'N' : 'Y';
-      
-      const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/admin/universities/${uniId}/availability`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isAvailable: newAvailability }),
+
+      const res = await api.patch(`/admin/universities/${uniId}/availability`, {
+        isAvailable: newAvailability
       });
-      
-      const data = await response.json();
-      
+
+      const data = res.data;
+
       if (data.success) {
         setUniversity(prev => prev ? { ...prev, isAvailable: newAvailability } : null);
       } else {
@@ -266,7 +261,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   // Filter vendors based on search term
   useEffect(() => {
     if (!university) return;
-    
+
     if (!searchTerm.trim()) {
       setFilteredVendors(university.vendors);
     } else {
@@ -339,16 +334,16 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerContent}>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={goBack}
             className={styles.backButton}
           >
             <ArrowLeftIcon />
             Back to Colleges
           </Button>
-          
+
           <div className={styles.headerInfo}>
             <div className={styles.headerTitle}>
               <BuildingIcon />
@@ -375,7 +370,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
               className={styles.toggleSwitch}
             />
           </div>
-          <Badge 
+          <Badge
             variant={university.isAvailable === 'Y' ? "default" : "destructive"}
             className={styles.availabilityBadge}
           >
@@ -398,7 +393,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                 <p>{university.email}</p>
               </div>
             </div>
-            
+
             <div className={styles.detailItem}>
               <PhoneIcon />
               <div>
@@ -406,7 +401,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                 <p>{university.phone}</p>
               </div>
             </div>
-            
+
             <div className={styles.detailItem}>
               <ReceiptIcon />
               <div>
@@ -414,7 +409,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                 <p>{university.gstNumber}</p>
               </div>
             </div>
-            
+
             <div className={styles.detailItem}>
               <ReceiptIcon />
               <div>
@@ -422,7 +417,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                 <p>₹{university.packingCharge}</p>
               </div>
             </div>
-            
+
             <div className={styles.detailItem}>
               <ReceiptIcon />
               <div>
@@ -430,7 +425,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                 <p>₹{university.deliveryCharge}</p>
               </div>
             </div>
-            
+
             <div className={styles.detailItem}>
               <CalendarIcon />
               <div>
@@ -464,10 +459,8 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                         onClick={async () => {
                           const next = selectedFeatureIds.filter((id) => id !== fid);
                           setSelectedFeatureIds(next);
-                          await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/features`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ features: next })
+                          await api.patch(`/api/university/universities/${uniId}/features`, {
+                            features: next
                           });
                           // also remove any services that belong to removed feature from selected state
                           const remainingServiceIds = selectedServiceIds.filter((sid) => {
@@ -476,10 +469,8 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                           });
                           if (remainingServiceIds.length !== selectedServiceIds.length) {
                             setSelectedServiceIds(remainingServiceIds);
-                            await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/services`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ services: remainingServiceIds })
+                            await api.patch(`/api/university/universities/${uniId}/services`, {
+                              services: remainingServiceIds
                             });
                           }
                         }}
@@ -509,10 +500,8 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                   const next = Array.from(new Set([...selectedFeatureIds, featureToAdd]));
                   setSelectedFeatureIds(next);
                   setFeatureToAdd("");
-                  await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/features`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ features: next })
+                  await api.patch(`/api/university/universities/${uniId}/features`, {
+                    features: next
                   });
                 }}
               >Add Feature</Button>
@@ -543,10 +532,8 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                         onClick={async () => {
                           const next = selectedServiceIds.filter((id) => id !== sid);
                           setSelectedServiceIds(next);
-                          await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/services`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ services: next })
+                          await api.patch(`/api/university/universities/${uniId}/services`, {
+                            services: next
                           });
                         }}
                         aria-label="Remove service"
@@ -579,10 +566,8 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                   const next = Array.from(new Set([...selectedServiceIds, serviceToAdd]));
                   setSelectedServiceIds(next);
                   setServiceToAdd("");
-                  await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/services`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ services: next })
+                  await api.patch(`/api/university/universities/${uniId}/services`, {
+                    services: next
                   });
                 }}
               >Add Service</Button>
@@ -627,8 +612,8 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                 className={styles.searchInput}
               />
             </div>
-            
-            <Button 
+
+            <Button
               onClick={fetchUniversityDetails}
               disabled={loading}
               variant="outline"
@@ -668,7 +653,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className={styles.vendorCardContent}>
                   <div className={styles.vendorDetails}>
                     <div className={styles.vendorDetailItem}>
@@ -678,7 +663,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                         <p>{vendor.email}</p>
                       </div>
                     </div>
-                    
+
                     <div className={styles.vendorDetailItem}>
                       <PhoneIcon />
                       <div>
@@ -686,7 +671,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                         <p>{vendor.phone}</p>
                       </div>
                     </div>
-                    
+
                     <div className={styles.vendorDetailItem}>
                       <MapPinIcon />
                       <div>
@@ -694,14 +679,14 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                         <p>{vendor.location}</p>
                       </div>
                     </div>
-                    
+
                     <div className={styles.vendorDetailItem}>
                       <UsersIcon />
                       <div>
                         <Label>Delivery</Label>
                         <p>
-                          {vendor.deliverySettings.offersDelivery 
-                            ? `Yes (${vendor.deliverySettings.deliveryPreparationTime} min)` 
+                          {vendor.deliverySettings.offersDelivery
+                            ? `Yes (${vendor.deliverySettings.deliveryPreparationTime} min)`
                             : 'No'
                           }
                         </p>

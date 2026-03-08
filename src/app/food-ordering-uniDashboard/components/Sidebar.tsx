@@ -10,6 +10,7 @@ import {
   AiOutlineClose,
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
+import api from "@/utils/apiUtils";
 import styles from "../styles/SideBar.module.scss";
 
 const defaultSegments = [
@@ -87,13 +88,7 @@ export default function Sidebar({
       const token = localStorage.getItem("token");
       if (token) {
         // Optional: Notify backend to invalidate the session
-        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/uni/auth/logout`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await api.post("/api/uni/auth/logout");
       }
 
       // Clear token and redirect

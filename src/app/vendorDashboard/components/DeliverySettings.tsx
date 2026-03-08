@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import api from "@/utils/apiUtils";
 import styles from "../styles/DeliverySettings.module.scss";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
+// Direct fetch was used previously, now I'm using api which has base URL.
+// env.NEXT_PUBLIC_BACKEND_URL || "<UNDEFINED>";
 
 interface DeliverySettings {
   offersDelivery: boolean;
@@ -20,27 +21,19 @@ export function DeliverySettings({ vendorId }: Props) {
     offersDelivery: false,
     deliveryPreparationTime: 30
   });
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  useEffect(() => {
-    fetchDeliverySettings();
-  }, [vendorId]);
 
-  const fetchDeliverySettings = async () => {
+  const fetchDeliverySettings = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/api/vendor/${vendorId}/delivery-settings`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await api.get(`/api/vendor/${vendorId}/delivery-settings`);
 
-      const data = await response.json();
-      
+      const data = response.data;
+      // Direct fetch used previously. Standardizing to use the `api` utility.
       if (data.success) {
         setSettings(data.data);
       } else {
@@ -51,23 +44,21 @@ export function DeliverySettings({ vendorId }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [vendorId]);
+
+  useEffect(() => {
+    fetchDeliverySettings();
+  }, [vendorId, fetchDeliverySettings]);
 
   const saveSettings = async () => {
     try {
       setSaving(true);
       setMessage(null);
-      
-      const response = await fetch(`${BACKEND_URL}/api/vendor/${vendorId}/delivery-settings`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(settings),
-      });
 
-      const data = await response.json();
-      
+      const response = await api.put(`/api/vendor/${vendorId}/delivery-settings`, settings);
+
+      const data = response.data;
+      // Direct fetch used previously. Standardizing to use the `api` utility.
       if (data.success) {
         setMessage({ type: 'success', text: 'Delivery settings saved successfully!' });
       } else {
@@ -123,7 +114,7 @@ export function DeliverySettings({ vendorId }: Props) {
             </span>
           </div>
           <p className={styles.settingDescription}>
-            Toggle this switch to enable or disable delivery service for your customers. 
+            Toggle this switch to enable or disable delivery service for your customers.
             When enabled, customers can place delivery orders.
           </p>
         </div>

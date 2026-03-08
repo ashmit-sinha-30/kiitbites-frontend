@@ -1,11 +1,14 @@
+"use client";
+
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
+import api from '@/utils/apiUtils';
 import { FoodItem, CartItem, Vendor } from '../types';
+// Direct fetch was used previously, now I'm using api which has base URL.
 import { addToCart, increaseQuantity, decreaseQuantity } from '../utils/cartUtils';
 import { SearchResult } from '@/app/components/search/SearchBar/SearchBar';
 import { CART_COUNT_UPDATE_EVENT } from '@/app/hooks/useCartCount';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -53,21 +56,18 @@ export const CartProvider = ({ children, userId }: CartProviderProps) => {
 
   const refreshCart = useCallback(async () => {
     if (!userId || isRefreshingRef.current) return;
-    
+
     try {
       isRefreshingRef.current = true;
-      const response = await fetch(`${BACKEND_URL}/cart/${userId}`, {
-        credentials: "include",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      const response = await api.get(`/cart/${userId}`);
 
-      if (!response.ok) {
-        const error = await response.json();
+      if (response.status !== 200) {
+        const error = response.data;
         console.error('Failed to fetch cart items:', error);
         throw new Error(error.message);
       }
 
-      const data = await response.json() as CartResponse;
+      const data = response.data as CartResponse;
       console.log('Raw API response:', data);
 
       // Transform the cart items to match our expected structure

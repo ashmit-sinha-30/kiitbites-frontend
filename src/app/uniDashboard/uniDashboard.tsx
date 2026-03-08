@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ENV_CONFIG } from "@/config/environment";
 import styles from "./styles/UniDashboard.module.scss";
+import api from "@/utils/apiUtils";
+import axios from "axios";
 
 export default function UniDashboardPage() {
   const router = useRouter();
@@ -30,19 +31,19 @@ export default function UniDashboardPage() {
           router.push("/uni-login");
           return;
         }
-        const userRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/uni/auth/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: "include",
-        });
-        if (userRes.ok) {
-          const user = await userRes.json();
+
+        // Use standardized api utility
+        const userRes = await api.get("/api/uni/auth/user");
+
+        if (userRes.status === 200) {
+          const user = userRes.data;
           const uniId = user._id || user.id;
 
           // Store uniId in localStorage
           localStorage.setItem("uniId", uniId);
 
-          const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/universities/${uniId}/assignments`);
-          const assignJson = await assignRes.json();
+          const assignRes = await api.get(`/api/university/universities/${uniId}/assignments`);
+          const assignJson = assignRes.data;
           if (assignJson.success) {
             setFeatures(assignJson.data.features);
           }
@@ -54,7 +55,11 @@ export default function UniDashboardPage() {
         }
       } catch (e) {
         console.error("Failed to init uni dashboard", e);
-        // On error, remove token and redirect to login
+        // On 401, the apiUtils interceptor will handle redirect
+        // For other errors, we might still want to clear/redirect if it's a critical failure
+        if (axios.isAxiosError(e) && e.response?.status === 401) {
+          return; // Interceptor already handled it
+        }
         localStorage.removeItem("token");
         router.push("/uni-login");
         return;

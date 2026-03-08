@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import api from '@/utils/apiUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -25,7 +26,6 @@ export default function VendorInvoices({ vendorId }: VendorInvoicesProps) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -41,22 +41,18 @@ export default function VendorInvoices({ vendorId }: VendorInvoicesProps) {
     hasPrev: false
   });
 
-  useEffect(() => {
-    fetchInvoices();
-  }, [filters, vendorId]);
-
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const queryParams = new URLSearchParams();
-      
+
       Object.entries(filters).forEach(([key, value]) => {
         if (value) queryParams.append(key, value.toString());
       });
 
-      const response = await fetch(`${API_BASE}/api/invoices/vendor/${vendorId}?${queryParams}`);
-      const data = await response.json();
+      const response = await api.get(`/api/invoices/vendor/${vendorId}?${queryParams.toString()}`);
+      const data = response.data;
 
       if (data.success) {
         setInvoices(data.data.invoices);
@@ -70,7 +66,11 @@ export default function VendorInvoices({ vendorId }: VendorInvoicesProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, vendorId]);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [filters, vendorId, fetchInvoices]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
@@ -83,7 +83,7 @@ export default function VendorInvoices({ vendorId }: VendorInvoicesProps) {
   const downloadInvoice = (invoice: Invoice) => {
     // Always use backend PDF download endpoint first
     if (invoice._id) {
-      window.open(`${API_BASE}/api/invoices/${invoice._id}/download`, '_blank');
+      window.open(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices/${invoice._id}/download`, '_blank');
     } else if (invoice.pdfUrl) {
       // Fallback to direct PDF URL if available
       window.open(invoice.pdfUrl, '_blank');
@@ -145,7 +145,7 @@ export default function VendorInvoices({ vendorId }: VendorInvoicesProps) {
               className="w-full p-2 border border-gray-300 rounded-md text-sm"
             />
           </div>
-          
+
           <div>
             <label htmlFor="endDate" className="block text-sm font-medium mb-1">End Date</label>
             <input
@@ -156,7 +156,7 @@ export default function VendorInvoices({ vendorId }: VendorInvoicesProps) {
               className="w-full p-2 border border-gray-300 rounded-md text-sm"
             />
           </div>
-          
+
           <div>
             <label htmlFor="status" className="block text-sm font-medium mb-1">Status</label>
             <select
@@ -172,7 +172,7 @@ export default function VendorInvoices({ vendorId }: VendorInvoicesProps) {
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
-          
+
           <div>
             <label htmlFor="limit" className="block text-sm font-medium mb-1">Items per page</label>
             <select

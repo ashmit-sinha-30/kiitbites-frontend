@@ -1,7 +1,7 @@
 // NEW FILE: Component for vendors to see and respond to pending order requests
 
 import React, { useEffect, useState, useCallback } from "react";
-import axios from "axios";
+import api from "@/utils/apiUtils";
 import { toast } from "react-toastify";
 import styles from "./styles/PendingOrderRequests.module.scss";
 
@@ -49,10 +49,7 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
 
   const fetchPendingOrders = useCallback(async () => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/order-approval/pending/${vendorId}`,
-        { withCredentials: true }
-      );
+      const response = await api.get(`/order-approval/pending/${vendorId}`);
 
       if (response.data.success) {
         setPendingOrders(response.data.orders || []);
@@ -74,14 +71,10 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
 
   const handleAcceptOrder = async (orderId: string) => {
     if (processingOrderId) return; // Prevent multiple clicks
-    
+
     setProcessingOrderId(orderId);
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/order-approval/${orderId}/accept`,
-        { vendorId },
-        { withCredentials: true }
-      );
+      const response = await api.post(`/order-approval/${orderId}/accept`, { vendorId });
 
       if (response.data.success) {
         toast.success("Order accepted successfully!");
@@ -95,12 +88,8 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
       } else {
         toast.error(response.data.message || "Failed to accept order");
       }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || "Failed to accept order");
-      } else {
-        toast.error("Failed to accept order");
-      }
+    } catch {
+      toast.error("Failed to accept order");
     } finally {
       setProcessingOrderId(null);
     }
@@ -108,9 +97,9 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
 
   const handleDenyOrder = async (orderId: string, reason?: string) => {
     if (processingOrderId) return;
-    
+
     const denialReason = reason || selectedDenialReason || "Item not available";
-    
+
     if (!denialReason.trim()) {
       toast.error("Please select a reason for denial");
       return;
@@ -118,11 +107,7 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
 
     setProcessingOrderId(orderId);
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/order-approval/${orderId}/deny`,
-        { vendorId, denialReason },
-        { withCredentials: true }
-      );
+      const response = await api.post(`/order-approval/${orderId}/deny`, { vendorId, denialReason });
 
       if (response.data.success) {
         toast.success("Order denied");
@@ -139,12 +124,8 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
       } else {
         toast.error(response.data.message || "Failed to deny order");
       }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || "Failed to deny order");
-      } else {
-        toast.error("Failed to deny order");
-      }
+    } catch {
+      toast.error("Failed to deny order");
     } finally {
       setProcessingOrderId(null);
     }
@@ -195,7 +176,7 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
               </div>
               <div className={styles.orderTotal}>₹{order.total}</div>
             </div>
-            
+
             <div className={styles.orderDetails}>
               <div className={styles.detailRow}>
                 <span className={styles.label}>Customer:</span>

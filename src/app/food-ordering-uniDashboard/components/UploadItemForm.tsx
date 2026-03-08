@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaChevronDown } from "react-icons/fa";
 import styles from "../styles/UploadItemForm.module.scss";
+import api from "@/utils/apiUtils";
 
 // Reusable Custom Dropdown Component
 const CustomDropdown = ({ value, options, onChange, placeholder, allowCustom = false, required = false }: {
@@ -119,11 +120,12 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
 
     try {
       // First try to get suggestions from the specific category
+      // First try to get suggestions from the specific category
       const categoryEndpoint = `/api/item/hsn-suggestions/${itemType.toLowerCase()}/${selectedType}`;
-      const categoryRes = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + categoryEndpoint);
+      const categoryRes = await api.get(categoryEndpoint);
 
-      if (categoryRes.ok) {
-        const categoryData = await categoryRes.json();
+      if (categoryRes.status === 200) {
+        const categoryData = categoryRes.data;
         console.log('Category HSN suggestions response:', categoryData); // Debug log
 
         if (categoryData.success && categoryData.suggestions.length > 0) {
@@ -136,10 +138,10 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
 
       // If no category-specific suggestions, try common HSN codes
       const commonEndpoint = `/api/item/common-hsn/${selectedType}`;
-      const commonRes = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + commonEndpoint);
+      const commonRes = await api.get(commonEndpoint);
 
-      if (commonRes.ok) {
-        const commonData = await commonRes.json();
+      if (commonRes.status === 200) {
+        const commonData = commonRes.data;
         console.log('Common HSN suggestions response:', commonData); // Debug log
 
         if (commonData.success && commonData.suggestions.length > 0) {
@@ -197,8 +199,8 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
   useEffect(() => {
     const fetchCloudName = async () => {
       try {
-        const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/cloudinary/cloud-name");
-        const data = await res.json();
+        const res = await api.get("/api/cloudinary/cloud-name");
+        const data = res.data;
         if (data.cloudName) setCloudName(data.cloudName);
         else throw new Error("Cloud name not found");
       } catch {
@@ -213,8 +215,8 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
       setType(""); // Reset type selection
       try {
         const endpoint = itemType === "Retail" ? "/api/item/types/retail" : "/api/item/types/produce";
-        const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + endpoint);
-        const data = await res.json();
+        const res = await api.get(endpoint);
+        const data = res.data;
         setTypes(data.types || []);
       } catch {
         setTypes([]);
@@ -260,29 +262,25 @@ export const UploadItemForm: React.FC<UploadItemFormProps> = ({ universityId }) 
         imageUrl = data.secure_url;
       }
       const endpoint = itemType === "Retail" ? "/api/item/retail" : "/api/item/produce";
-      const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          type,
-          ...(itemType === "Produce" && subtype ? { subtype } : {}),
-          description,
-          unit: itemType === "Retail" ? (unit || "pcs") : unit,
-          price: parseFloat(priceIncludingTax), // This will be the price including tax
-          priceExcludingTax: taxDetails?.priceExcludingTax,
-          hsnCode: hsnCode.trim(),
-          gstPercentage: parseFloat(gstPercentage),
-          sgstPercentage: taxDetails?.sgstPercentage,
-          cgstPercentage: taxDetails?.cgstPercentage,
-          isSpecial,
-          image: imageUrl,
-          uniId: universityId,
-          packable,
-          isVeg: isVeg !== undefined ? isVeg : true,
-        }),
+      const res = await api.post(endpoint, {
+        name,
+        type,
+        ...(itemType === "Produce" && subtype ? { subtype } : {}),
+        description,
+        unit: itemType === "Retail" ? (unit || "pcs") : unit,
+        price: parseFloat(priceIncludingTax), // This will be the price including tax
+        priceExcludingTax: taxDetails?.priceExcludingTax,
+        hsnCode: hsnCode.trim(),
+        gstPercentage: parseFloat(gstPercentage),
+        sgstPercentage: taxDetails?.sgstPercentage,
+        cgstPercentage: taxDetails?.cgstPercentage,
+        isSpecial,
+        image: imageUrl,
+        uniId: universityId,
+        packable,
+        isVeg: isVeg !== undefined ? isVeg : true,
       });
-      if (!res.ok) throw new Error("Failed to create item");
+      if (res.status !== 200 && res.status !== 201) throw new Error("Failed to create item");
       setSuccess("Item uploaded successfully!");
       setName("");
       setType("");

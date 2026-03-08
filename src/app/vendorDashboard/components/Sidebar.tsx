@@ -14,6 +14,7 @@ import {
 } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import React from "react";
+import api from "@/utils/apiUtils";
 import styles from "../styles/SideBar.module.scss";
 
 const allSegments = [
@@ -104,20 +105,14 @@ export default function Sidebar({
       try {
         const uniId = localStorage.getItem('uniId') || '';
         const role = localStorage.getItem('vendorRole') || undefined; // 'seller' | 'nonSeller'
-        const params = new URLSearchParams({ uniId });
-        if (vendorId && vendorId !== '—') params.set('vendorId', vendorId);
-        if (role) params.set('role', role);
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${backendUrl}/api/access/features?${params.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        const json = await res.json();
+        const params: { uniId: string; vendorId?: string; role?: string } = { uniId };
+        if (vendorId && vendorId !== '—') params.vendorId = vendorId;
+        if (role) params.role = role;
+
+        const res = await api.get("/api/access/features", { params });
+        const json = res.data;
         const features = json.features || {};
-        
+
         // Create a map of service names to check if they're available
         const serviceMap: Record<string, boolean> = {};
         Object.values(features as Record<string, { enabled: boolean; services?: Array<{ name: string }> }>).forEach((feature) => {
@@ -129,9 +124,9 @@ export default function Sidebar({
             });
           }
         });
-        
+
         const allowedMap: Record<string, boolean> = {};
-        
+
         segmentsToUse.forEach((seg) => {
           if (seg.featureKey) {
             // Extract service name from featureKey (e.g., "service.food_ordering.dashboard" -> "dashboard")
@@ -141,7 +136,7 @@ export default function Sidebar({
             allowedMap[seg.key] = true; // Always allow logout and segments without featureKey
           }
         });
-        
+
         setAllowed(allowedMap);
       } catch (e) {
         console.error('Failed to fetch access', e);
@@ -169,14 +164,7 @@ export default function Sidebar({
       const token = localStorage.getItem("token");
       if (token) {
         // Optional: Notify backend to invalidate the session
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-        await fetch(`${backendUrl}/api/vendor/auth/logout`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await api.post("/api/vendor/auth/logout");
       }
 
       // Clear token and redirect

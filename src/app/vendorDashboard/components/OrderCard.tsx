@@ -5,6 +5,8 @@ import { Order, Invoice } from "../types";
 import styles from "../styles/OrderCard.module.scss";
 import { ConfirmDialog } from "./ConfirmationDialogue";
 
+import api from "@/utils/apiUtils";
+
 export type LocalStatus = "inProgress" | "ready" | "onTheWay" | "completed";
 
 const statusLabels: Record<LocalStatus, string> = {
@@ -90,28 +92,32 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   const downloadInvoice = async (orderId: string) => {
     try {
       // Fetch backend invoice list and use PDF only
-      const invoicesRes = await fetch(`${BASE}/api/invoices/order/${orderId}`);
-      const invoicesData = await invoicesRes.json();
+      const invoicesRes = await api.get(`/api/invoices/order/${orderId}`);
+      const invoicesData = invoicesRes.data;
 
       if (invoicesData?.success && Array.isArray(invoicesData.data) && invoicesData.data.length > 0) {
-        const vendorInvoice = invoicesData.data.find((inv: Invoice) => inv.recipientType === 'vendor');
+        const vendorInvoice = invoicesData.data.find((inv: Invoice) => inv.recipientType === "vendor");
         const anyInvoice = vendorInvoice || invoicesData.data[0];
 
         if (anyInvoice?.pdfUrl) {
-          window.open(anyInvoice.pdfUrl, '_blank'); // Cloudinary or direct PDF
+          window.open(anyInvoice.pdfUrl, "_blank"); // Cloudinary or direct PDF
           return;
         }
         if (anyInvoice?._id) {
           // Use backend PDF download endpoint
-          window.open(`${BASE}/api/invoices/${anyInvoice._id}/download`, '_blank');
+          // For direct download via window.open, we need a way to pass the token if the endpoint is protected
+          // Usually, these are signed URLs or unprotected for a short time
+          // If it IS protected, we might need to fetch it as a blob and then open it
+          const downloadUrl = `${BASE}/api/invoices/${anyInvoice._id}/download`;
+          window.open(downloadUrl, "_blank");
           return;
         }
       }
 
-      alert('PDF invoice is not available yet. Please try again later.');
+      alert("PDF invoice is not available yet. Please try again later.");
     } catch (error) {
-      console.error('Error downloading invoice:', error);
-      alert('Failed to download invoice. Please try again.');
+      console.error("Error downloading invoice:", error);
+      alert("Failed to download invoice. Please try again.");
     }
   };
 
@@ -124,10 +130,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             workflow === "inProgress"
               ? "#fefcbf" // yellow for preparing
               : workflow === "ready"
-              ? "#c6f6d5" // green for ready
-              : workflow === "completed"
-              ? "#bee3f8" // blue for completed
-              : "#9ae6b4", // darker green for onTheWay
+                ? "#c6f6d5" // green for ready
+                : workflow === "completed"
+                  ? "#bee3f8" // blue for completed
+                  : "#9ae6b4", // darker green for onTheWay
         }}
       />
 
@@ -192,7 +198,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 btnLabel
               )}
             </button>
-            
+
             <button
               type="button"
               className={`${styles.invoiceBtn} ${styles.secondaryBtn}`}

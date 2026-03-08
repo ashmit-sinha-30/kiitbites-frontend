@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaChevronDown } from "react-icons/fa";
 import styles from "../styles/AddVendorForm.module.scss";
+import api from "@/utils/apiUtils";
 
 // Reusable Custom Dropdown Component
 const CustomDropdown = ({ value, options, onChange, placeholder, allowCustom = false, required = false, disabled = false }: {
@@ -86,26 +87,10 @@ export const AddVendorForm: React.FC<AddVendorFormProps> = ({ universityId }) =>
     setSuccess("");
     setError("");
     try {
-      const res = await fetch(
-        process.env.NEXT_PUBLIC_BACKEND_URL + "/api/vendor/auth/signup",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, uniID: universityId }),
-        }
-      );
+      const res = await api.post("/api/vendor/auth/signup", { ...form, uniID: universityId });
 
-      // Check if the response is JSON
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await res.text();
-        throw new Error(
-          "Unexpected response from server: " + text.slice(0, 100)
-        );
-      }
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to add vendor");
+      const data = res.data;
+      if (res.status !== 200 && res.status !== 201) throw new Error(data.message || "Failed to add vendor");
       setSuccess("Vendor added successfully! OTP sent to email.");
       setForm({ fullName: "", email: "", phone: "", password: "", location: "", sellerType: "SELLER" });
     } catch (err: unknown) {

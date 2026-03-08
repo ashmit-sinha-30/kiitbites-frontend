@@ -7,12 +7,9 @@ import Image from 'next/image';
 import { toast, ToastContainer } from 'react-toastify';
 import CustomDropdown from './CustomDropdown';
 import 'react-toastify/dist/ReactToastify.css';
+import api from "@/utils/apiUtils";
 
-const ENV_CONFIG = {
-    BACKEND: {
-        URL: process.env.NEXT_PUBLIC_BACKEND_URL || ""
-    }
-};
+
 
 interface CategoryImage {
     name: string;
@@ -66,12 +63,12 @@ const UniProfile = () => {
             if (!uniId) return;
 
             const [retailRes, produceRes] = await Promise.all([
-                fetch(`${ENV_CONFIG.BACKEND.URL}/api/item/retail/uni/${uniId}?limit=1000`),
-                fetch(`${ENV_CONFIG.BACKEND.URL}/api/item/produce/uni/${uniId}?limit=1000`),
+                api.get(`/api/item/retail/uni/${uniId}?limit=1000`),
+                api.get(`/api/item/produce/uni/${uniId}?limit=1000`),
             ]);
 
-            const retailData = await retailRes.json();
-            const produceData = await produceRes.json();
+            const retailData = retailRes.data;
+            const produceData = produceRes.data;
 
             const retailItems = retailData.items || [];
             const produceItems = produceData.items || [];
@@ -114,33 +111,15 @@ const UniProfile = () => {
             // Or we can just use the PUT response to refresh.
             // Let's try to fetch user details first.
 
-            const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/uni/auth/user`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await api.get("/api/uni/auth/user");
 
-            if (response.ok) {
-                // const userData = await response.json();
-                // The auth/user endpoint might not return the new image fields unless we updated the controller.
-                // Let's create a dedicated GET route or update the controller.
-                // For expediency, we can use the /charges endpoint which returns Uni name and charges, 
-                // maybe we can add images there too?
-                // Better: let's fetch the full profile from a new GET endpoint or assume we add one.
-                // I'll add a GET /:uniId/profile to universityRoutes.js quickly in next step if needed.
-                // For now, let's simulate or try to fetch.
+            if (response.status === 200) {
+                const profileRes = await api.get(`/api/university/${uniId}/profile`);
 
-                // Actually, let's fetch from the new GET route I should add: GET /api/university/:uniId
-                // Wait, I haven't added a GET route for profile. I should do that. 
-                // But for now, let's code the component assuming I will add GET /api/university/:uniId/profile
-
-                const profileRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/${uniId}/profile`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                if (profileRes.ok) {
-                    const data = await profileRes.json();
+                if (profileRes.status === 200) {
+                    const data = profileRes.data;
                     setProfileData(data);
                 } else {
-                    // Fallback or error
                     toast.error("Failed to fetch profile details");
                 }
             }
@@ -172,15 +151,11 @@ const UniProfile = () => {
         try {
             setSaving(true);
             const uniId = localStorage.getItem('uniId');
-            const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/${uniId}/profile`, {
-                method: 'PUT',
-                body: formData,
-                // No Content-Type header for FormData, browser sets it with boundary
-            });
+            const response = await api.put(`/api/university/${uniId}/profile`, formData);
 
-            if (response.ok) {
+            if (response.status === 200) {
                 toast.success(`${type === 'retail' ? 'Retail' : 'Produce'} image updated!`);
-                const result = await response.json();
+                const result = response.data;
                 // Update with server URL
                 setProfileData(prev => prev ? ({
                     ...prev,
@@ -222,13 +197,10 @@ const UniProfile = () => {
             formData.append('name', newKindName);
             formData.append('image', newKindImage);
 
-            const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/university/${uniId}/category-images`, {
-                method: 'PUT',
-                body: formData
-            });
+            const response = await api.put(`/api/university/${uniId}/category-images`, formData);
 
-            if (response.ok) {
-                const result = await response.json();
+            if (response.status === 200) {
+                const result = response.data;
                 toast.success("Category image saved!");
                 setProfileData(prev => prev ? ({
                     ...prev,

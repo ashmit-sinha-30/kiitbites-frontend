@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import * as Switch from "@radix-ui/react-switch";
 import { FaChevronDown } from "react-icons/fa";
 import styles from "../styles/ManageItems.module.scss";
+import api from "@/utils/apiUtils";
 
 // Reusable Custom Dropdown Component
 const CustomDropdown = ({ value, options, onChange, placeholder, allowCustom = false, required = false, disabled = false }: {
@@ -101,12 +102,12 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
       setError("");
       try {
         const [retailRes, produceRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/retail/uni/${universityId}?limit=1000`),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/item/produce/uni/${universityId}?limit=1000`),
+          api.get(`/api/item/retail/uni/${universityId}?limit=1000`),
+          api.get(`/api/item/produce/uni/${universityId}?limit=1000`),
         ]);
-        const retailData = await retailRes.json();
-        const produceData = await produceRes.json();
-        if (!retailRes.ok || !produceRes.ok) throw new Error("Failed to fetch items");
+        const retailData = retailRes.data;
+        const produceData = produceRes.data;
+        if (retailRes.status !== 200 || produceRes.status !== 200) throw new Error("Failed to fetch items");
         const retailItems: Item[] = (retailData.items || []).map((item: Item) => ({ ...item, category: "retail" }));
         const produceItems: Item[] = (produceData.items || []).map((item: Item) => ({ ...item, category: "produce" }));
         setItems([...retailItems, ...produceItems]);
@@ -151,8 +152,8 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
       let imageUrl = editData.image as string;
       if (editData.imageFile) {
         // Upload new image to Cloudinary
-        const cloudRes = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/cloudinary/cloud-name");
-        const { cloudName } = await cloudRes.json();
+        const cloudRes = await api.get("/api/cloudinary/cloud-name");
+        const { cloudName } = cloudRes.data;
         const formData = new FormData();
         formData.append("file", editData.imageFile);
         formData.append("upload_preset", "bitesbay");
@@ -166,20 +167,16 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
       }
       if (!editItem) return;
       const endpoint = `/api/item/${editItem.category}/${editItem._id}`;
-      const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + endpoint, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: editData.name,
-          price: parseFloat(String(editData.price ?? "")),
-          type: editData.type,
-          subtype: editData.subtype,
-          image: imageUrl,
-          packable: editData.packable,
-          isVeg: editData.isVeg !== undefined ? editData.isVeg : true,
-        }),
+      const res = await api.put(endpoint, {
+        name: editData.name,
+        price: parseFloat(String(editData.price ?? "")),
+        type: editData.type,
+        subtype: editData.subtype,
+        image: imageUrl,
+        packable: editData.packable,
+        isVeg: editData.isVeg !== undefined ? editData.isVeg : true,
       });
-      if (!res.ok) throw new Error("Failed to update item");
+      if (res.status !== 200) throw new Error("Failed to update item");
       setEditItem(null);
       setEditData({});
       setRefresh(r => r + 1);
@@ -201,10 +198,8 @@ const ManageItems: React.FC<ManageItemsProps> = ({ universityId }) => {
     setShowDeleteModal(false);
     try {
       const endpoint = `/api/item/${itemToDelete.category}/${itemToDelete._id}`;
-      const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + endpoint, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete item");
+      const res = await api.delete(endpoint);
+      if (res.status !== 200) throw new Error("Failed to delete item");
       setRefresh(r => r + 1);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Failed to delete item");

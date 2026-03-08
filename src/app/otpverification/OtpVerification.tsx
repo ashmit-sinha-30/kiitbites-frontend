@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"; // ✅ Only used in OtpForm
 import { ToastContainer, toast } from "react-toastify";
 import styles from "./styles/OtpVerification.module.scss";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import api from "@/utils/apiUtils";
 
 export default function OtpVerificationClient() {
   // Redirect if user is already authenticated
@@ -60,7 +61,7 @@ function OtpForm({
   const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
   const router = useRouter(); // ✅ Correctly using router here
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -106,16 +107,11 @@ function OtpForm({
 
     try {
       setIsLoading(true);
-      const res = await fetch(`${BACKEND_URL}/api/user/auth/otpverification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, otp: otpString }),
-      });
+      const res = await api.post("/api/user/auth/otpverification", { email, otp: otpString });
 
-      const data = await res.json();
+      const data = res.data;
 
-      if (res.ok) {
+      if (res.status === 200) {
         const token = data.token;
 
         if (token) {
@@ -141,17 +137,10 @@ function OtpForm({
         }
 
         // After successful OTP verification, get user data
-        const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const userRes = await api.get("/api/user/auth/user");
 
-        if (userRes.ok) {
-          const userData = await userRes.json();
+        if (userRes.status === 200) {
+          const userData = userRes.data;
           // Store user data
           localStorage.setItem("user", JSON.stringify(userData));
 
@@ -169,9 +158,9 @@ function OtpForm({
             if (uniId) {
               try {
                 // Fetch college data to get the slug
-                const collegeResponse = await fetch(`${BACKEND_URL}/api/user/auth/list`);
-                if (collegeResponse.ok) {
-                  const colleges = await collegeResponse.json();
+                const collegeResponse = await api.get("/api/user/auth/list");
+                if (collegeResponse.status === 200) {
+                  const colleges = collegeResponse.data;
                   const userCollege = colleges.find((college: { _id: string; fullName: string }) => college._id === uniId);
 
                   if (userCollege) {
@@ -208,7 +197,7 @@ function OtpForm({
             }, 100);
           }
         } else {
-          const errorData = await userRes.json();
+          const errorData = userRes.data;
           console.error("User data fetch error:", errorData);
           toast.error(
             errorData.message || "Failed to fetch user data after verification."
@@ -229,15 +218,11 @@ function OtpForm({
     if (!email || countdown > 0) return;
     setResendLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/user/auth/resendotp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const res = await api.post("/api/user/auth/resendotp", { email });
 
-      const data = await res.json();
+      const data = res.data;
 
-      if (res.ok) {
+      if (res.status === 200) {
         setCountdown(60);
         toast.success("OTP resent successfully!");
       } else {

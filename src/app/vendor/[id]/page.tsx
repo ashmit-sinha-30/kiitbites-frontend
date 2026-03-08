@@ -8,10 +8,9 @@ import SearchBar from "@/app/components/search/SearchBar/SearchBar";
 import styles from "./styles/VendorPage.module.scss";
 import { addToCart, increaseQuantity, decreaseQuantity } from "./utils/cartUtils";
 import { toast } from "react-toastify";
+import api from "@/utils/apiUtils";
 import { FoodItem } from "@/app/home/[slug]/types";
 
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 interface VendorItem {
   itemId: string;
@@ -122,8 +121,8 @@ const VendorPage = () => {
     const fetchData = async () => {
       try {
         // Fetch vendor data
-        const vendorResponse = await fetch(`${BACKEND_URL}/api/item/getvendors/${id}`);
-        const vendorData = await vendorResponse.json();
+        const vendorResponse = await api.get(`/api/item/getvendors/${id}`);
+        const vendorData = vendorResponse.data;
         if (vendorData.success) {
           // Add category information to items (preserve original type field)
           let retailItems = vendorData.data.retailItems.map((item: VendorItem) => ({
@@ -141,22 +140,22 @@ const VendorPage = () => {
 
             try {
               // Try vendor-specific sort order first
-              let sortRes = await fetch(
-                `${BACKEND_URL}/api/menu-sort/order?uniId=${vendorData.uniID}&vendorId=${id}`
+              let sortRes = await api.get(
+                `/api/menu-sort/order?uniId=${vendorData.uniID}&vendorId=${id}`
               );
               let sortData = null;
 
-              if (sortRes.ok) {
-                sortData = await sortRes.json();
+              if (sortRes.status === 200) {
+                sortData = sortRes.data;
               }
 
               // If vendor-specific doesn't exist or failed, try university-wide
               if (!sortData || !sortData.success) {
-                sortRes = await fetch(
-                  `${BACKEND_URL}/api/menu-sort/order?uniId=${vendorData.uniID}&vendorId=null`
+                sortRes = await api.get(
+                  `/api/menu-sort/order?uniId=${vendorData.uniID}&vendorId=null`
                 );
-                if (sortRes.ok) {
-                  sortData = await sortRes.json();
+                if (sortRes.status === 200) {
+                  sortData = sortRes.data;
                 }
               }
 
@@ -229,13 +228,9 @@ const VendorPage = () => {
         // Fetch user data
         const token = localStorage.getItem("token");
         if (token) {
-          const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
+          const userResponse = await api.get("/api/user/auth/user");
+          if (userResponse.status === 200) {
+            const userData = userResponse.data;
             setUserData(userData);
           }
         }
@@ -259,24 +254,18 @@ const VendorPage = () => {
     const kind = category === "retail" ? "Retail" : "Produce";
 
     try {
-      const res = await fetch(`${BACKEND_URL}/fav/${userData._id}/${itemId}/${kind}/${getRealVendorId(item as VendorItem)}`, {
-        method: "PATCH",
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      const res = await api.patch(`/fav/${userData._id}/${itemId}/${kind}/${getRealVendorId(item as VendorItem)}`);
+      const data = res.data;
+      if (res.status !== 200) {
         toast.error(data.error || "Failed to update favourites");
       } else {
         toast.success(data.message || "Favourites updated.");
         // Optionally, you can refresh userData here to get updated favourites
         const token = localStorage.getItem("token");
         if (token) {
-          const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (userResponse.ok) {
-            const updatedUserData = await userResponse.json();
+          const userResponse = await api.get("/api/user/auth/user");
+          if (userResponse.status === 200) {
+            const updatedUserData = userResponse.data;
             setUserData(updatedUserData);
           }
         }
@@ -561,14 +550,9 @@ const VendorPage = () => {
     // Refresh user data to update cart
     const token = localStorage.getItem("token");
     if (token) {
-      const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (userResponse.ok) {
-        const updatedUserData = await userResponse.json();
-        setUserData(updatedUserData);
+      const userResponse = await api.get("/api/user/auth/user");
+      if (userResponse.status === 200) {
+        setUserData(userResponse.data);
       }
     }
   };
@@ -598,14 +582,9 @@ const VendorPage = () => {
     // Refresh user data to update cart
     const token = localStorage.getItem("token");
     if (token) {
-      const userResponse = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (userResponse.ok) {
-        const updatedUserData = await userResponse.json();
-        setUserData(updatedUserData);
+      const userResponse = await api.get("/api/user/auth/user");
+      if (userResponse.status === 200) {
+        setUserData(userResponse.data);
       }
     }
   };

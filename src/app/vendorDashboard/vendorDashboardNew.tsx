@@ -28,6 +28,7 @@ import DownloadButton from "./components/DownloadButton";
 import { VendorProfile } from "./components/VendorProfile";
 import { DashboardHomeSkeleton, InventorySkeleton } from "./components/DashboardSkeleton";
 import { Order, InventoryReport, transformApiReport } from "./types";
+import api from "@/utils/apiUtils";
 import styles from "./styles/InventoryReport.module.scss";
 import { ENV_CONFIG } from "@/config/environment";
 
@@ -122,13 +123,10 @@ export default function VendorDashboardPage() {
         }
 
         // Get vendor user info
-        const userRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/vendor/auth/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: "include",
-        });
+        const userRes = await api.get("/api/vendor/auth/user");
+        const user = userRes.data;
 
-        if (userRes.ok) {
-          const user = await userRes.json();
+        if (userRes.status === 200) {
           const vendorIdFromUser = user._id || user.id;
           setVendorId(vendorIdFromUser);
           setVendorName(user.fullName || "Vendor");
@@ -139,8 +137,8 @@ export default function VendorDashboardPage() {
           }
 
           // Get vendor assignments (services)
-          const assignRes = await fetch(`${ENV_CONFIG.BACKEND.URL}/api/vendor/${vendorIdFromUser}/assignments`);
-          const assignJson = await assignRes.json();
+          const assignRes = await api.get(`/api/vendor/${vendorIdFromUser}/assignments`);
+          const assignJson = assignRes.data;
 
           if (assignJson.success) {
             setServices(assignJson.data.services);
@@ -232,16 +230,13 @@ export default function VendorDashboardPage() {
 
     const fetchLatestPendingOrder = async () => {
       try {
-        const response = await fetch(`${ENV_CONFIG.BACKEND.URL}/order-approval/pending/${vendorId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: "include",
-        });
+        const response = await api.get(`/order-approval/pending/${vendorId}`);
 
-        if (!response.ok) {
+        if (response.status !== 200) {
           return;
         }
 
-        const data = await response.json();
+        const data = response.data;
         if (data?.success && Array.isArray(data.orders) && data.orders.length > 0) {
           const latest = data.orders[0];
           if (latest?.orderId && latest.orderId !== lastAlertedOrderIdRef.current) {
@@ -355,11 +350,12 @@ export default function VendorDashboardPage() {
     setLoadingReport(true);
     setErrorReport(null);
     try {
-      const url = `${ENV_CONFIG.BACKEND.URL}/inventoryreport/vendor/${vendorId}?date=${date}`;
-      console.log("🔍 Fetching inventory report from:", url);
+      console.log("🔍 Fetching inventory report for vendor:", vendorId, "date:", date);
 
-      const res = await fetch(url);
-      const json = await res.json();
+      const res = await api.get(`/inventoryreport/vendor/${vendorId}`, {
+        params: { date }
+      });
+      const json = res.data;
 
       console.log("📊 API Response:", json);
 

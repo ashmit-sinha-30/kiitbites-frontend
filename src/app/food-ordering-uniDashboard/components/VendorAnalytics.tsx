@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import styles from "../styles/VendorManagement.module.scss";
+import api from "@/utils/apiUtils";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
 
 type ItemStats = {
   name: string;
@@ -97,12 +98,11 @@ const VendorAnalytics: React.FC<VendorAnalyticsProps> = ({ vendorId, vendorName 
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${BACKEND_URL}/order/analytics/${vendorId}?date=${date}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      
+      const response = await api.get(`/order/analytics/${vendorId}`, {
+        params: { date }
+      });
+      const data = response.data;
+
       if (data.success) {
         // Process analytics data
         setRevenue({
@@ -125,7 +125,7 @@ const VendorAnalytics: React.FC<VendorAnalyticsProps> = ({ vendorId, vendorName 
           week: data.week.uniqueCustomers,
           month: data.month.uniqueCustomers,
         });
-        
+
         // Process most/least sold items
         setMostSold({
           day: getMostLeastSold(data.day.itemStats).most,
@@ -137,7 +137,7 @@ const VendorAnalytics: React.FC<VendorAnalyticsProps> = ({ vendorId, vendorName 
           week: getMostLeastSold(data.week.itemStats).least,
           month: getMostLeastSold(data.month.itemStats).least,
         });
-        
+
         // Process order times for graph
         setOrderTimes(getOrderCountsByHour(data.ordersDay, new Date(date)));
       } else {

@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import styles from "../styles/MenuSorting.module.scss";
+import api from "@/utils/apiUtils";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ChevronUp, ChevronDown, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
 
 interface MenuSortingProps {
   universityId: string;
@@ -73,9 +74,9 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
     const fetchVendors = async () => {
       try {
         setLoadingVendors(true);
-        const response = await fetch(`${BACKEND_URL}/api/vendor/list/uni/${universityId}`);
-        if (response.ok) {
-          const vendorsData = await response.json();
+        const response = await api.get(`/api/vendor/list/uni/${universityId}`);
+        if (response.status === 200) {
+          const vendorsData = response.data;
           setVendors(vendorsData || []);
         }
       } catch (error) {
@@ -90,6 +91,88 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
     }
   }, [universityId]);
 
+
+  // Fetch current sort order
+  const fetchSortOrder = useCallback(async (itemsToFilter: Item[]) => {
+    if (!universityId || !itemsToFilter || itemsToFilter.length === 0) return;
+
+    try {
+      const response = await api.get("/api/menu-sort/order", {
+        params: {
+          uniId: universityId,
+          vendorId: (selectedVendorId && selectedVendorId !== "null") ? selectedVendorId : "null"
+        }
+      });
+      const data = response.data;
+
+      if (data.success && data.data) {
+        // Create sets of available itemIds, types, and subtypes for filtering
+        const availableItemIds = new Set(itemsToFilter.map(item => item.itemId));
+        const availableTypeKeys = new Set<string>();
+        const availableSubtypeKeys = new Set<string>();
+
+        itemsToFilter.forEach(item => {
+          if (item.type) {
+            availableTypeKeys.add(`${item.category}-${item.type}`);
+          }
+          if (item.type && item.subtype) {
+            availableSubtypeKeys.add(`${item.category}-${item.type}-${item.subtype}`);
+          }
+        });
+
+        // Filter and set item order
+        if (data.data.itemOrder && data.data.itemOrder.length > 0) {
+          // Filter itemOrder to only include items that exist in current items
+          const filteredItemOrder = data.data.itemOrder.filter((item: SortOrderItem) =>
+            availableItemIds.has(item.itemId)
+          );
+          setCurrentSortOrder(filteredItemOrder);
+
+          // Apply sort order to items
+          // Create a copy to avoid mutating the original array
+          const sortedItems = applySortOrder([...itemsToFilter], filteredItemOrder);
+
+          // Update items with sorted order
+          // The isFetchingSortRef flag prevents re-fetching when items are updated
+          setItems(sortedItems);
+        } else {
+          setCurrentSortOrder([]);
+        }
+
+        // Filter and set type order
+        if (data.data.typeOrder) {
+          const filteredTypeOrder = data.data.typeOrder.filter((item: TypeOrderItem) =>
+            availableTypeKeys.has(`${item.category}-${item.type}`)
+          );
+          setCurrentTypeOrder(filteredTypeOrder);
+        } else {
+          setCurrentTypeOrder([]);
+        }
+
+        // Filter and set subtype order
+        if (data.data.subtypeOrder) {
+          const filteredSubtypeOrder = data.data.subtypeOrder.filter((item: SubtypeOrderItem) =>
+            availableSubtypeKeys.has(`${item.category}-${item.type}-${item.subtype}`)
+          );
+          setCurrentSubtypeOrder(filteredSubtypeOrder);
+        } else {
+          setCurrentSubtypeOrder([]);
+        }
+      } else {
+        // No sort order found, reset to empty
+        setCurrentSortOrder([]);
+        setCurrentTypeOrder([]);
+        setCurrentSubtypeOrder([]);
+      }
+    } catch (error) {
+      console.error("Error fetching sort order:", error);
+      // On error, reset to empty
+      setCurrentSortOrder([]);
+      setCurrentTypeOrder([]);
+      setCurrentSubtypeOrder([]);
+    }
+  }, [universityId, selectedVendorId]);
+
   // Fetch items (vendor-specific if vendor selected, otherwise all university items)
   useEffect(() => {
     const fetchItems = async () => {
@@ -100,9 +183,9 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
 
         if (selectedVendorId && selectedVendorId !== "null") {
           // Fetch vendor-specific items
-          const vendorResponse = await fetch(`${BACKEND_URL}/api/item/getvendors/${selectedVendorId}`);
-          if (vendorResponse.ok) {
-            const vendorData = await vendorResponse.json();
+          const vendorResponse = await api.get(`/api/item/getvendors/${selectedVendorId}`);
+          if (vendorResponse.status === 200) {
+            const vendorData = vendorResponse.data;
             if (vendorData.success && vendorData.data) {
               // Map vendor retail items
               retailItems = (vendorData.data.retailItems || []).map((item: { itemId: string; name: string; type: string; subtype?: string; price: number; image?: string }) => ({
@@ -132,12 +215,12 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
         } else {
           // Fetch all university items (university-wide)
           const [retailRes, produceRes] = await Promise.all([
-            fetch(`${BACKEND_URL}/api/item/retail/uni/${universityId}?limit=1000`),
-            fetch(`${BACKEND_URL}/api/item/produce/uni/${universityId}?limit=1000`),
+            api.get(`/api/item/retail/uni/${universityId}`, { params: { limit: 1000 } }),
+            api.get(`/api/item/produce/uni/${universityId}`, { params: { limit: 1000 } }),
           ]);
 
-          const retailData = await retailRes.json();
-          const produceData = await produceRes.json();
+          const retailData = retailRes.data;
+          const produceData = produceRes.data;
 
           retailItems = (retailData.items || []).map((item: { _id: string; name: string; type: string; subtype?: string; price: number; image?: string }) => ({
             _id: item._id,
@@ -164,16 +247,16 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
 
         const allItems = [...retailItems, ...produceItems];
         setItems(allItems);
-        
+
         // Fetch sort order after items are loaded (only once per vendor)
         if (allItems.length > 0 && !isFetchingSortRef.current) {
           const fetchKey = `${selectedVendorId || 'university'}-${universityId}`;
-          
+
           // Only fetch if we haven't fetched for this key yet
           if (fetchKey !== lastFetchKeyRef.current) {
             lastFetchKeyRef.current = fetchKey;
             isFetchingSortRef.current = true;
-            
+
             // Fetch sort order - this will update items with sorted order
             fetchSortOrder(allItems).finally(() => {
               // Don't reset isFetchingSortRef immediately - let it reset after items are updated
@@ -194,88 +277,7 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
     if (universityId) {
       fetchItems();
     }
-  }, [universityId, selectedVendorId]);
-
-  // Fetch current sort order
-  const fetchSortOrder = useCallback(async (itemsToFilter: Item[]) => {
-    if (!universityId || !itemsToFilter || itemsToFilter.length === 0) return;
-    
-    try {
-      const params = new URLSearchParams({
-        uniId: universityId,
-        ...(selectedVendorId && selectedVendorId !== "null" ? { vendorId: selectedVendorId } : { vendorId: "null" }),
-      });
-
-      const response = await fetch(`${BACKEND_URL}/api/menu-sort/order?${params}`);
-      const data = await response.json();
-
-      if (data.success && data.data) {
-        // Create sets of available itemIds, types, and subtypes for filtering
-        const availableItemIds = new Set(itemsToFilter.map(item => item.itemId));
-        const availableTypeKeys = new Set<string>();
-        const availableSubtypeKeys = new Set<string>();
-        
-        itemsToFilter.forEach(item => {
-          if (item.type) {
-            availableTypeKeys.add(`${item.category}-${item.type}`);
-          }
-          if (item.type && item.subtype) {
-            availableSubtypeKeys.add(`${item.category}-${item.type}-${item.subtype}`);
-          }
-        });
-        
-        // Filter and set item order
-        if (data.data.itemOrder && data.data.itemOrder.length > 0) {
-          // Filter itemOrder to only include items that exist in current items
-          const filteredItemOrder = data.data.itemOrder.filter((item: SortOrderItem) => 
-            availableItemIds.has(item.itemId)
-          );
-          setCurrentSortOrder(filteredItemOrder);
-          
-          // Apply sort order to items
-          // Create a copy to avoid mutating the original array
-          const sortedItems = applySortOrder([...itemsToFilter], filteredItemOrder);
-          
-          // Update items with sorted order
-          // The isFetchingSortRef flag prevents re-fetching when items are updated
-          setItems(sortedItems);
-        } else {
-          setCurrentSortOrder([]);
-        }
-        
-        // Filter and set type order
-        if (data.data.typeOrder) {
-          const filteredTypeOrder = data.data.typeOrder.filter((item: TypeOrderItem) => 
-            availableTypeKeys.has(`${item.category}-${item.type}`)
-          );
-          setCurrentTypeOrder(filteredTypeOrder);
-        } else {
-          setCurrentTypeOrder([]);
-        }
-        
-        // Filter and set subtype order
-        if (data.data.subtypeOrder) {
-          const filteredSubtypeOrder = data.data.subtypeOrder.filter((item: SubtypeOrderItem) => 
-            availableSubtypeKeys.has(`${item.category}-${item.type}-${item.subtype}`)
-          );
-          setCurrentSubtypeOrder(filteredSubtypeOrder);
-        } else {
-          setCurrentSubtypeOrder([]);
-        }
-      } else {
-        // No sort order found, reset to empty
-        setCurrentSortOrder([]);
-        setCurrentTypeOrder([]);
-        setCurrentSubtypeOrder([]);
-      }
-    } catch (error) {
-      console.error("Error fetching sort order:", error);
-      // On error, reset to empty
-      setCurrentSortOrder([]);
-      setCurrentTypeOrder([]);
-      setCurrentSubtypeOrder([]);
-    }
-  }, [universityId, selectedVendorId]);
+  }, [universityId, selectedVendorId, fetchSortOrder]);
 
   // Track the last fetch to prevent repeated API calls
   const lastFetchKeyRef = useRef<string>("");
@@ -304,16 +306,16 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
   // Handle move up
   const handleMoveUp = (index: number) => {
     if (index === 0) return;
-    
+
     const filtered = getFilteredItems();
     const newItems = [...items];
     const itemToMove = filtered[index];
     const itemAbove = filtered[index - 1];
-    
+
     // Find indices in full items array
     const itemIndex = newItems.findIndex((i) => i.itemId === itemToMove.itemId);
     const aboveIndex = newItems.findIndex((i) => i.itemId === itemAbove.itemId);
-    
+
     if (itemIndex !== -1 && aboveIndex !== -1) {
       // Swap items
       [newItems[itemIndex], newItems[aboveIndex]] = [newItems[aboveIndex], newItems[itemIndex]];
@@ -325,15 +327,15 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
   const handleMoveDown = (index: number) => {
     const filtered = getFilteredItems();
     if (index >= filtered.length - 1) return;
-    
+
     const newItems = [...items];
     const itemToMove = filtered[index];
     const itemBelow = filtered[index + 1];
-    
+
     // Find indices in full items array
     const itemIndex = newItems.findIndex((i) => i.itemId === itemToMove.itemId);
     const belowIndex = newItems.findIndex((i) => i.itemId === itemBelow.itemId);
-    
+
     if (itemIndex !== -1 && belowIndex !== -1) {
       // Swap items
       [newItems[itemIndex], newItems[belowIndex]] = [newItems[belowIndex], newItems[itemIndex]];
@@ -446,14 +448,14 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
           availableSubtypeKeys.add(`${item.category}-${item.type}-${item.subtype}`);
         }
       });
-      
+
       // Only add subtype order entries for subtypes that exist
       currentSubtypeOrder
         .filter((item) => {
           const key = `${item.category}-${item.type}-${item.subtype}`;
-          return item.category === category && 
-                 item.type === type && 
-                 availableSubtypeKeys.has(key);
+          return item.category === category &&
+            item.type === type &&
+            availableSubtypeKeys.has(key);
         })
         .forEach((item) => {
           subtypeOrderMap.set(item.subtype, item.sortIndex);
@@ -564,7 +566,7 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
           availableTypeKeys.add(`${item.category}-${item.type}`);
         }
       });
-      const filteredTypeOrder = currentTypeOrder.filter((item: TypeOrderItem) => 
+      const filteredTypeOrder = currentTypeOrder.filter((item: TypeOrderItem) =>
         availableTypeKeys.has(`${item.category}-${item.type}`)
       );
 
@@ -575,25 +577,19 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
           availableSubtypeKeys.add(`${item.category}-${item.type}-${item.subtype}`);
         }
       });
-      const filteredSubtypeOrder = currentSubtypeOrder.filter((item: SubtypeOrderItem) => 
+      const filteredSubtypeOrder = currentSubtypeOrder.filter((item: SubtypeOrderItem) =>
         availableSubtypeKeys.has(`${item.category}-${item.type}-${item.subtype}`)
       );
 
-      const response = await fetch(`${BACKEND_URL}/api/menu-sort/order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          uniId: universityId,
-          vendorId: selectedVendorId || null,
-          itemOrder: sortOrder,
-          typeOrder: filteredTypeOrder,
-          subtypeOrder: filteredSubtypeOrder,
-        }),
+      const response = await api.post("/api/menu-sort/order", {
+        uniId: universityId,
+        vendorId: selectedVendorId || null,
+        itemOrder: sortOrder,
+        typeOrder: filteredTypeOrder,
+        subtypeOrder: filteredSubtypeOrder,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         toast.success("Menu sort order saved successfully!");
@@ -619,18 +615,14 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
 
     try {
       setSaving(true);
-      const response = await fetch(`${BACKEND_URL}/api/menu-sort/order`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await api.delete("/api/menu-sort/order", {
+        data: {
           uniId: universityId,
           vendorId: selectedVendorId || null,
-        }),
+        }
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         toast.success("Sort order reset successfully!");
@@ -849,52 +841,52 @@ const MenuSorting: React.FC<MenuSortingProps> = ({ universityId, vendorId: initi
       {activeTab === "items" && (
         <div className={styles.itemsList}>
           {filteredItems.map((item, index) => (
-          <div
-            key={item.itemId}
-            draggable
-            onDragStart={() => handleDragStart(index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDragEnd={handleDragEnd}
-            className={`${styles.itemCard} ${draggedIndex === index ? styles.dragging : ""}`}
-          >
-            <div className={styles.itemIndex}>{index + 1}</div>
-            <div className={styles.itemImage}>
-              {item.image ? (
-                <img src={item.image} alt={item.name} />
-              ) : (
-                <div className={styles.placeholderImage}>No Image</div>
-              )}
-            </div>
-            <div className={styles.itemDetails}>
-              <div className={styles.itemName}>{item.name}</div>
-              <div className={styles.itemMeta}>
-                <span className={styles.badge}>{item.category}</span>
-                <span className={styles.badge}>{item.type}</span>
-                {item.subtype && <span className={styles.badge}>{item.subtype}</span>}
+            <div
+              key={item.itemId}
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
+              className={`${styles.itemCard} ${draggedIndex === index ? styles.dragging : ""}`}
+            >
+              <div className={styles.itemIndex}>{index + 1}</div>
+              <div className={styles.itemImage}>
+                {item.image ? (
+                  <img src={item.image} alt={item.name} />
+                ) : (
+                  <div className={styles.placeholderImage}>No Image</div>
+                )}
               </div>
-              <div className={styles.itemPrice}>₹{item.price}</div>
+              <div className={styles.itemDetails}>
+                <div className={styles.itemName}>{item.name}</div>
+                <div className={styles.itemMeta}>
+                  <span className={styles.badge}>{item.category}</span>
+                  <span className={styles.badge}>{item.type}</span>
+                  {item.subtype && <span className={styles.badge}>{item.subtype}</span>}
+                </div>
+                <div className={styles.itemPrice}>₹{item.price}</div>
+              </div>
+              <div className={styles.moveButtons}>
+                <button
+                  onClick={() => handleMoveUp(index)}
+                  disabled={index === 0}
+                  className={styles.moveButton}
+                  title="Move up"
+                >
+                  <ChevronUp size={20} />
+                </button>
+                <button
+                  onClick={() => handleMoveDown(index)}
+                  disabled={index === filteredItems.length - 1}
+                  className={styles.moveButton}
+                  title="Move down"
+                >
+                  <ChevronDown size={20} />
+                </button>
+              </div>
+              <div className={styles.dragHandle} title="Drag to reorder">☰</div>
             </div>
-            <div className={styles.moveButtons}>
-              <button
-                onClick={() => handleMoveUp(index)}
-                disabled={index === 0}
-                className={styles.moveButton}
-                title="Move up"
-              >
-                <ChevronUp size={20} />
-              </button>
-              <button
-                onClick={() => handleMoveDown(index)}
-                disabled={index === filteredItems.length - 1}
-                className={styles.moveButton}
-                title="Move down"
-              >
-                <ChevronDown size={20} />
-              </button>
-            </div>
-            <div className={styles.dragHandle} title="Drag to reorder">☰</div>
-          </div>
-        ))}
+          ))}
         </div>
       )}
     </div>

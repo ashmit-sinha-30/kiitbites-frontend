@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import api from "@/utils/apiUtils";
 import { useToast } from "@/hooks/use-toast";
 import styles from "../styles/VendorRecipes.module.scss";
 
@@ -126,26 +127,16 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
 
   const fetchRecipes = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-      
-      let url = `${backendUrl}/api/recipes/vendor`;
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.append("status", statusFilter);
       if (categoryFilter) params.append("category", categoryFilter);
       if (cuisineFilter) params.append("cuisine", cuisineFilter);
       if (searchTerm) params.append("search", searchTerm);
-      if (params.toString()) url += `?${params.toString()}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
 
-      if (response.ok) {
-        const json = await response.json();
+      const response = await api.get(`/api/recipes/vendor${params.toString() ? `?${params.toString()}` : ""}`);
+
+      if (response.status === 200) {
+        const json = response.data;
         if (json.success) {
           setRecipes(json.data);
         }
@@ -168,19 +159,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
 
   const handleCreateRecipe = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-
-      const response = await fetch(`${backendUrl}/api/recipes/vendor`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const json = await response.json();
+      const response = await api.post("/api/recipes/vendor", formData);
+      const json = response.data;
 
       if (json.success) {
         toast({
@@ -211,19 +191,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
     if (!editingRecipe) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-
-      const response = await fetch(`${backendUrl}/api/recipes/vendor/${editingRecipe._id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const json = await response.json();
+      const response = await api.put(`/api/recipes/vendor/${editingRecipe._id}`, formData);
+      const json = response.data;
 
       if (json.success) {
         toast({
@@ -249,9 +218,6 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
       });
     }
   };
-
-  // Vendors can no longer delete recipes or change status
-  // Only universities can manage recipe status
 
   const resetForm = () => {
     setFormData({
@@ -315,7 +281,7 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
   const updateIngredient = (index: number, field: keyof Ingredient, value: string | number) => {
     setFormData(prev => ({
       ...prev,
-      ingredients: prev.ingredients.map((ing, i) => 
+      ingredients: prev.ingredients.map((ing, i) =>
         i === index ? { ...ing, [field]: value } : ing
       )
     }));
@@ -331,12 +297,12 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
   const addInstruction = () => {
     setFormData(prev => ({
       ...prev,
-      instructions: [...prev.instructions, { 
-        step: prev.instructions.length + 1, 
-        description: "", 
-        duration: 0, 
-        temperature: "", 
-        notes: "" 
+      instructions: [...prev.instructions, {
+        step: prev.instructions.length + 1,
+        description: "",
+        duration: 0,
+        temperature: "",
+        notes: ""
       }]
     }));
   };
@@ -344,7 +310,7 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
   const updateInstruction = (index: number, field: keyof Instruction, value: string | number) => {
     setFormData(prev => ({
       ...prev,
-      instructions: prev.instructions.map((inst, i) => 
+      instructions: prev.instructions.map((inst, i) =>
         i === index ? { ...inst, [field]: value } : inst
       )
     }));
@@ -384,7 +350,7 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
     <div className={styles.container}>
       <div className={styles.header}>
         <h2>Recipe Management</h2>
-        <button 
+        <button
           className={styles.createButton}
           onClick={() => {
             resetForm();
@@ -446,20 +412,20 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
               <div className={styles.cardHeader}>
                 <h3>{recipe.title}</h3>
                 <div className={styles.badges}>
-                  <span 
+                  <span
                     className={styles.badge}
                     style={{ backgroundColor: getStatusColor(recipe.status) }}
                   >
                     {recipe.status.toUpperCase()}
                   </span>
-                  <span 
+                  <span
                     className={styles.badge}
                     style={{ backgroundColor: getDifficultyColor(recipe.difficulty) }}
                   >
                     {recipe.difficulty.toUpperCase()}
                   </span>
                   {recipe.outputType && (
-                    <span 
+                    <span
                       className={styles.badge}
                       style={{ backgroundColor: '#10b981' }}
                     >
@@ -473,24 +439,21 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                 <span>Prep: {recipe.prepTime}m</span>
                 <span>Cook: {recipe.cookTime}m</span>
                 <span>Serves: {recipe.servings}</span>
-                
+
               </div>
               <div className={styles.actions}>
-                <button 
+                <button
                   onClick={() => setViewingRecipe(recipe)}
                   className={styles.viewButton}
                 >
                   View
                 </button>
-                <button 
+                <button
                   onClick={() => startEdit(recipe)}
                   className={styles.editButton}
                 >
                   Edit
                 </button>
-                <span className={`${styles.statusBadge} ${styles[recipe.status]}`}>
-                  {recipe.status}
-                </span>
               </div>
             </div>
           ))}
@@ -502,7 +465,7 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
         <div className={styles.modal} onClick={() => setShowCreateForm(false)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <h3>{editingRecipe ? "Edit Recipe" : "Create New Recipe"}</h3>
-            
+
             <div className={styles.formGrid}>
               <div className={styles.formGroup}>
                 <label>Title *</label>
@@ -610,8 +573,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                   onChange={(e) => {
                     const value = e.target.value;
                     const outputType: 'retail' | 'produce' | null = value === '' ? null : (value === 'retail' ? 'retail' : value === 'produce' ? 'produce' : null);
-                    setFormData(prev => ({ 
-                      ...prev, 
+                    setFormData(prev => ({
+                      ...prev,
                       outputType
                     }));
                   }}
@@ -664,8 +627,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                     value={ingredient.notes || ""}
                     onChange={(e) => updateIngredient(index, 'notes', e.target.value)}
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => removeIngredient(index)}
                     className={styles.removeButton}
                   >
@@ -711,8 +674,8 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                     value={instruction.notes || ""}
                     onChange={(e) => updateInstruction(index, 'notes', e.target.value)}
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => removeInstruction(index)}
                     className={styles.removeButton}
                   >
@@ -746,7 +709,7 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
         <div className={styles.modal} onClick={() => setViewingRecipe(null)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <h3>{viewingRecipe.title}</h3>
-            
+
             <div className={styles.recipeDetails}>
               <div className={styles.recipeMeta}>
                 <p><strong>Category:</strong> {viewingRecipe.category.replace('_', ' ').toUpperCase()}</p>
@@ -799,28 +762,6 @@ export default function VendorRecipes({ }: VendorRecipesProps) {
                   ))}
                 </ol>
               </div>
-
-              {viewingRecipe.tags && viewingRecipe.tags.length > 0 && (
-                <div className={styles.tags}>
-                  <h4>Tags</h4>
-                  <div className={styles.tagList}>
-                    {viewingRecipe.tags.map((tag, index) => (
-                      <span key={index} className={styles.tag}>{tag}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {viewingRecipe.tips && viewingRecipe.tips.length > 0 && (
-                <div className={styles.tips}>
-                  <h4>Tips</h4>
-                  <ul>
-                    {viewingRecipe.tips.map((tip, index) => (
-                      <li key={index}>{tip}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
 
             <div className={styles.modalActions}>

@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FaSearch, FaArrowLeft, FaChevronDown } from "react-icons/fa";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import api from "@/utils/apiUtils";
 import DishListItemV2 from "../../food/DishListItem/DishListItemV2";
 import { Store, X, CheckCircle2 } from "lucide-react";
 import styles from "./SearchBar.module.scss";
 import { useSearchCart } from '../../context/SearchCartContext';
 import { FoodItem as SharedFoodItem } from "@/app/home/[slug]/types";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 
 interface University {
   _id: string;
@@ -46,15 +47,6 @@ interface VendorItem {
   isVeg?: string | boolean;
 }
 
-interface VendorData {
-  success: boolean;
-  foodCourtName: string;
-  message?: string;
-  data: {
-    retailItems: VendorItem[];
-    produceItems: VendorItem[];
-  };
-}
 
 export interface SearchResult {
   _id?: string;
@@ -214,26 +206,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
     // If we're in a vendor page, we don't need university ID
     if (vendorId) {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/item/getvendors/${vendorId}`);
-
-        if (!response.ok) {
-          console.error("Vendor search failed:", response.status);
-          setSearchResults([]);
-          setSuggestedItems([]);
-          if (onSearchResults) onSearchResults([]);
-          return;
-        }
-
-        let data: VendorData;
-        try {
-          data = await response.json();
-        } catch (e) {
-          console.error("Failed to parse vendor data:", e);
-          setSearchResults([]);
-          setSuggestedItems([]);
-          if (onSearchResults) onSearchResults([]);
-          return;
-        }
+        const response = await api.get(`/api/item/getvendors/${vendorId}`);
+        const data = response.data;
 
         if (!data.success) {
           console.error("Vendor data fetch failed:", data.message);
@@ -396,18 +370,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
     try {
       const [itemsRes, vendorsRes] = await Promise.all([
-        fetch(`${BACKEND_URL}/api/item/search/items?query=${encodeURIComponent(searchText)}&uniID=${selectedUniversity}&searchByType=true`),
-        fetch(`${BACKEND_URL}/api/item/search/vendors?query=${encodeURIComponent(searchText)}&uniID=${selectedUniversity}`)
+        api.get(`/api/item/search/items?query=${encodeURIComponent(searchText)}&uniID=${selectedUniversity}&searchByType=true`),
+        api.get(`/api/item/search/vendors?query=${encodeURIComponent(searchText)}&uniID=${selectedUniversity}`)
       ]);
 
-      if (!itemsRes.ok || !vendorsRes.ok) {
-        throw new Error(`HTTP error! status: ${itemsRes.status} ${vendorsRes.status}`);
-      }
-
-      const [itemsData, vendorsData] = await Promise.all([
-        itemsRes.json(),
-        vendorsRes.json()
-      ]);
+      const itemsData = itemsRes.data;
+      const vendorsData = vendorsRes.data;
 
       let items: SearchResult[] = [];
       let suggestions: SearchResult[] = [];
@@ -478,8 +446,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
     const fetchUniversities = async () => {
       try {
-        const res = await fetch(`${BACKEND_URL}/api/user/auth/list`);
-        const data = await res.json();
+        const res = await api.get("/api/user/auth/list");
+        const data = res.data;
         setUniversities(data);
 
         // If user is not authenticated, select the first college
@@ -498,11 +466,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
         return;
       }
       try {
-        const res = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/api/user/auth/user");
 
-        const user = await res.json();
+        const user = res.data;
         if (user?.uniID) {
           setSelectedUniversity(user.uniID);
           setIsAuthenticated(true);
@@ -527,14 +493,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
     const fetchPopularFoods = async () => {
       try {
         const [retailRes, produceRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/api/item/retail/uni/${selectedUniversity}`),
-          fetch(`${BACKEND_URL}/api/item/produce/uni/${selectedUniversity}`),
+          api.get(`/api/item/retail/uni/${selectedUniversity}`),
+          api.get(`/api/item/produce/uni/${selectedUniversity}`),
         ]);
 
-        const [retailData, produceData] = await Promise.all([
-          retailRes.json(),
-          produceRes.json(),
-        ]);
+        const retailData = retailRes.data;
+        const produceData = produceRes.data;
 
         const combined = [...retailData.items, ...produceData.items];
         setPopularFoods(combined.slice(0, 24));
@@ -577,11 +541,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     fetchSearchResults(foodName);
 
     // Track analytics in background without blocking UI
-    fetch(`${BACKEND_URL}/api/increase-search`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ foodName }),
-    }).catch(err => console.error("Failed to track search:", err));
+    api.post("/api/increase-search", { foodName }).catch(err => console.error("Failed to track search:", err));
   };
 
 
@@ -640,12 +600,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
       // If not in vendor mode, show vendor selection modal or check existing cart vendor
       try {
         // Fetch vendors for the selected item
-        const response = await fetch(`${BACKEND_URL}/api/item/vendors/${itemId}`);
-        if (!response.ok) {
-          toast.error('Failed to fetch vendors for this item');
-          return;
-        }
-        const fetchedVendors: Vendor[] = await response.json();
+        const response = await api.get(`/api/item/vendors/${itemId}`);
+        const fetchedVendors: Vendor[] = response.data;
 
         // Check if cart has items from another vendor
         const confirmedVendorId = searchCartItems.length > 0 ? searchCartItems[0].vendorId : null;
@@ -659,13 +615,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
           } else {
             // Item NOT available in current vendor -> Show error "Item not available in {vendorName}"
             try {
-              const vRes = await fetch(`${BACKEND_URL}/api/vendor/${confirmedVendorId}`);
-              if (vRes.ok) {
-                const vData = await vRes.json();
-                toast.error(`Item not available in ${vData.fullName || vData.name || 'your current vendor'}`);
-              } else {
-                toast.error('Item not available in your current vendor');
-              }
+              const vRes = await api.get(`/api/vendor/${confirmedVendorId}`);
+              const vData = vRes.data;
+              toast.error(`Item not available in ${vData.fullName || vData.name || 'your current vendor'}`);
             } catch {
               toast.error('Item not available in your current vendor');
             }

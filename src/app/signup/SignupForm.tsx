@@ -6,6 +6,7 @@ import { FaEye, FaEyeSlash, FaChevronDown } from "react-icons/fa";
 import dynamic from "next/dynamic";
 import styles from "./styles/Signup.module.scss";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import api from "@/utils/apiUtils";
 // import GoogleSignup from "./GoogleSignup";
 
 // Lazy load ToastContainer to reduce initial bundle size
@@ -78,15 +79,10 @@ export default function SignupForm() {
 
     try {
       setIsLoading(true);
-      const res = await fetch(`${BACKEND_URL}/api/user/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(formData),
-      });
+      const res = await api.post("/api/user/auth/signup", formData);
 
-      const data = await res.json();
-      if (res.ok) {
+      const data = res.data;
+      if (res.status === 200 || res.status === 201) {
         // Token will be provided after OTP verification, not during signup
         // Navigate immediately to OTP verification page
         router.push(
@@ -110,16 +106,9 @@ export default function SignupForm() {
 
   const checkSession = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${BACKEND_URL}/api/user/auth/refresh`, {
-        method: "GET",
-        credentials: "include",
-        headers: token
-          ? { Authorization: `Bearer ${token}` }
-          : {},
-      });
+      const res = await api.get("/api/user/auth/refresh");
 
-      if (res.ok) {
+      if (res.status === 200) {
         console.log("✅ Session refreshed successfully");
       } else if (res.status === 401 || res.status === 403) {
         console.log("🔴 Session expired, redirecting ...");
@@ -131,7 +120,7 @@ export default function SignupForm() {
     } catch (error) {
       console.error("❌ Error refreshing session:", error);
     }
-  }, [BACKEND_URL, router]);
+  }, [router]);
 
   // Refresh session on component mount - deferred to not block initial render
   useEffect(() => {
@@ -160,9 +149,9 @@ export default function SignupForm() {
     const timeoutId = setTimeout(() => {
       const fetchColleges = async () => {
         try {
-          const res = await fetch(`${BACKEND_URL}/api/user/auth/list`);
-          if (res.ok) {
-            const data = await res.json();
+          const res = await api.get("/api/user/auth/list");
+          if (res.status === 200) {
+            const data = res.data;
             setColleges(data);
           }
         } catch (error) {
@@ -174,7 +163,7 @@ export default function SignupForm() {
     }, 100); // Small delay to allow UI to render first
 
     return () => clearTimeout(timeoutId);
-  }, [BACKEND_URL]);
+  }, []);
 
   console.log("Making request to:", `${BACKEND_URL}/api/user/auth/signup`);
   console.log("Request body:", formData);

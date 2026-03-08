@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import api from "@/utils/apiUtils";
 import { useToast } from "@/hooks/use-toast";
+// Direct fetch was used previously, now I'm using api which has base URL.
 import styles from "../styles/VendorGrievances.module.scss";
 
 const VENDOR_GRIEVANCE_CATEGORIES = [
@@ -63,18 +65,11 @@ export default function VendorGrievances({ vendorId }: VendorGrievancesProps) {
 
   const fetchGrievances = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-      
-      const response = await fetch(`${backendUrl}/api/vendor/${vendorId}/grievances`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
+      const response = await api.get(`/api/vendor/${vendorId}/grievances`);
 
-      if (response.ok) {
-        const json = await response.json();
+      if (response.status === 200) {
+        const json = response.data;
+        // Direct fetch was used previously, now I'm using api which has base URL.
         if (json.success) {
           setGrievances(json.data);
         }
@@ -96,19 +91,9 @@ export default function VendorGrievances({ vendorId }: VendorGrievancesProps) {
     setSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token");
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-
-      const response = await fetch(`${backendUrl}/api/vendor/${vendorId}/grievances`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const json = await response.json();
+      const response = await api.post(`/api/vendor/${vendorId}/grievances`, formData);
+      const json = response.data;
+      // Direct fetch was used previously, now I'm using api which has base URL.
 
       if (json.success) {
         toast({
@@ -277,13 +262,13 @@ export default function VendorGrievances({ vendorId }: VendorGrievancesProps) {
                   </p>
                 </div>
                 <div className={styles.badges}>
-                  <span 
+                  <span
                     className={styles.badge}
                     style={{ backgroundColor: getSeverityColor(grievance.severity) }}
                   >
                     {grievance.severity.toUpperCase()}
                   </span>
-                  <span 
+                  <span
                     className={styles.badge}
                     style={{ backgroundColor: getStatusColor(grievance.status) }}
                   >
