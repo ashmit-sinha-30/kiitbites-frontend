@@ -7,6 +7,7 @@ import { ToastContainer, toast } from "react-toastify";
 import styles from "./styles/OtpVerification.module.scss";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import api from "@/utils/apiUtils";
+import Link from "next/link";
 
 export default function OtpVerificationClient() {
   // Redirect if user is already authenticated
@@ -14,11 +15,11 @@ export default function OtpVerificationClient() {
   const [email, setEmail] = useState<string | null>(null);
   const [fromPage, setFromPage] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const emailParam = searchParams.get("email");
+  const fromParam = searchParams.get("from");
+  const role = searchParams.get("role") || "user";
 
   useEffect(() => {
-    const emailParam = searchParams.get("email");
-    const fromParam = searchParams.get("from");
-
     console.log("Extracted email:", emailParam);
     console.log("Extracted fromPage:", fromParam);
     console.log(
@@ -31,7 +32,7 @@ export default function OtpVerificationClient() {
   }, [searchParams]);
 
   return email ? (
-    <OtpForm email={email} fromPage={fromPage} />
+    <OtpForm email={email} fromPage={fromPage} role={role} />
   ) : (
     <div className={styles.container}>
       <h1 style={{
@@ -50,9 +51,11 @@ export default function OtpVerificationClient() {
 function OtpForm({
   email,
   fromPage,
+  role,
 }: {
   email: string;
   fromPage: string | null;
+  role: string;
 }) {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -136,8 +139,8 @@ function OtpForm({
           return;
         }
 
-        // After successful OTP verification, get user data
-        const userRes = await api.get("/api/user/auth/user");
+        // After successful OTP verification, get user data using the appropriate role endpoint
+        const userRes = await api.get(`/api/${role}/auth/user`);
 
         if (userRes.status === 200) {
           const userData = userRes.data;
@@ -218,7 +221,8 @@ function OtpForm({
     if (!email || countdown > 0) return;
     setResendLoading(true);
     try {
-      const res = await api.post("/api/user/auth/resendotp", { email });
+      // Use role-specific resend endpoint
+      const res = await api.post(`/api/${role}/auth/resendotp`, { email });
 
       const data = res.data;
 
@@ -270,19 +274,26 @@ function OtpForm({
             </button>
           </form>
           <div className={styles.footer}>
-            <p>Didn&apos;t receive the code?</p>
-            <button
-              type="button"
-              onClick={handleResendOtp}
-              className={styles.resendButton}
-              disabled={resendLoading || countdown > 0}
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (!resendLoading && countdown === 0) {
+                  handleResendOtp();
+                }
+              }}
+              style={{
+                pointerEvents: resendLoading || countdown > 0 ? "none" : "auto",
+                opacity: resendLoading || countdown > 0 ? 0.6 : 1,
+              }}
             >
+              Didn&apos;t receive the code?{" "}
               {resendLoading
                 ? "Sending..."
                 : countdown > 0
                   ? `Resend in ${countdown}s`
                   : "Resend OTP"}
-            </button>
+            </Link>
           </div>
         </div>
 
