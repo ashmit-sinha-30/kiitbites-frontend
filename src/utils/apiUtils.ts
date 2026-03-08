@@ -40,13 +40,23 @@ api.interceptors.request.use(
         if (typeof window !== 'undefined') {
             const token = localStorage.getItem('token');
             const adminToken = localStorage.getItem('adminToken');
+            const url = config.url || '';
 
-            if (adminToken) {
+            // Prioritize adminToken ONLY for admin-related API calls
+            if (url.includes('/api/admin/') && adminToken) {
                 config.headers.Authorization = `Bearer ${adminToken}`;
-            } else if (token) {
+            }
+            // For all other calls (user, vendor, uni), prioritize the standard token
+            else if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
-            } else {
-                // If no token is found, ensure no stale Authorization header is sent
+            }
+            // Fallback: use adminToken if it's the only one available and we are NOT on a user route
+            // (This handles cases where an admin might be accessing generic routes)
+            else if (adminToken && !url.includes('/api/user/')) {
+                config.headers.Authorization = `Bearer ${adminToken}`;
+            }
+            else {
+                // If no appropriate token is found, ensure no stale Authorization header is sent
                 delete config.headers.Authorization;
             }
         }
