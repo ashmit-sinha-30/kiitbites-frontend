@@ -62,9 +62,11 @@ api.interceptors.request.use(
         // Attach Bearer token for cross-origin requests (cookies may be blocked by browsers)
         if (typeof window !== 'undefined') {
             const url = config.url || '';
-            const token = url.includes('/api/admin/')
-                ? localStorage.getItem('adminToken')
-                : localStorage.getItem('token');
+            const isAdminRoute = url.includes('/api/admin/') ||
+                url.includes('/api/invoices/admin') ||
+                url.includes('/api/invoices/stats') ||
+                url.includes('/api/invoices/bulk');
+            const token = isAdminRoute ? localStorage.getItem('adminToken') : localStorage.getItem('token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
@@ -125,9 +127,11 @@ userApi.interceptors.request.use((config) => {
     }
     if (typeof window !== 'undefined') {
         const url = config.url || '';
-        const token = url.includes('/api/admin/')
-            ? localStorage.getItem('adminToken')
-            : localStorage.getItem('token');
+        const isAdminRoute = url.includes('/api/admin/') ||
+            url.includes('/api/invoices/admin') ||
+            url.includes('/api/invoices/stats') ||
+            url.includes('/api/invoices/bulk');
+        const token = isAdminRoute ? localStorage.getItem('adminToken') : localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }

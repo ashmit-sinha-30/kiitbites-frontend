@@ -40,7 +40,9 @@ export default function AdminLoginPage() {
             const json = res.data;
 
             if (res.status === 200) {
-                if (json.data?.token) {
+                const token = json.token ?? json.data?.token;
+                if (token) {
+                    localStorage.setItem('adminToken', token);
                     toast.success('Login successful!');
                     setIsRedirecting(true);
                     setTimeout(() => {

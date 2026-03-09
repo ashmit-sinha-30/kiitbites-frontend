@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, GraduationCap, AlertCircle } from "lucide-react";
 import styles from "./styles/Home.module.scss";
 import { useEffect, useState } from "react";
+import api from "@/utils/apiUtils";
 
 interface College {
   fullName: string;
@@ -23,16 +24,14 @@ const HomePage = () => {
   const [colleges, setColleges] = useState<College[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-
   useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/user/auth/list`);
-        if (!response.ok) {
+        const response = await api.get("/api/user/auth/list");
+        if (response.status !== 200) {
           throw new Error("Failed to fetch colleges");
         }
-        const data = await response.json();
+        const data = response.data;
         // Add slugs to the college data
         const collegesWithSlugs = data.map((college: College) => ({
           ...college,
@@ -45,7 +44,7 @@ const HomePage = () => {
     };
 
     fetchColleges();
-  }, [BACKEND_URL]);
+  }, []);
 
   const handleCollegeClick = (college: College) => {
     // Store the college ID in localStorage before navigation

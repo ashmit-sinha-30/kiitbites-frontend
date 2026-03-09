@@ -101,8 +101,9 @@ function OtpForm({
       const data = res.data;
 
       if (res.status === 200) {
-        // Store token first
-        // localStorage.setItem("token", data.token);
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+        }
         toast.success("Account verified successfully!");
 
         // Handle different redirection cases

@@ -44,7 +44,10 @@ const VendorLoginPage: React.FC = () => {
       const data = response.data;
 
       if (response.status === 200) {
-        // Store token and redirect to vendor dashboard
+        // Store token for Authorization header (cookies may be blocked cross-origin)
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         window.dispatchEvent(new Event("authChanged"));
         localStorage.setItem('vendorRole', 'seller'); // Default role, can be updated later
         toast.success('Login successful!');

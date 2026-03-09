@@ -4,8 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { toast } from 'react-toastify';
 import { SearchResult } from '../search/SearchBar/SearchBar';
 import { CART_COUNT_UPDATE_EVENT } from '@/app/hooks/useCartCount';
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import api from '@/utils/apiUtils';
 
 interface CartItemResponse {
   itemId: string;
@@ -66,15 +65,12 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
       return null;
     }
     try {
-      const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
+      const response = await api.get("/api/user/auth/user");
+      if (response.status !== 200) {
         console.log('User auth response not ok:', response.status, response.statusText);
         return null;
       }
-      const user = await response.json();
-      console.log('User data received:', user);
+      const user = response.data;
       const id = user._id || user.id;
       setUserId(id);
       return id;
@@ -101,17 +97,14 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/cart/${currentUserId}`, {
-        credentials: "include",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(`/cart/${currentUserId}`);
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         console.log('Cart fetch failed:', response.status, response.statusText);
         return;
       }
 
-      const data = await response.json();
+      const data = response.data;
       // Transform the cart items to match our search cart structure
       const transformedItems = data.cart.map((item: CartItemResponse) => ({
         id: item.itemId,
@@ -191,28 +184,16 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         quantity: 1
       };
 
-      console.log('Sending cart request:', {
-        url: `${BACKEND_URL}/cart/add/${userId}`,
-        data: requestData
-      });
+      const response = await api.post(`/cart/add/${currentUserId}`, requestData);
 
-      const response = await fetch(`${BACKEND_URL}/cart/add/${currentUserId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (response.status !== 200 && response.status !== 201) {
+        const errorData = response.data;
         console.error('Cart addition failed:', {
           status: response.status,
           statusText: response.statusText,
           error: errorData
         });
-        throw new Error(errorData.message || 'Failed to add item to cart');
+        throw new Error(errorData?.message || 'Failed to add item to cart');
       }
 
       await refreshSearchCart();
@@ -238,20 +219,13 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         throw new Error('Item not found in cart');
       }
 
-      const response = await fetch(`${BACKEND_URL}/cart/add-one/${currentUserId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          itemId,
-          kind: item.type === 'retail' ? 'Retail' : 'Produce'
-        }),
+      const response = await api.post(`/cart/add-one/${currentUserId}`, {
+        itemId,
+        kind: item.type === 'retail' ? 'Retail' : 'Produce'
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (response.status !== 200 && response.status !== 201) {
+        const errorData = response.data;
         if (errorData.message?.includes('maximum quantity')) {
           toast.info('Maximum quantity reached for this item');
           return;
@@ -281,20 +255,13 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
         throw new Error('Item not found in cart');
       }
 
-      const response = await fetch(`${BACKEND_URL}/cart/remove-one/${currentUserId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          itemId,
-          kind: item.type === 'retail' ? 'Retail' : 'Produce'
-        }),
+      const response = await api.post(`/cart/remove-one/${currentUserId}`, {
+        itemId,
+        kind: item.type === 'retail' ? 'Retail' : 'Produce'
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (response.status !== 200 && response.status !== 201) {
+        const errorData = response.data;
         if (errorData.message?.includes('minimum quantity')) {
           toast.info('Minimum quantity reached');
           return;

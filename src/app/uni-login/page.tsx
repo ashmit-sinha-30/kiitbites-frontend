@@ -45,6 +45,7 @@ export default function UniLoginPage() {
         return;
       }
       if (json.token) {
+        localStorage.setItem('token', json.token);
         toast.success('Login successful!');
         setIsRedirecting(true);
       }

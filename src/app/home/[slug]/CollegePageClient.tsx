@@ -25,10 +25,7 @@ import { toast } from "react-toastify";
 import VendorModal from "./components/VendorModal";
 import FavoritesSection from "./components/FavoritesSection";
 import { VendorSkeleton, CategorySkeleton } from "@/app/components/skeleton/SkeletonLoader/SkeletonLoader";
-
 import api from "@/utils/apiUtils";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 // Categories will be dynamically generated from fetched items
 
@@ -1090,13 +1087,9 @@ const CollegePageClient = ({ slug = "" }: { slug?: string }) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-          credentials: "include",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUserId(data._id);
+        const response = await api.get("/api/user/auth/user");
+        if (response.status === 200) {
+          setUserId(response.data._id);
         }
       } catch (err) {
         console.error("Error fetching user in wrapper:", err);
