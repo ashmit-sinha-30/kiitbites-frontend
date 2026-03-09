@@ -20,6 +20,7 @@ import styles from "./styles/InventoryReport.module.scss";
 
 import UniProfile from "./components/UniProfile";
 import api from "@/utils/apiUtils";
+import axios from "axios";
 
 export default function UniDashboardPage() {
   const router = useRouter();
@@ -122,14 +123,22 @@ export default function UniDashboardPage() {
             setServices(assignJson.data.services);
           }
         } else {
-          // Failure to get user info, redirect
-          router.push("/uni-login");
-          return;
+          // Failure to get user info, redirect only if we truly have no session
+          const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+          if (!token) {
+            router.push("/uni-login");
+            return;
+          }
         }
       } catch (e) {
         console.error("Failed to init uni dashboard", e);
-        // On error, redirect to login
-        router.push("/uni-login");
+        // Only redirect on explicit 401 (unauthorized); for other errors, stay on page
+        if (axios.isAxiosError(e) && e.response?.status === 401) {
+          const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+          if (!token) {
+            router.push("/uni-login");
+          }
+        }
         return;
       }
     };

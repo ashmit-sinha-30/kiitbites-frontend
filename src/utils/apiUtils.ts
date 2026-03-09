@@ -63,9 +63,11 @@ api.interceptors.response.use(
         if (typeof window !== 'undefined' && error.response && error.response.status === 401) {
             // Check if we are in a dashboard area that requires authentication
             const pathname = window.location.pathname;
-            const isDashboardArea = pathname.includes('Dashboard') ||
-                pathname.includes('dashboard') ||
-                pathname.includes('admin');
+            // Restrict auto-redirects to admin and vendor dashboards only.
+            // Uni dashboards and user pages handle 401s themselves.
+            const isDashboardArea =
+                pathname.includes('admin-dashboard') ||
+                pathname.includes('vendordashboard');
 
             if (isDashboardArea) {
                 console.warn('Unauthorized access detected in dashboard. Redirecting to login.');
