@@ -51,7 +51,7 @@ export const initCSRF = async () => {
     }
 };
 
-// Add a request interceptor to handle CSRF and cleanup Authorization
+// Add a request interceptor to handle CSRF and Authorization
 api.interceptors.request.use(
     (config) => {
         // Attach CSRF token if available for state-changing methods
@@ -59,9 +59,16 @@ api.interceptors.request.use(
             config.headers['X-CSRF-Token'] = csrfToken;
         }
 
-        // We no longer manually attach Authorization headers as we rely on HTTP-only cookies
-        // If your backend still requires them during migration, they can be added back here
-        // but the goal is to move purely to withCredentials: true
+        // Attach Bearer token for cross-origin requests (cookies may be blocked by browsers)
+        if (typeof window !== 'undefined') {
+            const url = config.url || '';
+            const token = url.includes('/api/admin/')
+                ? localStorage.getItem('adminToken')
+                : localStorage.getItem('token');
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+        }
 
         return config;
     },
@@ -115,6 +122,15 @@ export const userApi = axios.create({
 userApi.interceptors.request.use((config) => {
     if (csrfToken && ['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase() || '')) {
         config.headers['X-CSRF-Token'] = csrfToken;
+    }
+    if (typeof window !== 'undefined') {
+        const url = config.url || '';
+        const token = url.includes('/api/admin/')
+            ? localStorage.getItem('adminToken')
+            : localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
     }
     return config;
 });

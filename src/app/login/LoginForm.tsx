@@ -83,7 +83,10 @@ export default function LoginForm() {
         return;
       }
 
-      // localStorage.setItem("token", data.token); // REMOVED: Using HTTP-only cookies now
+      // Store token for Authorization header (cookies may be blocked cross-origin)
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
 
       // Notify header to update
       window.dispatchEvent(new Event("authChanged"));
