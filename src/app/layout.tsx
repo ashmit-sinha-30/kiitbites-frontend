@@ -7,6 +7,7 @@ import { Metadata } from "next";
 import { SearchCartProvider } from './components/context/SearchCartContext';
 import ConditionalHeader from './components/layout/ConditionalHeader/ConditionalHeader';
 import NextTopLoader from 'nextjs-toploader';
+import CSRFInitializer from './components/shared/CSRFInitializer';
 
 export const metadata: Metadata = {
   title: {
@@ -83,6 +84,7 @@ export default function RootLayout({
       </head> */}
       <body>
         <GoogleOAuthProvider clientId={googleClientId}>
+          <CSRFInitializer />
           <SearchCartProvider>
             <NextTopLoader
               color="#01796f"

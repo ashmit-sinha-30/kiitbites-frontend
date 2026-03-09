@@ -98,11 +98,14 @@ export default function UniDashboardPage() {
   useEffect(() => {
     const init = async () => {
       try {
+        // Token is now in HTTP-only cookies
+        /* REMOVED:
         const token = localStorage.getItem("token");
         if (!token) {
           router.push("/uni-login");
           return;
         }
+        */
         const userRes = await api.get("/api/uni/auth/user");
         if (userRes.status === 200) {
           const user = userRes.data;
@@ -119,15 +122,13 @@ export default function UniDashboardPage() {
             setServices(assignJson.data.services);
           }
         } else {
-          // Token is invalid or expired, redirect to login
-          localStorage.removeItem("token");
+          // Failure to get user info, redirect
           router.push("/uni-login");
           return;
         }
       } catch (e) {
         console.error("Failed to init uni dashboard", e);
-        // On error, remove token and redirect to login
-        localStorage.removeItem("token");
+        // On error, redirect to login
         router.push("/uni-login");
         return;
       }

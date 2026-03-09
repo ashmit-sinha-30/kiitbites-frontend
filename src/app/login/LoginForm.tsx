@@ -83,7 +83,7 @@ export default function LoginForm() {
         return;
       }
 
-      localStorage.setItem("token", data.token);
+      // localStorage.setItem("token", data.token); // REMOVED: Using HTTP-only cookies now
 
       // Notify header to update
       window.dispatchEvent(new Event("authChanged"));
@@ -156,13 +156,13 @@ export default function LoginForm() {
 
       if (res.status === 200) {
         console.log("✅ Session refreshed successfully");
-        const data = res.data;
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-        }
+        // const data = res.data;
+        // if (data.token) {
+        //   localStorage.setItem("token", data.token); // REMOVED
+        // }
       } else if (res.status === 401 || res.status === 403) {
         console.log("🔴 Session expired, redirecting to login...");
-        localStorage.removeItem("token"); // Clear stored token (if any)
+        // localStorage.removeItem("token"); // REMOVED
         router.push("/login"); // Redirect to login page
       } else {
         console.log("⚠️ Unexpected response from server");

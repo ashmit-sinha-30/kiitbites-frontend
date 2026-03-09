@@ -113,26 +113,8 @@ export default function Cart() {
 
     const fetchUserAndCart = async () => {
       setIsLoading(true);
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        setUserLoggedIn(false);
-        const rawGuest = localStorage.getItem("guest_cart") || "[]";
-        try {
-          const guestCart = JSON.parse(rawGuest) as GuestCartItem[];
-          const guestCartWithCategory: CartItem[] = guestCart.map((item) => ({
-            ...item,
-            category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
-          }));
-          setCart(guestCartWithCategory);
-          window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
-        } catch {
-          setCart([]);
-        } finally {
-          setIsLoading(false);
-        }
-        return;
-      }
+      // Tokens are now in HTTP-only cookies.
+      // We try to fetch the user to see if we are logged in.
 
       try {
         const res = await api.get("/api/user/auth/user");
@@ -194,9 +176,26 @@ export default function Cart() {
         }
 
         await fetchExtras();
-      } catch {
-        localStorage.removeItem("token");
-        setUserLoggedIn(false);
+      } catch (err: unknown) {
+        const error = err as { response?: { status?: number } };
+        // If 401, we are not logged in, handle as guest
+        if (error.response?.status === 401) {
+          setUserLoggedIn(false);
+          const rawGuest = localStorage.getItem("guest_cart") || "[]";
+          try {
+            const guestCart = JSON.parse(rawGuest) as GuestCartItem[];
+            const guestCartWithCategory: CartItem[] = guestCart.map((item) => ({
+              ...item,
+              category: item.kind === "Retail" ? "Retail" as const : "Produce" as const
+            }));
+            setCart(guestCartWithCategory);
+            window.dispatchEvent(new Event(CART_COUNT_UPDATE_EVENT));
+          } catch {
+            setCart([]);
+          }
+        } else {
+          console.error("Error fetching user or cart:", err);
+        }
       } finally {
         setIsLoading(false);
       }

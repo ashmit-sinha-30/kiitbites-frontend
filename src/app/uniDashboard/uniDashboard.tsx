@@ -26,11 +26,14 @@ export default function UniDashboardPage() {
   useEffect(() => {
     const init = async () => {
       try {
+        // Token is now in HTTP-only cookies
+        /* REMOVED:
         const token = localStorage.getItem("token");
         if (!token) {
           router.push("/uni-login");
           return;
         }
+        */
 
         // Use standardized api utility
         const userRes = await api.get("/api/uni/auth/user");
@@ -48,8 +51,7 @@ export default function UniDashboardPage() {
             setFeatures(assignJson.data.features);
           }
         } else {
-          // Token is invalid or expired, redirect to login
-          localStorage.removeItem("token");
+          // Failure to get user info, redirect
           router.push("/uni-login");
           return;
         }
@@ -60,7 +62,6 @@ export default function UniDashboardPage() {
         if (axios.isAxiosError(e) && e.response?.status === 401) {
           return; // Interceptor already handled it
         }
-        localStorage.removeItem("token");
         router.push("/uni-login");
         return;
       } finally {

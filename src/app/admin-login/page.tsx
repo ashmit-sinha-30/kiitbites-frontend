@@ -41,7 +41,6 @@ export default function AdminLoginPage() {
 
             if (res.status === 200) {
                 if (json.data?.token) {
-                    localStorage.setItem('adminToken', json.data.token);
                     toast.success('Login successful!');
                     setIsRedirecting(true);
                     setTimeout(() => {

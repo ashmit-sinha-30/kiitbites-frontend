@@ -1,7 +1,9 @@
 import { FavoriteItem, Vendor } from "../types";
 import { toast } from "react-toastify";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import api from "@/utils/apiUtils";
+
+// const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ""; // Handled by apiUtils
 
 export const checkFavoriteItemAvailability = async (
   item: FavoriteItem,
@@ -9,39 +11,16 @@ export const checkFavoriteItemAvailability = async (
   categories: { retail: string[]; produce: string[] }
 ): Promise<{ isAvailable: boolean; vendors: Vendor[] | undefined }> => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("Please login to add items to cart");
-      return { isAvailable: false, vendors: undefined };
-    }
-
-    const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-      credentials: "include",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!userRes.ok) {
-      toast.error("Please login to add items to cart");
-      return { isAvailable: false, vendors: undefined };
-    }
-    const userId = (await userRes.json())._id;
+    const userRes = await api.get("/api/user/auth/user");
+    const userId = userRes.data._id;
 
     const [vendorRes, favRes] = await Promise.all([
-      fetch(`${BACKEND_URL}/api/item/vendors/${item._id}`, {
-        credentials: "include",
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      fetch(`${BACKEND_URL}/fav/${userId}`, {
-        credentials: "include",
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      api.get(`/api/item/vendors/${item._id}`),
+      api.get(`/fav/${userId}`),
     ]);
 
-    if (!vendorRes.ok || !favRes.ok) {
-      return { isAvailable: false, vendors: undefined };
-    }
-
-    const allVendors: Vendor[] = await vendorRes.json();
-    const userFavorites: FavoriteItem[] = (await favRes.json()).favourites || [];
+    const allVendors: Vendor[] = vendorRes.data;
+    const userFavorites: FavoriteItem[] = favRes.data.favourites || [];
 
     const favoriteVendorSet = new Set(
       userFavorites
@@ -105,19 +84,10 @@ export const addFavoriteToCart = async (
       vendorId,
     };
 
-    const response = await fetch(`${BACKEND_URL}/cart/add/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(requestData),
-    });
+    const response = await api.post(`/cart/add/${userId}`, requestData);
 
-    const responseData = await response.json();
-    if (!response.ok) {
-      throw new Error(responseData.message || "Failed to add item to cart");
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(response.data.message || "Failed to add favorite to cart");
     }
 
     toast.success(`${item.name} added to cart!`);

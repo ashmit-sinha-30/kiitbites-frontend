@@ -1,6 +1,7 @@
 import { toast } from "react-toastify";
+import api from "@/utils/apiUtils";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+// const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL; // Handled by apiUtils
 
 interface VendorItem {
   itemId: string;
@@ -30,9 +31,9 @@ export const addToCart = async (
     if (!item.itemId || item.itemId === '') {
       throw new Error('Invalid item ID: itemId is missing or empty');
     }
-    
+
     const kind = getItemKind(item);
-    
+
     console.log('DEBUG: Cart request data:', {
       itemId: item.itemId,
       kind: kind,
@@ -40,25 +41,16 @@ export const addToCart = async (
       vendorId: vendorId,
       itemName: item.name
     });
-    
-    const response = await fetch(`${BACKEND_URL}/cart/add/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item.itemId,
-        kind: kind,
-        quantity: 1,
-        vendorId: vendorId,
-      }),
+
+    const response = await api.post(`/cart/add/${userId}`, {
+      itemId: item.itemId,
+      kind: kind,
+      quantity: 1,
+      vendorId: vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(response.data.message || "Failed to add to cart");
     }
 
     toast.success(`${item.name} added to cart!`);
@@ -82,25 +74,16 @@ export const increaseQuantity = async (
     if (!item.itemId || item.itemId === '') {
       throw new Error('Invalid item ID: itemId is missing or empty');
     }
-    
+
     const kind = getItemKind(item);
-    const response = await fetch(`${BACKEND_URL}/cart/add-one/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item.itemId,
-        kind: kind,
-        vendorId: vendorId,
-      }),
+    const response = await api.post(`/cart/add-one/${userId}`, {
+      itemId: item.itemId,
+      kind: kind,
+      vendorId: vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(response.data.message || "Failed to increase quantity");
     }
 
     toast.success(`Increased quantity of ${item.name}`);
@@ -124,25 +107,16 @@ export const decreaseQuantity = async (
     if (!item.itemId || item.itemId === '') {
       throw new Error('Invalid item ID: itemId is missing or empty');
     }
-    
+
     const kind = getItemKind(item);
-    const response = await fetch(`${BACKEND_URL}/cart/remove-one/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item.itemId,
-        kind: kind,
-        vendorId: vendorId,
-      }),
+    const response = await api.post(`/cart/remove-one/${userId}`, {
+      itemId: item.itemId,
+      kind: kind,
+      vendorId: vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(response.data.message || "Failed to decrease quantity");
     }
 
     toast.success(`Decreased quantity of ${item.name}`);

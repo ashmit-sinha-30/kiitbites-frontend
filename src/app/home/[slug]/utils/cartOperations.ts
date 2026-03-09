@@ -1,7 +1,9 @@
 import { FoodItem, CartItem } from "../types";
 import { toast } from "react-toastify";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import api from "@/utils/apiUtils";
+
+// const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ""; // Handled by apiUtils
 
 export const addItemToCart = async (
   userId: string,
@@ -11,25 +13,17 @@ export const addItemToCart = async (
 ): Promise<boolean> => {
   try {
     const kind = categories.retail.includes(item.category) ? "Retail" : "Produce";
-    
-    const response = await fetch(`${BACKEND_URL}/cart/add/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item.id,
-        kind: kind,
-        quantity: 1,
-        vendorId: vendorId,
-      }),
+
+    const response = await api.post(`/cart/add/${userId}`, {
+      itemId: item.id,
+      kind: kind,
+      quantity: 1,
+      vendorId: vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
+    // axios throws for non-2xx by default, but we can check status if needed
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(response.data.message || "Failed to add to cart");
     }
 
     toast.success(`${item.title} added to cart!`);
@@ -50,24 +44,15 @@ export const increaseItemQuantity = async (
 ): Promise<boolean> => {
   try {
     const kind = categories.retail.includes(item.category) ? "Retail" : "Produce";
-    
-    const response = await fetch(`${BACKEND_URL}/cart/add-one/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item.id,
-        kind: kind,
-        vendorId: item.vendorId,
-      }),
+
+    const response = await api.post(`/cart/add-one/${userId}`, {
+      itemId: item.id,
+      kind: kind,
+      vendorId: item.vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(response.data.message || "Failed to increase quantity");
     }
 
     toast.success(`Increased quantity of ${item.title}`);
@@ -88,24 +73,15 @@ export const decreaseItemQuantity = async (
 ): Promise<boolean> => {
   try {
     const kind = categories.retail.includes(item.category) ? "Retail" : "Produce";
-    
-    const response = await fetch(`${BACKEND_URL}/cart/remove-one/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item.id,
-        kind: kind,
-        vendorId: item.vendorId,
-      }),
+
+    const response = await api.post(`/cart/remove-one/${userId}`, {
+      itemId: item.id,
+      kind: kind,
+      vendorId: item.vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(response.data.message || "Failed to decrease quantity");
     }
 
     toast.info(`Decreased quantity of ${item.title}`);
@@ -121,19 +97,8 @@ export const decreaseItemQuantity = async (
 
 export const fetchUserCart = async (userId: string): Promise<CartItem[]> => {
   try {
-    const response = await fetch(`${BACKEND_URL}/cart/${userId}`, {
-      credentials: "include",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
-    }
-
-    const data = await response.json();
+    const response = await api.get(`/cart/${userId}`);
+    const data = response.data;
     return data.cart || [];
   } catch (error) {
     console.error("Error fetching cart:", error);

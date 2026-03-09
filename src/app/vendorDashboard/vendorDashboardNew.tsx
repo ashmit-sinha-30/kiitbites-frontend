@@ -116,11 +116,15 @@ export default function VendorDashboardPage() {
   useEffect(() => {
     const init = async () => {
       try {
+        // Token check is implicitly handled by the API call now.
+        // If the call fails with 401, init will catch it.
+        /* REMOVED:
         const token = localStorage.getItem("token");
         if (!token) {
           router.push("/vendor-login");
           return;
         }
+        */
 
         // Get vendor user info
         const userRes = await api.get("/api/vendor/auth/user");
@@ -144,15 +148,12 @@ export default function VendorDashboardPage() {
             setServices(assignJson.data.services);
           }
         } else {
-          // Token is invalid or expired, redirect to login
-          localStorage.removeItem("token");
+          // Failure to get user info, redirect to login
           router.push("/vendor-login");
           return;
         }
-      } catch (e) {
-        console.error("Failed to init vendor dashboard", e);
-        // On error, remove token and redirect to login
-        localStorage.removeItem("token");
+      } catch {
+        // On error, redirect to login
         router.push("/vendor-login");
         return;
       } finally {
@@ -167,11 +168,12 @@ export default function VendorDashboardPage() {
     if (!vendorId) return;
     if (typeof window === "undefined") return;
 
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    // Notifications now rely on credentials (cookies)
+    // const token = localStorage.getItem("token");
+    // if (!token) return;
 
     const streamUrl = new URL(`${ENV_CONFIG.BACKEND.URL}/api/vendor/notifications/stream`);
-    streamUrl.searchParams.set("token", token);
+    // streamUrl.searchParams.set("token", token); // REMOVED: token should be in cookies
 
     const eventSource = new EventSource(streamUrl.toString(), { withCredentials: true });
 
@@ -225,8 +227,9 @@ export default function VendorDashboardPage() {
   useEffect(() => {
     if (!vendorId) return;
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) return;
+    // Polling now relies on credentials (cookies)
+    // const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    // if (!token) return;
 
     const fetchLatestPendingOrder = async () => {
       try {

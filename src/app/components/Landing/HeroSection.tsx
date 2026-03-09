@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import api from "@/utils/apiUtils";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+// const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL; // Handled by apiUtils
 
 const generateSlug = (name: string): string => {
   return name
@@ -25,36 +26,19 @@ const HeroSection: React.FC = () => {
 
   const handleOrderNow = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/home");
-        return;
-      }
+      // Fetch user info using cookies
+      const userRes = await api.get("/api/user/auth/user");
 
-      // Fetch user info
-      const userRes = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (!userRes.ok) {
-        router.push("/home");
-        return;
-      }
-
-      const userData = await userRes.json();
+      const userData = userRes.data;
       if (!userData.uniID) {
         router.push("/home");
         return;
       }
 
       // Fetch colleges to get the slug
-      const collegesRes = await fetch(`${BACKEND_URL}/api/user/auth/list`);
-      if (!collegesRes.ok) {
-        router.push("/home");
-        return;
-      }
+      const collegesRes = await api.get("/api/user/auth/list");
 
-      const colleges: College[] = await collegesRes.json();
+      const colleges: College[] = collegesRes.data;
       const userCollege = colleges.find((c) => c._id === userData.uniID);
 
       if (userCollege) {

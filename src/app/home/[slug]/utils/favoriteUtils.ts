@@ -1,7 +1,9 @@
 import { FavoriteItem, Vendor } from "../types";
 import { toast } from "react-toastify";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+import api from "@/utils/apiUtils";
+
+// const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ""; // Handled by apiUtils
 
 export const checkFavoriteItemAvailability = async (
   item: FavoriteItem,
@@ -10,19 +12,8 @@ export const checkFavoriteItemAvailability = async (
 ): Promise<{ isAvailable: boolean; vendors: Vendor[] | undefined }> => {
   try {
     console.log(`Fetching vendors for favorite item ${item._id}`);
-    const response = await fetch(`${BACKEND_URL}/api/item/vendors/${item._id}`, {
-      credentials: "include",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
-    }
-
-    const vendors = await response.json();
+    const response = await api.get(`/api/item/vendors/${item._id}`);
+    const vendors = response.data;
     console.log(`All vendors for favorite item:`, vendors);
     console.log(`Favorite item type:`, item.type);
     console.log(`Favorite item kind:`, item.kind);
@@ -40,7 +31,7 @@ export const checkFavoriteItemAvailability = async (
       const isRetailByType = item.type.toLowerCase() === "retail";
       // Item is retail if either condition is true
       const isRetailItem = isRetailByCategory || isRetailByType;
-      
+
       console.log(`Is retail by category:`, isRetailByCategory);
       console.log(`Is retail by type:`, isRetailByType);
       console.log(`Is retail item:`, isRetailItem);
@@ -93,25 +84,16 @@ export const addFavoriteToCart = async (
 ): Promise<boolean> => {
   try {
     const kind = categories.retail.includes(item.kind) ? "Retail" : "Produce";
-    
-    const response = await fetch(`${BACKEND_URL}/cart/add/${userId}`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        itemId: item._id,
-        kind: kind,
-        quantity: 1,
-        vendorId: vendorId,
-      }),
+
+    const response = await api.post(`/cart/add/${userId}`, {
+      itemId: item._id,
+      kind: kind,
+      quantity: 1,
+      vendorId: vendorId,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(response.data.message || "Failed to add favorite to cart");
     }
 
     toast.success(`${item.name} added to cart!`);

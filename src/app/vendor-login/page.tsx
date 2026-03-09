@@ -45,7 +45,7 @@ const VendorLoginPage: React.FC = () => {
 
       if (response.status === 200) {
         // Store token and redirect to vendor dashboard
-        localStorage.setItem('token', data.token);
+        window.dispatchEvent(new Event("authChanged"));
         localStorage.setItem('vendorRole', 'seller'); // Default role, can be updated later
         toast.success('Login successful!');
         setIsRedirecting(true);

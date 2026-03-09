@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import api from "@/utils/apiUtils";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { IoMdSearch } from "react-icons/io";
@@ -21,7 +22,7 @@ import { IoReceiptOutline } from "react-icons/io5";
 import styles from "./Header.module.scss";
 import { useCartCount } from "../../../hooks/useCartCount";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+// const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL; // Handled by apiUtils
 
 interface HeaderProps {
   showGetApp?: boolean;
@@ -72,17 +73,8 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        // Optional: Notify backend to invalidate the session
-        await fetch(`${BACKEND_URL}/api/user/auth/logout`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
+      // Optional: Notify backend to invalidate the session
+      await api.post("/api/user/auth/logout");
 
       // Clear token and redirect
       localStorage.removeItem("token");
@@ -98,21 +90,10 @@ const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setUserFullName(null);
-          return;
-        }
+        const response = await api.get("/api/user/auth/user");
 
-        const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
+        if (response.status === 200) {
+          const data = response.data;
           setUserFullName(data.fullName);
           setUserEmail(data.email);
         } else {

@@ -293,8 +293,10 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
   useEffect(() => {
     const fetchUserAndFavorites = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
+        // Tokens are now handled via HTTP-only cookies
+        // If we want to check if the user is potentially logged in without an API call, 
+        // we can still use a non-sensitive flag in localStorage if needed, 
+        // but for now we'll just try to fetch the user.
 
         // Fetch user data
         const userResponse = await api.get("/api/user/auth/user");

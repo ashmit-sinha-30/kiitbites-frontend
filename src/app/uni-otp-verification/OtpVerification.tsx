@@ -102,9 +102,8 @@ function OtpForm({
 
       if (res.status === 200) {
         // Store token first
-        localStorage.setItem("token", data.token);
-
-        toast.success("OTP verified successfully!");
+        // localStorage.setItem("token", data.token);
+        toast.success("Account verified successfully!");
 
         // Handle different redirection cases
         if (fromPage === "forgotpassword" || fromPage === "/forgotpassword") {

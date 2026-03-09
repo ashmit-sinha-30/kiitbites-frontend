@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import api from '@/utils/apiUtils';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+// const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ""; // Handled by apiUtils
 
 interface CachedCartCount {
   count: number;
@@ -48,18 +49,12 @@ export const useCartCount = () => {
 
   // Get user ID helper
   const getUserId = useCallback(async (): Promise<string | null> => {
-    const token = localStorage.getItem("token");
-    if (!token) return null;
+    // Token is now in HTTP-only cookies
+    // if (!token) return null; // REMOVED
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-        credentials: "include",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) return null;
-
-      const user = await response.json();
+      const response = await api.get("/api/user/auth/user");
+      const user = response.data;
       return user._id || user.id || null;
     } catch {
       return null;
@@ -72,8 +67,7 @@ export const useCartCount = () => {
     if (!forceRefresh) {
       const cached = getCachedCount();
       if (cached) {
-        const token = localStorage.getItem("token");
-        const currentUserId = userId || (token ? await getUserId() : null);
+        const currentUserId = userId || await getUserId();
 
         // If user matches and cache is valid, use cached count
         if (cached.userId === currentUserId) {
@@ -86,17 +80,18 @@ export const useCartCount = () => {
     // No valid cache or force refresh, fetch from API
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      
-      // Handle guest cart (no token)
-      if (!token) {
+
+      // Handle guest cart (If getUserId returns null, assume guest)
+      const currentUserId = userId || await getUserId();
+
+      if (!currentUserId) {
         const guestCart = localStorage.getItem("guest_cart") || "[]";
         try {
           const guestCartItems = JSON.parse(guestCart);
           const guestCount = Array.isArray(guestCartItems)
             ? guestCartItems.reduce((sum: number, item: { quantity?: number }) => sum + (item.quantity || 1), 0)
             : 0;
-          
+
           const cacheData: CachedCartCount = {
             count: guestCount,
             timestamp: Date.now(),
@@ -112,22 +107,14 @@ export const useCartCount = () => {
       }
 
       // Handle logged-in user
-      const currentUserId = userId || await getUserId();
       if (!currentUserId) {
         setCount(0);
         return 0;
       }
 
-      const response = await fetch(`${BACKEND_URL}/cart/${currentUserId}`, {
-        credentials: "include",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(`/cart/${currentUserId}`);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch cart');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       const cartItems = data.cart || [];
       const itemCount = cartItems.reduce((sum: number, item: { quantity?: number }) => sum + (item.quantity || 1), 0);
 
@@ -153,8 +140,7 @@ export const useCartCount = () => {
   // Initialize cart count on mount
   useEffect(() => {
     const initializeCartCount = async () => {
-      const token = localStorage.getItem("token");
-      const userId = token ? await getUserId() : null;
+      const userId = await getUserId();
       await fetchCartCount(userId, false);
     };
 
@@ -162,8 +148,7 @@ export const useCartCount = () => {
 
     // Listen for cart count update events
     const handleCartUpdate = async () => {
-      const token = localStorage.getItem("token");
-      const userId = token ? await getUserId() : null;
+      const userId = await getUserId();
       await fetchCartCount(userId, true); // Force refresh on event
     };
 
@@ -171,8 +156,7 @@ export const useCartCount = () => {
 
     // Also listen for auth changes to refresh cart count
     const handleAuthChange = async () => {
-      const token = localStorage.getItem("token");
-      const userId = token ? await getUserId() : null;
+      const userId = await getUserId();
       await fetchCartCount(userId, true);
     };
 
@@ -186,8 +170,7 @@ export const useCartCount = () => {
 
   // Manual refresh function
   const refreshCount = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    const userId = token ? await getUserId() : null;
+    const userId = await getUserId();
     await fetchCartCount(userId, true);
   }, [fetchCartCount, getUserId]);
 

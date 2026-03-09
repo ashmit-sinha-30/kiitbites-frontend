@@ -77,7 +77,7 @@ const VendorOtpVerificationContent: React.FC = () => {
 
       if (response.status === 200) {
         // Store token first to maintain compatibility with existing flows
-        localStorage.setItem('token', data.token);
+        window.dispatchEvent(new Event("authChanged"));
         localStorage.setItem('vendorRole', 'seller'); // Default role
         toast.success('OTP verified successfully!');
 

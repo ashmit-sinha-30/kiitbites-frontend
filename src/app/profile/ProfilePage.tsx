@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import api from "@/utils/apiUtils";
 import {
   User,
   Mail,
@@ -19,7 +20,7 @@ import styles from "./styles/UserProfile.module.scss";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+// const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL; // Handled by apiUtils
 
 const UserProfile = () => {
   const router = useRouter();
@@ -34,29 +35,16 @@ const UserProfile = () => {
   // ✅ Fetch user data
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login"); // Redirect to login if no token
-        return;
-      }
-
       try {
-        const res = await fetch(`${BACKEND_URL}/api/user/auth/user`, {
-          credentials: "include",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data);
-        } else {
-          localStorage.removeItem("token");
+        const res = await api.get("/api/user/auth/user");
+        setUser(res.data);
+      } catch (error: unknown) {
+        const err = error as { response?: { status?: number } };
+        if (err.response?.status === 401) {
           router.push("/login"); // If unauthorized, redirect to login
+        } else {
+          console.error("Error fetching user:", error);
         }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        localStorage.removeItem("token");
-        router.push("/login");
       }
     };
 
@@ -69,26 +57,21 @@ const UserProfile = () => {
     setIsLoggingOut(true);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/user/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await api.post("/api/user/auth/logout");
 
-      if (response.ok) {
-        localStorage.removeItem("token");
+      if (response.status === 200) {
+        localStorage.removeItem("token"); // Cleanup legacy token if present
         setTimeout(() => router.push("/login"), 1000);
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } else {
-        console.error("Logout failed:", await response.text());
+        console.error("Logout failed:", response.data);
         setIsLoggingOut(false);
       }
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: unknown }; message?: string };
+      console.error("Logout failed:", err.response?.data || err.message);
       setIsLoggingOut(false);
     }
   };
@@ -116,9 +99,8 @@ const UserProfile = () => {
           </div>
 
           <div
-            className={`${styles.dropdownContent} ${
-              isPersonalInfoOpen ? styles.open : ""
-            }`}
+            className={`${styles.dropdownContent} ${isPersonalInfoOpen ? styles.open : ""
+              }`}
           >
             <div className={styles.infoItem}>
               <strong>Full Name:</strong> {user?.fullName || "Loading..."}

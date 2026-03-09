@@ -146,7 +146,6 @@ function OtpForm({
           const userData = userRes.data;
           // Store user data
           localStorage.setItem("user", JSON.stringify(userData));
-
           toast.success("OTP verified successfully!");
           console.log("Redirecting based on fromPage:", fromPage);
 
