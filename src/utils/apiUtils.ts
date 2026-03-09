@@ -33,32 +33,9 @@ export const api = axios.create({
     },
 });
 
-// CSRF Token state
-let csrfToken: string | null = null;
-
-/**
- * Initialize CSRF token from backend.
- * Should be called on app startup.
- */
-export const initCSRF = async () => {
-    try {
-        const response = await axios.get(`${BACKEND_URL}/api/csrf/token`, { withCredentials: true });
-        csrfToken = response.data.csrfToken;
-        return csrfToken;
-    } catch (error) {
-        console.error('Failed to initialize CSRF token:', error);
-        return null;
-    }
-};
-
-// Add a request interceptor to handle CSRF and Authorization
+// Add a request interceptor to handle Authorization
 api.interceptors.request.use(
     (config) => {
-        // Attach CSRF token if available for state-changing methods
-        if (csrfToken && ['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase() || '')) {
-            config.headers['X-CSRF-Token'] = csrfToken;
-        }
-
         // Attach Bearer token for cross-origin requests (cookies may be blocked by browsers)
         if (typeof window !== 'undefined') {
             const url = config.url || '';
@@ -110,7 +87,7 @@ api.interceptors.response.use(
 );
 
 /**
- * User-side axios instance with credentials and CSRF support.
+ * User-side axios instance with credentials and auth.
  * Used for user-specific features like cart, orders, and favorites.
  */
 export const userApi = axios.create({
@@ -122,9 +99,6 @@ export const userApi = axios.create({
 });
 
 userApi.interceptors.request.use((config) => {
-    if (csrfToken && ['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase() || '')) {
-        config.headers['X-CSRF-Token'] = csrfToken;
-    }
     if (typeof window !== 'undefined') {
         const url = config.url || '';
         const isAdminRoute = url.includes('/api/admin/') ||

@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect } from 'react';
-import { initCSRF } from '@/utils/apiUtils';
-
+/**
+ * CSRF has been removed. This component is a no-op.
+ * Kept for backwards compatibility if referenced elsewhere.
+ */
 export default function CSRFInitializer() {
-    useEffect(() => {
-        initCSRF();
-    }, []);
-
-    return null;
+  return null;
 }
