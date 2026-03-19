@@ -113,4 +113,4 @@ This project is licensed under the MIT License.
 
 ---
 
-**© 2025 EXSOLVIA. All rights reserved.**
+**© 2026 EXSOLVIA. All rights reserved.**
