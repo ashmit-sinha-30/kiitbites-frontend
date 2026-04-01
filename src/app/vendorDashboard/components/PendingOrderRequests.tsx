@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import api from "@/utils/apiUtils";
 import { toast } from "react-toastify";
+import { useOrderEvents } from "@/hooks/useOrderEvents";
 import styles from "./styles/PendingOrderRequests.module.scss";
 
 interface PendingOrder {
@@ -64,10 +65,20 @@ export const PendingOrderRequests: React.FC<PendingOrderRequestsProps> = ({
 
   useEffect(() => {
     fetchPendingOrders();
-    // Refresh every 5 seconds
-    const interval = setInterval(fetchPendingOrders, 5000);
-    return () => clearInterval(interval);
   }, [fetchPendingOrders]);
+
+  const eventListeners = React.useMemo(() => ({
+    "pending-order": () => {
+      console.log("SSE: New pending order received, fetching...");
+      fetchPendingOrders();
+    },
+    "pending-order-update": () => {
+      console.log("SSE: Pending order updated, fetching...");
+      fetchPendingOrders();
+    }
+  }), [fetchPendingOrders]);
+
+  useOrderEvents(vendorId, eventListeners);
 
   const handleAcceptOrder = async (orderId: string) => {
     if (processingOrderId) return; // Prevent multiple clicks

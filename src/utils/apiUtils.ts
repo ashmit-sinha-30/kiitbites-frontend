@@ -70,17 +70,31 @@ api.interceptors.response.use(
                 pathname.includes('vendordashboard');
 
             if (isDashboardArea) {
-                console.warn('Unauthorized access detected in dashboard. Redirecting to login.');
+                const url = error.config?.url || '';
+                
+                // Only redirect if the 401 error comes from an endpoint that matches the dashboard role.
+                // This prevents "shopper" side 401s (like SearchCartContext profile checks) from 
+                // accidentally logging out vendors or administrators.
+                
+                let shouldRedirect = false;
+                let targetLogin = '/login';
 
-                // Redirect to appropriate login page based on context
-                if (pathname.includes('admin')) {
-                    window.location.href = '/admin-login';
-                } else if (pathname.includes('uni')) {
-                    window.location.href = '/uni-login';
-                } else if (pathname.includes('vendor')) {
-                    window.location.href = '/vendor-login';
+                if (pathname.includes('admin-dashboard') && url.includes('/api/admin')) {
+                    shouldRedirect = true;
+                    targetLogin = '/admin-login';
+                } else if (pathname.includes('vendordashboard') && url.includes('/api/vendor')) {
+                    shouldRedirect = true;
+                    targetLogin = '/vendor-login';
+                } else if (pathname.includes('uniDashboard') && url.includes('/api/uni')) {
+                    shouldRedirect = true;
+                    targetLogin = '/uni-login';
+                }
+
+                if (shouldRedirect) {
+                    console.warn(`Unauthorized ${url} access in ${pathname}. Redirecting to ${targetLogin}.`);
+                    window.location.href = targetLogin;
                 } else {
-                    window.location.href = '/login';
+                    console.info(`Silent 401 on ${url} in ${pathname} (ignored by global interceptor)`);
                 }
             }
         }

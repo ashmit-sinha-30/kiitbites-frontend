@@ -86,7 +86,7 @@ const VendorOtpVerificationContent: React.FC = () => {
         if (fromPage === 'forgotpassword' || fromPage === '/forgotpassword') {
           router.push(`/vendor-reset-password?email=${encodeURIComponent(email || '')}`);
         } else {
-          router.push('/vendorDashboard');
+          router.push(process.env.NODE_ENV === 'development' ? '/vendordashboard' : '/vendorDashboard');
         }
       } else {
         toast.error(data.message || 'OTP verification failed');

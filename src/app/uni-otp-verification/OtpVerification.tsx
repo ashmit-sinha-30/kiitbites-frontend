@@ -112,7 +112,7 @@ function OtpForm({
           router.push(`/uni-reset-password?email=${encodeURIComponent(email)}`);
         } else {
           // For signup/login, redirect to uni dashboard
-          router.push("/uniDashboard");
+          router.push(process.env.NODE_ENV === 'development' ? "/unidashboard" : "/uniDashboard");
         }
       } else {
         toast.error(data.message || "Failed to verify OTP.");

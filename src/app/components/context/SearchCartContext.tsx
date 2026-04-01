@@ -61,21 +61,34 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
     if (userId) return userId;
     const token = localStorage.getItem("token");
     if (!token) {
-      console.log('No token found in localStorage');
       return null;
     }
+
+    // Role check: If we're on a non-shopper dashboard, skip fetching regular user profile
+    const vendorRole = localStorage.getItem("vendorRole");
+    const uniId = localStorage.getItem("uniId");
+    const adminToken = localStorage.getItem("adminToken");
+    
+    if (vendorRole || uniId || adminToken) {
+      return null;
+    }
+
     try {
       const response = await api.get("/api/user/auth/user");
       if (response.status !== 200) {
-        console.log('User auth response not ok:', response.status, response.statusText);
         return null;
       }
       const user = response.data;
       const id = user._id || user.id;
       setUserId(id);
       return id;
-    } catch (error) {
-      console.error('Error fetching user:', error);
+    } catch (error: unknown) {
+      // Handle 401 silently - it's usually expected if the user isn't logged into a shopper account
+      const err = error as { response?: { status: number } };
+      if (err?.response?.status === 401) {
+        return null;
+      }
+      console.error('Error fetching user profile:', error);
       return null;
     }
   }, [userId]);

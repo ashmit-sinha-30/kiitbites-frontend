@@ -3,10 +3,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Order, OrderType, Status, Item } from "../types";
 import api from "@/utils/apiUtils";
+import { useOrderEvents } from "@/hooks/useOrderEvents";
 import styles from "../styles/OrderList.module.scss";
 
 const PAGE_SIZE = 5; // number of orders per page
-const REFRESH_INTERVAL = 60000; // 60 seconds (less frequent for past orders)
 
 type OrderState = {
   order: Order;
@@ -75,9 +75,16 @@ export const PastOrdersList: React.FC<PastOrdersListProps> = ({ vendorId, onLoad
   useEffect(() => {
     setLoading(true);
     fetchPastOrders().finally(() => setLoading(false));
-    const interval = setInterval(fetchPastOrders, REFRESH_INTERVAL);
-    return () => clearInterval(interval);
   }, [fetchPastOrders]);
+
+  const eventListeners = React.useMemo(() => ({
+    "past-order-update": () => {
+      console.log("SSE: Past orders updated, refreshing...");
+      fetchPastOrders();
+    }
+  }), [fetchPastOrders]);
+
+  useOrderEvents(vendorId, eventListeners);
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleString();

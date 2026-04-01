@@ -4,10 +4,10 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Order } from "../types";
 import { OrderCard, LocalStatus } from "./OrderCard";
 import api from "@/utils/apiUtils";
+import { useOrderEvents } from "@/hooks/useOrderEvents";
 import styles from "../styles/OrderList.module.scss";
 
 const PAGE_SIZE = 5; // number of orders per page
-const REFRESH_INTERVAL = 30000; // 30 seconds
 
 type OrderState = {
   order: Order;
@@ -163,9 +163,16 @@ export const OrderList: React.FC<OrderListProps> = ({ vendorId, onLoaded, onOrde
   // Load once + auto-refresh
   useEffect(() => {
     fetchOrders(false);
-    const interval = setInterval(() => fetchOrders(true), REFRESH_INTERVAL);
-    return () => clearInterval(interval);
   }, [fetchOrders]);
+
+  const eventListeners = React.useMemo(() => ({
+    "active-order-update": () => {
+      console.log("SSE: Active orders updated, refreshing...");
+      fetchOrders(true);
+    }
+  }), [fetchOrders]);
+
+  useOrderEvents(vendorId, eventListeners);
 
   // Handle incoming order status changes
   useEffect(() => {

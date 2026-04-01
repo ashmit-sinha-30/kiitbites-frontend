@@ -19,6 +19,7 @@ import { PendingOrderRequests } from "./components/PendingOrderRequests";
 import { DeliverySettings } from "./components/DeliverySettings";
 import VendorInvoices from "./components/VendorInvoices";
 import VendorGrievances from "./components/VendorGrievances";
+import { useOrderEvents } from "@/hooks/useOrderEvents";
 import VendorRecipes from "./components/VendorRecipes";
 import RecipeWorks from "./components/RecipeWorks";
 import StatCard from "./components/StatCard";
@@ -30,7 +31,6 @@ import { DashboardHomeSkeleton, InventorySkeleton } from "./components/Dashboard
 import { Order, InventoryReport, transformApiReport } from "./types";
 import api from "@/utils/apiUtils";
 import styles from "./styles/InventoryReport.module.scss";
-import { ENV_CONFIG } from "@/config/environment";
 
 type PendingOrderAlert = {
   orderId: string;
@@ -63,7 +63,6 @@ export default function VendorDashboardPage() {
     orderData?: Order;
   }[]>([]);
   const [pendingOrderAlert, setPendingOrderAlert] = useState<PendingOrderAlert | null>(null);
-  const [notificationStreamAttempt, setNotificationStreamAttempt] = useState(0);
   const notificationRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingOrderPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastAlertedOrderIdRef = useRef<string | null>(null);
@@ -102,12 +101,15 @@ export default function VendorDashboardPage() {
   }, [services]);
 
   useEffect(() => {
+    const notificationRetry = notificationRetryRef.current;
+    const pendingOrderPoll = pendingOrderPollRef.current;
+
     return () => {
-      if (notificationRetryRef.current) {
-        clearTimeout(notificationRetryRef.current);
+      if (notificationRetry) {
+        clearTimeout(notificationRetry);
       }
-      if (pendingOrderPollRef.current) {
-        clearInterval(pendingOrderPollRef.current);
+      if (pendingOrderPoll) {
+        clearInterval(pendingOrderPoll);
       }
     };
   }, []);
@@ -164,125 +166,53 @@ export default function VendorDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (!vendorId) return;
-    if (typeof window === "undefined") return;
-
-    // Notifications now rely on credentials (cookies)
-    // const token = localStorage.getItem("token");
-    // if (!token) return;
-
-    const streamUrl = new URL(`${ENV_CONFIG.BACKEND.URL}/api/vendor/notifications/stream`);
-    // streamUrl.searchParams.set("token", token); // REMOVED: token should be in cookies
-
-    const eventSource = new EventSource(streamUrl.toString(), { withCredentials: true });
-
-    eventSource.addEventListener("pending-order", (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.orderId && data.orderId === lastAlertedOrderIdRef.current) {
-          return;
-        }
-        // Don't show notification if we're already on the pending orders section
-        const currentActiveSegment = activeSegmentRef.current;
-        const currentServices = servicesRef.current;
-        const currentService = currentServices.find((s) => s._id === currentActiveSegment);
-        const name = currentService?.name?.toLowerCase() || "";
-        const isOnPendingOrders = currentActiveSegment === "pending-orders" ||
-          name.includes("pending order") || name.includes("pending orders");
-
-        if (isOnPendingOrders) {
-          return;
-        }
-
-        lastAlertedOrderIdRef.current = data.orderId || null;
-        setPendingOrderAlert({
-          orderId: data.orderId,
-          orderNumber: data.orderNumber,
-          collectorName: data.collectorName,
-          orderType: data.orderType,
-          total: data.total,
-          createdAt: data.createdAt,
-        });
-      } catch (err) {
-        console.error("Failed to parse pending order notification", err);
-      }
-    });
-
-    eventSource.onerror = () => {
-      eventSource.close();
-      if (notificationRetryRef.current) {
-        clearTimeout(notificationRetryRef.current);
-      }
-      notificationRetryRef.current = setTimeout(() => {
-        setNotificationStreamAttempt((prev) => prev + 1);
-      }, 5000);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [vendorId, notificationStreamAttempt]);
-
-  useEffect(() => {
-    if (!vendorId) return;
-
-    // Polling now relies on credentials (cookies)
-    // const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    // if (!token) return;
-
-    const fetchLatestPendingOrder = async () => {
-      try {
-        const response = await api.get(`/order-approval/pending/${vendorId}`);
-
-        if (response.status !== 200) {
-          return;
-        }
-
-        const data = response.data;
-        if (data?.success && Array.isArray(data.orders) && data.orders.length > 0) {
-          const latest = data.orders[0];
-          if (latest?.orderId && latest.orderId !== lastAlertedOrderIdRef.current) {
-            // Don't show notification if we're already on the pending orders section
-            const currentActiveSegment = activeSegmentRef.current;
-            const currentServices = servicesRef.current;
-            const currentService = currentServices.find((s) => s._id === currentActiveSegment);
-            const name = currentService?.name?.toLowerCase() || "";
-            const isOnPendingOrders = currentActiveSegment === "pending-orders" ||
-              name.includes("pending order") || name.includes("pending orders");
-
-            if (!isOnPendingOrders) {
-              lastAlertedOrderIdRef.current = latest.orderId;
-              setPendingOrderAlert({
-                orderId: latest.orderId,
-                orderNumber: latest.orderNumber,
-                collectorName: latest.collectorName,
-                orderType: latest.orderType,
-                total: latest.total,
-                createdAt: latest.createdAt,
-              });
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Failed to poll pending orders", err);
-      }
-    };
-
-    fetchLatestPendingOrder();
-
-    if (pendingOrderPollRef.current) {
-      clearInterval(pendingOrderPollRef.current);
+  // Handler for new pending orders received via SSE
+  const handlePendingOrderAlert = useCallback((data: unknown) => {
+    const alertData = data as PendingOrderAlert;
+    if (alertData.orderId && alertData.orderId === lastAlertedOrderIdRef.current) {
+      return;
     }
-    pendingOrderPollRef.current = setInterval(fetchLatestPendingOrder, 15000);
+    // Don't show notification if we're already on the pending orders section
+    const currentActiveSegment = activeSegmentRef.current;
+    const currentServices = servicesRef.current;
+    const currentService = currentServices.find((s) => s._id === currentActiveSegment);
+    const name = currentService?.name?.toLowerCase() || "";
+    const isOnPendingOrders = currentActiveSegment === "pending-orders" ||
+      name.includes("pending order") || name.includes("pending orders");
 
-    return () => {
-      if (pendingOrderPollRef.current) {
-        clearInterval(pendingOrderPollRef.current);
-        pendingOrderPollRef.current = null;
+    if (isOnPendingOrders) {
+      return;
+    }
+
+    console.log("Dashboard: New pending order notification received via SSE");
+    lastAlertedOrderIdRef.current = alertData.orderId || null;
+    setPendingOrderAlert({
+      orderId: alertData.orderId,
+      orderNumber: alertData.orderNumber,
+      collectorName: alertData.collectorName,
+      orderType: alertData.orderType,
+      total: alertData.total,
+      createdAt: alertData.createdAt,
+    });
+  }, [setPendingOrderAlert]);
+
+  // Use the centralized SSE hook for real-time notifications
+  const eventListeners = useMemo(() => ({
+    "pending-order": handlePendingOrderAlert,
+    // Also listen for general message events as fallback
+    "message": (data: unknown) => {
+      if (
+        data &&
+        typeof data === "object" &&
+        "type" in data &&
+        (data as Record<string, unknown>).type === "pending-order"
+      ) {
+        handlePendingOrderAlert(data);
       }
-    };
-  }, [vendorId]);
+    }
+  }), [handlePendingOrderAlert]);
+
+  useOrderEvents(vendorId, eventListeners);
 
   const sidebarSegments = useMemo(() => {
     // Filter out any service named "Dashboard" to avoid duplicates

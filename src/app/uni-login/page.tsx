@@ -50,7 +50,7 @@ export default function UniLoginPage() {
         setIsRedirecting(true);
       }
       window.dispatchEvent(new Event('authChanged'));
-      router.push('/uniDashboard');
+      router.push(process.env.NODE_ENV === 'development' ? '/unidashboard' : '/uniDashboard');
     } catch {
       toast.error('Network error. Please try again.');
     } finally {
