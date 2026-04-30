@@ -31,7 +31,7 @@ const HeroSection: React.FC = () => {
 
       const userData = userRes.data;
       if (!userData.uniID) {
-        router.push("/home");
+        router.push("/food");
         return;
       }
 
@@ -44,13 +44,13 @@ const HeroSection: React.FC = () => {
       if (userCollege) {
         const slug = generateSlug(userCollege.fullName);
         localStorage.setItem('currentCollegeId', userCollege._id);
-        router.push(`/home/${slug}?cid=${userCollege._id}`);
+        router.push(`/food/${slug}?cid=${userCollege._id}`);
       } else {
-        router.push("/home");
+        router.push("/food");
       }
     } catch (error) {
       console.error("Order Now redirect failed:", error);
-      router.push("/home");
+      router.push("/food");
     }
   };
 

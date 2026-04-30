@@ -82,6 +82,7 @@ export interface ApiItem {
 export interface CollegeVendor {
   _id: string;
   fullName: string;
+  sellerType?: "SELLER" | "NON_SELLER";
   image?: string;
   coverImage?: string;
   retailInventory: {

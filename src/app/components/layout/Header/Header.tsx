@@ -58,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({
   // Prefetch the most common app routes so navigation from the navbar feels instant
   useEffect(() => {
     try {
-      router.prefetch("/home");
+      router.prefetch("/food");
       router.prefetch("/search");
       router.prefetch("/cart");
       router.prefetch("/profile");
@@ -228,7 +228,7 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className={`${styles.header} ${scrolling ? styles.scrolled : ""} ${menuOpen ? styles.headerMenuOpen : ""}`}>
       <div className={styles.logoContainer}>
-        <Link href="/home" onClick={handleLinkClick}>
+        <Link href="/food" onClick={handleLinkClick}>
           <Image
             src="https://res.cloudinary.com/dt45pu5mx/image/upload/v1754770229/FullLogo_Transparent_NoBuffer_1_fg1iux.png"
             alt="KAMPYN Logo"
@@ -376,7 +376,7 @@ const Header: React.FC<HeaderProps> = ({
             <div className={styles.menuBox}>
               {showGetApp && (
                 <Link
-                  href="/home"
+                  href="/food"
                   className={styles.navItem}
                   onClick={handleLinkClick}
                 >
@@ -403,7 +403,7 @@ const Header: React.FC<HeaderProps> = ({
         </AnimatePresence>
       ) : (
         <div className={styles.rightOptions}>
-          <Link href="/home" className={styles.navItem}>
+          <Link href="/food" className={styles.navItem}>
             <LuArrowUpRight size={18} />
             <span>GET THE APP</span>
           </Link>

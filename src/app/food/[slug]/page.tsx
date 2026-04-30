@@ -1,4 +1,4 @@
-// src/app/home/[slug]/page.tsx
+// src/app/food/[slug]/page.tsx
 
 import { Metadata } from "next";
 import CollegePageClient from "./CollegePageClient";
@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
           alt: `KAMPYN - Food Ordering`,
         },
       ],
-      url: `https://kampyn.com/home`,
+      url: `https://kampyn.com/food`,
       type: "website",
     },
     twitter: {
@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
       images: ["/college-twitter.jpg"],
     },
     alternates: {
-      canonical: `https://kampyn.com/home`,
+      canonical: `https://kampyn.com/food`,
     },
   };
 }

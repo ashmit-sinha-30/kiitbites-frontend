@@ -1,0 +1,117 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1rem;
+  margin-top: 4.75rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #f0f9ff 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.backgroundGradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(78, 161, 153, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(111, 195, 189, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(1, 121, 111, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.content {
+  width: 100%;
+  max-width: 1100px;
+  position: relative;
+  z-index: 1;
+}
+
+.headerSection {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.heading {
+  text-align: center;
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, #4ea199 0%, #6fc3bd 50%, #01796f 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subheading {
+  text-align: center;
+  color: #64748b;
+  font-size: 1.05rem;
+  margin-bottom: 2rem;
+}
+
+.optionsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.optionCard {
+  display: block;
+  border-radius: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  padding: 1.75rem;
+  text-decoration: none;
+  min-height: 180px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s ease;
+}
+
+.optionCard:hover {
+  transform: translateY(-6px);
+  border-color: rgba(78, 161, 153, 0.3);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 20px 40px -12px rgba(78, 161, 153, 0.22),
+    0 0 0 1px rgba(78, 161, 153, 0.1);
+}
+
+.cardTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.65rem;
+}
+
+.cardDescription {
+  color: #64748b;
+  margin-bottom: 1.1rem;
+  line-height: 1.6;
+}
+
+.cta {
+  color: #4ea199;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+
+  .optionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .optionCard {
+    min-height: 160px;
+  }
+}

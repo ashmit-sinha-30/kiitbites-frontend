@@ -6,7 +6,7 @@ import api from "@/utils/apiUtils";
 
 /**
  * Custom hook to redirect authenticated users away from auth pages
- * If user is logged in, redirects them to /home/{collegeSlug}
+ * If user is logged in, redirects them to /food/{collegeSlug}
  */
 export function useAuthRedirect() {
   const router = useRouter();
@@ -44,14 +44,14 @@ export function useAuthRedirect() {
                   .replace(/^-+|-+$/g, "");
               };
               const collegeSlug = generateSlug(userCollege.fullName);
-              router.push(`/home/${collegeSlug}`);
+              router.push(`/food/${collegeSlug}`);
               return;
             }
           }
         }
 
         // Fallback to generic home page
-        router.push("/home");
+        router.push("/food");
       } catch (error) {
         console.error("Error checking authentication:", error);
         // On error, allow user to stay on auth page

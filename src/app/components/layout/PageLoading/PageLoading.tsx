@@ -2,7 +2,7 @@
 
 import React from "react";
 import { GraduationCap } from "lucide-react";
-import styles from "../../../home/styles/Home.module.scss";
+import styles from "../../../food/styles/Home.module.scss";
 
 interface PageLoadingProps {
   message?: string;

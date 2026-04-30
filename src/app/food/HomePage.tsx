@@ -49,7 +49,7 @@ const HomePage = () => {
   const handleCollegeClick = (college: College) => {
     // Store the college ID in localStorage before navigation
     localStorage.setItem('currentCollegeId', college._id);
-    router.push(`/home/${college.slug}`);
+    router.push(`/food/${college.slug}`);
   };
 
   if (error) {

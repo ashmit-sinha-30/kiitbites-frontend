@@ -324,7 +324,10 @@ const CollegePageContent = ({ slug = "", userIdProp }: { slug?: string, userIdPr
       try {
         const response = await api.get(`/api/vendor/list/uni/${uniId}`);
         if (response.data) {
-          setVendors(response.data);
+          const sellerOnlyVendors = (response.data as CollegeVendor[]).filter(
+            (vendor) => vendor.sellerType !== "NON_SELLER"
+          );
+          setVendors(sellerOnlyVendors);
         }
       } catch (err) {
         console.error("Error fetching vendors:", err);

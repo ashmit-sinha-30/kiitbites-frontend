@@ -9,7 +9,7 @@ import styles from "./styles/VendorPage.module.scss";
 import { addToCart, increaseQuantity, decreaseQuantity } from "./utils/cartUtils";
 import { toast } from "react-toastify";
 import api from "@/utils/apiUtils";
-import { FoodItem } from "@/app/home/[slug]/types";
+import { FoodItem } from "@/app/food/[slug]/types";
 
 
 interface VendorItem {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import styles from './DishListItem.module.scss';
-import { FoodItem } from '@/app/home/[slug]/types'; // Assuming types are exported here or similar path
+import { FoodItem } from '@/app/food/[slug]/types'; // Assuming types are exported here or similar path
 
 interface DishListItemProps {
     item: FoodItem;

@@ -8,7 +8,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaChevronDown } from "react-icons/fa";
 import DishListItem from "@/app/components/food/DishListItem/DishListItemV2";
-import { FoodItem as HomeFoodItem } from "@/app/home/[slug]/types";
+import { FoodItem as HomeFoodItem } from "@/app/food/[slug]/types";
 import axios from "axios";
 
 interface FoodItem {

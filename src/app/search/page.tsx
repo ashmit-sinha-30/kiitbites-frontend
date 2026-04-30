@@ -3,7 +3,7 @@
 import api from "@/utils/apiUtils";
 import { Suspense, useEffect, useState } from "react";
 import SearchBar from "../components/search/SearchBar/SearchBar";
-import { CartProvider } from "../home/[slug]/context/CartContext";
+import { CartProvider } from "../food/[slug]/context/CartContext";
 import PageLoading from "../components/layout/PageLoading/PageLoading";
 
 export default function SearchBarPage() {

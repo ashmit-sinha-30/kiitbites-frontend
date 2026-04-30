@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import styles from "./Search.module.scss";
-import { Vendor } from "@/app/home/[slug]/types";
+import { Vendor } from "@/app/food/[slug]/types";
 
 interface SearchVendorModalProps {
   show: boolean;

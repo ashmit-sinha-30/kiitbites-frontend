@@ -10,7 +10,7 @@ import DishListItemV2 from "../../food/DishListItem/DishListItemV2";
 import { Store, X, CheckCircle2 } from "lucide-react";
 import styles from "./SearchBar.module.scss";
 import { useSearchCart } from '../../context/SearchCartContext';
-import { FoodItem as SharedFoodItem } from "@/app/home/[slug]/types";
+import { FoodItem as SharedFoodItem } from "@/app/food/[slug]/types";
 
 
 
@@ -134,7 +134,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       const uni = universities.find(u => u._id === targetUniId);
       if (uni) {
         const slug = normalizeName(uni.fullName);
-        router.push(`/home/${slug}?cid=${uni._id}`);
+        router.push(`/food/${slug}?cid=${uni._id}`);
         return;
       }
     }

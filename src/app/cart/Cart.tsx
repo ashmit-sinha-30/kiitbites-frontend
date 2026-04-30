@@ -8,7 +8,7 @@ import BillBox from "../components/cart/BillBox/BillBox";
 import OrderWaitingScreen from "../components/order/OrderWaitingScreen/OrderWaitingScreen";
 import styles from "./styles/Cart.module.scss";
 import { FoodItem, CartItem } from "../cart/types";
-import { FoodItem as SharedFoodItem } from "@/app/home/[slug]/types";
+import { FoodItem as SharedFoodItem } from "@/app/food/[slug]/types";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -677,7 +677,7 @@ export default function Cart() {
             </p>
             <button
               className={styles.homeButton}
-              onClick={() => router.push("/home")}
+              onClick={() => router.push("/food")}
             >
               Add Items To Cart
             </button>
