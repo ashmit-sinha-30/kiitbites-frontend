@@ -137,6 +137,8 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   const [allowedServices, setAllowedServices] = useState<{ _id: string; name: string; feature?: { _id: string; name: string } }[]>([]);
   const [vendorServices, setVendorServices] = useState<string[]>([]);
   const [savingVendorServices, setSavingVendorServices] = useState(false);
+  const [draggedServiceIndex, setDraggedServiceIndex] = useState<number | null>(null);
+  const [dragOverServiceIndex, setDragOverServiceIndex] = useState<number | null>(null);
 
   // Fetch university details
   const fetchUniversityDetails = useCallback(async () => {
@@ -229,6 +231,50 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
     } finally {
       setSavingVendorServices(false);
     }
+  };
+
+  const reorderSelectedService = async (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= selectedServiceIds.length) return;
+
+    const next = [...selectedServiceIds];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+
+    setSelectedServiceIds(next);
+    try {
+      await api.patch(`/api/university/universities/${uniId}/services`, {
+        services: next
+      });
+    } catch (e) {
+      console.error('Failed to reorder services', e);
+      // Revert local state if persistence fails
+      setSelectedServiceIds(selectedServiceIds);
+      alert('Failed to reorder services');
+    }
+  };
+
+  const handleServiceDragStart = (index: number) => {
+    setDraggedServiceIndex(index);
+  };
+
+  const handleServiceDragOver = (index: number) => {
+    setDragOverServiceIndex(index);
+  };
+
+  const handleServiceDrop = async (dropIndex: number) => {
+    if (draggedServiceIndex === null) return;
+
+    const fromIndex = draggedServiceIndex;
+    setDraggedServiceIndex(null);
+    setDragOverServiceIndex(null);
+
+    if (fromIndex === dropIndex) return;
+    await reorderSelectedService(fromIndex, dropIndex);
+  };
+
+  const clearServiceDragState = () => {
+    setDraggedServiceIndex(null);
+    setDragOverServiceIndex(null);
   };
 
   // Toggle university availability
@@ -522,10 +568,28 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                 {selectedServiceIds.length === 0 && (
                   <span className="text-sm text-gray-500">No services assigned</span>
                 )}
-                {selectedServiceIds.map((sid) => {
+                {selectedServiceIds.map((sid, index) => {
                   const s = allServices.find((x) => x._id === sid);
+                  const isDragging = draggedServiceIndex === index;
+                  const isDragOver = dragOverServiceIndex === index && draggedServiceIndex !== index;
                   return (
-                    <span key={sid} className="inline-flex items-center gap-2 border rounded px-2 py-1 text-sm">
+                    <span
+                      key={sid}
+                      draggable
+                      onDragStart={() => handleServiceDragStart(index)}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        handleServiceDragOver(index);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        void handleServiceDrop(index);
+                      }}
+                      onDragEnd={clearServiceDragState}
+                      className={`inline-flex items-center gap-2 border rounded px-2 py-1 text-sm ${isDragging ? 'opacity-50' : ''} ${isDragOver ? 'border-teal-500 bg-teal-50' : ''}`}
+                      title="Drag to reorder"
+                    >
+                      <span className="text-gray-500 cursor-move" aria-hidden="true">⋮⋮</span>
                       {s?.name || sid}{s?.feature?.name ? ` — ${s.feature.name}` : ''}
                       <button
                         className="text-red-600"

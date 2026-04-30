@@ -1,5 +1,14 @@
 import axios from 'axios';
 
+const isAdminRequest = (url: string) => {
+    const normalizedUrl = (url || '').toLowerCase();
+    return normalizedUrl.includes('/api/admin/') ||
+        normalizedUrl.includes('/api/invoices/admin') ||
+        normalizedUrl.includes('/api/invoices/stats') ||
+        normalizedUrl.includes('/api/invoices/bulk') ||
+        /(^|\/\/[^/]+)?\/admin(\/|$)/.test(normalizedUrl);
+};
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 /**
@@ -39,10 +48,7 @@ api.interceptors.request.use(
         // Attach Bearer token for cross-origin requests (cookies may be blocked by browsers)
         if (typeof window !== 'undefined') {
             const url = config.url || '';
-            const isAdminRoute = url.includes('/api/admin/') ||
-                url.includes('/api/invoices/admin') ||
-                url.includes('/api/invoices/stats') ||
-                url.includes('/api/invoices/bulk');
+            const isAdminRoute = isAdminRequest(url);
             const token = isAdminRoute ? localStorage.getItem('adminToken') : localStorage.getItem('token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
@@ -117,10 +123,7 @@ export const userApi = axios.create({
 userApi.interceptors.request.use((config) => {
     if (typeof window !== 'undefined') {
         const url = config.url || '';
-        const isAdminRoute = url.includes('/api/admin/') ||
-            url.includes('/api/invoices/admin') ||
-            url.includes('/api/invoices/stats') ||
-            url.includes('/api/invoices/bulk');
+        const isAdminRoute = isAdminRequest(url);
         const token = isAdminRoute ? localStorage.getItem('adminToken') : localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;

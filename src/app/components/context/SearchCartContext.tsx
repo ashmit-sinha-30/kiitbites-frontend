@@ -57,19 +57,31 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const getUserId = useCallback(async () => {
-    if (userId) return userId;
-    const token = localStorage.getItem("token");
-    if (!token) {
-      return null;
-    }
+  const isNonShopperSession = useCallback(() => {
+    if (typeof window === "undefined") return false;
 
-    // Role check: If we're on a non-shopper dashboard, skip fetching regular user profile
     const vendorRole = localStorage.getItem("vendorRole");
     const uniId = localStorage.getItem("uniId");
     const adminToken = localStorage.getItem("adminToken");
-    
-    if (vendorRole || uniId || adminToken) {
+    const pathname = window.location.pathname.toLowerCase();
+    const isNonShopperRoute =
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/vendor") ||
+      pathname.startsWith("/uni");
+
+    return Boolean(vendorRole || uniId || adminToken || isNonShopperRoute);
+  }, []);
+
+  const getUserId = useCallback(async () => {
+    if (userId) return userId;
+
+    // Skip shopper profile checks entirely in non-shopper sessions/routes.
+    if (isNonShopperSession()) {
+      return null;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
       return null;
     }
 
@@ -91,7 +103,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
       console.error('Error fetching user profile:', error);
       return null;
     }
-  }, [userId]);
+  }, [userId, isNonShopperSession]);
 
   const refreshSearchCart = useCallback(async () => {
     if (isRefreshing) return;
@@ -99,7 +111,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
     try {
       setIsRefreshing(true);
       const token = localStorage.getItem("token");
-      if (!token) {
+      if (!token || isNonShopperSession()) {
         console.log('No token found, skipping cart refresh');
         return;
       }
@@ -142,7 +154,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing]);
+  }, [isRefreshing, getUserId, isNonShopperSession]);
 
   // Only refresh cart on mount
   useEffect(() => {
@@ -153,7 +165,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
   const addToSearchCart = async (item: SearchResult, vendorId: string) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
+      if (!token || isNonShopperSession()) {
         toast.error('Please login to add items to cart');
         return;
       }
@@ -221,7 +233,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
   const increaseSearchCartQuantity = async (itemId: string) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token || isNonShopperSession()) return;
 
       const currentUserId = await getUserId();
       if (!currentUserId) return;
@@ -257,7 +269,7 @@ export const SearchCartProvider = ({ children }: SearchCartProviderProps) => {
   const decreaseSearchCartQuantity = async (itemId: string) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token || isNonShopperSession()) return;
 
       const currentUserId = await getUserId();
       if (!currentUserId) return;
