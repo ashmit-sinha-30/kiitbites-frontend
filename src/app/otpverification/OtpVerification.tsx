@@ -154,49 +154,8 @@ function OtpForm({
             console.log("Redirecting to resetpassword");
             router.push(`/resetpassword?email=${encodeURIComponent(email)}`);
           } else {
-            // For both signup and login, redirect to user's university home page
-            const uniId = userData?.uniID || userData?.college?._id;
-
-            if (uniId) {
-              try {
-                // Fetch college data to get the slug
-                const collegeResponse = await api.get("/api/user/auth/list");
-                if (collegeResponse.status === 200) {
-                  const colleges = collegeResponse.data;
-                  const userCollege = colleges.find((college: { _id: string; fullName: string }) => college._id === uniId);
-
-                  if (userCollege) {
-                    // Generate slug from college name
-                    const generateSlug = (name: string): string => {
-                      return name
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, "-")
-                        .replace(/^-+|-+$/g, "");
-                    };
-                    const collegeSlug = generateSlug(userCollege.fullName);
-                    // Redirect with college ID (cid) parameter
-                    const redirectUrl = `/home/${collegeSlug}?cid=${uniId}`;
-                    console.log(`Redirecting to ${redirectUrl} after ${fromPage}`);
-                    router.push(redirectUrl);
-                    // Force a page reload after a short delay
-                    setTimeout(() => {
-                      window.location.href = redirectUrl;
-                    }, 100);
-                    return;
-                  }
-                }
-              } catch (error) {
-                console.error("Error fetching college data for redirect:", error);
-              }
-            }
-
-            // Fallback to generic home page
             console.log("Redirecting to home");
             router.push("/home");
-            // Force a page reload after a short delay
-            setTimeout(() => {
-              window.location.href = "/home";
-            }, 100);
           }
         } else {
           const errorData = userRes.data;

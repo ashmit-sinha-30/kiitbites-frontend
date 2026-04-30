@@ -6,7 +6,7 @@ import api from "@/utils/apiUtils";
 
 /**
  * Custom hook to redirect authenticated users away from auth pages
- * If user is logged in, redirects them to /food/{collegeSlug}
+ * If user is logged in, redirects them to /home
  */
 export function useAuthRedirect() {
   const router = useRouter();
@@ -27,31 +27,12 @@ export function useAuthRedirect() {
         const uniId = userData?.uniID || userData?.college?._id;
 
         if (uniId) {
-          // Fetch college data to get the slug
-          const collegeResponse = await api.get("/api/user/auth/list");
-          if (collegeResponse.status === 200) {
-            const colleges = collegeResponse.data;
-            const userCollege = colleges.find(
-              (college: { _id: string; fullName: string }) => college._id === uniId
-            );
-
-            if (userCollege) {
-              // Generate slug from college name
-              const generateSlug = (name: string): string => {
-                return name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, "-")
-                  .replace(/^-+|-+$/g, "");
-              };
-              const collegeSlug = generateSlug(userCollege.fullName);
-              router.push(`/food/${collegeSlug}`);
-              return;
-            }
-          }
+          router.push("/home");
+          return;
         }
 
         // Fallback to generic home page
-        router.push("/food");
+        router.push("/home");
       } catch (error) {
         console.error("Error checking authentication:", error);
         // On error, allow user to stay on auth page

@@ -101,42 +101,6 @@ export default function LoginForm() {
       notify("Login successful!", "success");
       setIsRedirecting(true);
 
-      // Get user data to determine university slug for redirect
-      try {
-        const userResponse = await api.get("/api/user/auth/user");
-
-        if (userResponse.status === 200) {
-          const userData = userResponse.data;
-          const uniId = userData?.uniID || userData?.college?._id;
-
-          if (uniId) {
-            // Fetch college data to get the slug
-            const collegeResponse = await api.get("/api/user/auth/list");
-            if (collegeResponse.status === 200) {
-              const colleges = collegeResponse.data;
-              const userCollege = colleges.find((college: { _id: string; fullName: string }) => college._id === uniId);
-
-              if (userCollege) {
-                // Generate slug from college name
-                const generateSlug = (name: string): string => {
-                  return name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-")
-                    .replace(/^-+|-+$/g, "");
-                };
-                const collegeSlug = generateSlug(userCollege.fullName);
-                // Redirect with college ID (cid) parameter
-                setTimeout(() => router.push(`/home/${collegeSlug}?cid=${uniId}`), 2000);
-                return;
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching user data for redirect:", error);
-      }
-
-      // Fallback to generic home page
       setTimeout(() => router.push("/home"), 2000);
       // setTimeout(() => {
       //   window.location.reload();
