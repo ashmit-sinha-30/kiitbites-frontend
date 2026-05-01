@@ -92,6 +92,16 @@ interface Vendor {
   };
 }
 
+interface GuestHouse {
+  _id: string;
+  name: string;
+  email: string;
+  contactNumber: string;
+  location: string;
+  isActive: boolean;
+  services?: { _id: string; name: string; feature?: { _id: string; name: string } }[];
+}
+
 interface UniversityDetails {
   _id: string;
   fullName: string;
@@ -125,6 +135,9 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
+  const [guestHouses, setGuestHouses] = useState<GuestHouse[]>([]);
+  const [filteredGuestHouses, setFilteredGuestHouses] = useState<GuestHouse[]>([]);
+  const [guestHouseSearchTerm, setGuestHouseSearchTerm] = useState('');
   const [allFeatures, setAllFeatures] = useState<{ _id: string; name: string }[]>([]);
   const [allServices, setAllServices] = useState<{ _id: string; name: string; feature: { _id: string; name: string } }[]>([]);
   const [selectedFeatureIds, setSelectedFeatureIds] = useState<string[]>([]);
@@ -137,6 +150,12 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   const [allowedServices, setAllowedServices] = useState<{ _id: string; name: string; feature?: { _id: string; name: string } }[]>([]);
   const [vendorServices, setVendorServices] = useState<string[]>([]);
   const [savingVendorServices, setSavingVendorServices] = useState(false);
+  // Guest-house service assignment modal state
+  const [assignGuestHouseOpen, setAssignGuestHouseOpen] = useState(false);
+  const [assignGuestHouseId, setAssignGuestHouseId] = useState<string>("");
+  const [guestHouseAllowedServices, setGuestHouseAllowedServices] = useState<{ _id: string; name: string; feature?: { _id: string; name: string } }[]>([]);
+  const [guestHouseServices, setGuestHouseServices] = useState<string[]>([]);
+  const [savingGuestHouseServices, setSavingGuestHouseServices] = useState(false);
   const [draggedServiceIndex, setDraggedServiceIndex] = useState<number | null>(null);
   const [dragOverServiceIndex, setDragOverServiceIndex] = useState<number | null>(null);
 
@@ -152,6 +171,21 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       if (data.success) {
         setUniversity(data.data);
         setFilteredVendors(data.data.vendors);
+        try {
+          const guestHouseRes = await api.get(`/admin/universities/${uniId}/guest-houses`);
+          const guestHouseJson = guestHouseRes.data;
+          if (guestHouseJson.success) {
+            setGuestHouses(guestHouseJson.data || []);
+            setFilteredGuestHouses(guestHouseJson.data || []);
+          } else {
+            setGuestHouses([]);
+            setFilteredGuestHouses([]);
+          }
+        } catch {
+          console.error('Failed to load guest houses');
+          setGuestHouses([]);
+          setFilteredGuestHouses([]);
+        }
         // Load current assignments
         try {
           const assignRes = await api.get(`/api/university/universities/${uniId}/assignments`);
@@ -216,6 +250,28 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
     setVendorServices(prev => prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]);
   };
 
+  const openAssignGuestHouseServices = async (guestHouseId: string) => {
+    try {
+      setAssignGuestHouseId(guestHouseId);
+      setAssignGuestHouseOpen(true);
+      const res = await api.get(`/admin/universities/${uniId}/guest-houses/${guestHouseId}/services`);
+      const json = res.data;
+      if (json.success) {
+        const services = json.data?.services || [];
+        setGuestHouseAllowedServices(services);
+        setGuestHouseServices(services.filter((s: { isAssigned: boolean }) => s.isAssigned).map((s: { _id: string }) => s._id));
+      }
+    } catch {
+      console.error('Failed to open assign services for guest house');
+      setGuestHouseAllowedServices([]);
+      setGuestHouseServices([]);
+    }
+  };
+
+  const toggleGuestHouseService = (serviceId: string) => {
+    setGuestHouseServices(prev => prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]);
+  };
+
   const saveVendorServices = async () => {
     try {
       setSavingVendorServices(true);
@@ -230,6 +286,24 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       alert('Failed to save vendor services');
     } finally {
       setSavingVendorServices(false);
+    }
+  };
+
+  const saveGuestHouseServices = async () => {
+    try {
+      setSavingGuestHouseServices(true);
+      const res = await api.patch(`/admin/universities/${uniId}/guest-houses/${assignGuestHouseId}/services`, {
+        services: guestHouseServices
+      });
+      const json = res.data;
+      if (!json.success) throw new Error(json.message || 'Failed to update guest house services');
+      setAssignGuestHouseOpen(false);
+      await fetchUniversityDetails();
+    } catch (e) {
+      console.error('Failed to save guest house services', e);
+      alert('Failed to save guest house services');
+    } finally {
+      setSavingGuestHouseServices(false);
     }
   };
 
@@ -320,6 +394,20 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
     }
   }, [searchTerm, university]);
 
+  // Filter guest houses based on search term
+  useEffect(() => {
+    if (!guestHouseSearchTerm.trim()) {
+      setFilteredGuestHouses(guestHouses);
+    } else {
+      const filtered = guestHouses.filter((guestHouse) =>
+        guestHouse.name.toLowerCase().includes(guestHouseSearchTerm.toLowerCase()) ||
+        guestHouse.email.toLowerCase().includes(guestHouseSearchTerm.toLowerCase()) ||
+        guestHouse.location.toLowerCase().includes(guestHouseSearchTerm.toLowerCase())
+      );
+      setFilteredGuestHouses(filtered);
+    }
+  }, [guestHouseSearchTerm, guestHouses]);
+
   // Load data on component mount or when uniId changes
   useEffect(() => {
     fetchUniversityDetails();
@@ -396,7 +484,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
               <h1>{university.fullName}</h1>
             </div>
             <p className={styles.headerSubtitle}>
-              University Details & Vendor Management
+              University Details, Vendor Management & Guest House Management
             </p>
           </div>
         </div>
@@ -767,9 +855,94 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
         </div>
       </div>
 
+      {/* Guest Houses Section */}
+      <div className={styles.vendorsSection}>
+        <div className={styles.vendorsHeader}>
+          <h2>Guest Houses ({filteredGuestHouses.length})</h2>
+          <div className={styles.vendorsActions}>
+            <div className={styles.searchContainer}>
+              <SearchIcon />
+              <Input
+                placeholder="Search guest houses..."
+                value={guestHouseSearchTerm}
+                onChange={(e) => setGuestHouseSearchTerm(e.target.value)}
+                className={styles.searchInput}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.vendorsList}>
+          {filteredGuestHouses.length === 0 ? (
+            <div className={styles.emptyState}>
+              <BuildingIcon />
+              <h3>No guest houses found</h3>
+              <p>
+                {guestHouseSearchTerm ? 'No guest houses match your search criteria.' : 'No guest houses are registered for this university.'}
+              </p>
+            </div>
+          ) : (
+            filteredGuestHouses.map((guestHouse) => (
+              <Card key={guestHouse._id} className={styles.vendorCard}>
+                <CardHeader className={styles.vendorCardHeader}>
+                  <div className={styles.vendorInfo}>
+                    <CardTitle className={styles.vendorName}>
+                      {guestHouse.name}
+                    </CardTitle>
+                    <div className={styles.vendorMeta}>
+                      <Badge variant={guestHouse.isActive ? "default" : "secondary"}>
+                        {guestHouse.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <span className={styles.vendorId}>
+                        ID: {guestHouse._id.slice(-8)}
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className={styles.vendorCardContent}>
+                  <div className={styles.vendorDetails}>
+                    <div className={styles.vendorDetailItem}>
+                      <EmailIcon />
+                      <div>
+                        <Label>Email</Label>
+                        <p>{guestHouse.email}</p>
+                      </div>
+                    </div>
+
+                    <div className={styles.vendorDetailItem}>
+                      <PhoneIcon />
+                      <div>
+                        <Label>Contact</Label>
+                        <p>{guestHouse.contactNumber}</p>
+                      </div>
+                    </div>
+
+                    <div className={styles.vendorDetailItem}>
+                      <MapPinIcon />
+                      <div>
+                        <Label>Location</Label>
+                        <p>{guestHouse.location}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <Button size="sm" onClick={() => openAssignGuestHouseServices(guestHouse._id)}>Assign Services</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* Footer */}
       <div className={styles.footer}>
-        <p>Showing {filteredVendors.length} of {university.vendors.length} vendors</p>
+        <p>
+          Showing {filteredVendors.length} of {university.vendors.length} vendors
+          {' • '}
+          Showing {filteredGuestHouses.length} of {guestHouses.length} guest houses
+        </p>
       </div>
 
       {assignOpen && (
@@ -795,6 +968,38 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
               <Button variant="outline" onClick={() => setAssignOpen(false)}>Cancel</Button>
               <Button onClick={saveVendorServices} disabled={savingVendorServices}>{savingVendorServices ? 'Saving...' : 'Save'}</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {assignGuestHouseOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: 'white', borderRadius: 8, padding: 16, width: 'min(720px, 90vw)', maxHeight: '80vh', overflow: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 className="text-lg font-semibold">Assign Services to Guest House</h3>
+              <button onClick={() => setAssignGuestHouseOpen(false)} style={{ fontSize: 20, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ marginBottom: 8, fontSize: 12, color: '#666' }}>
+              Only services from guest-house features assigned to this university are available.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
+              {guestHouseAllowedServices.length === 0 && (
+                <div className="text-sm text-gray-500">No guest-house services are available for this university yet.</div>
+              )}
+              {guestHouseAllowedServices.map((s) => (
+                <label key={s._id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, border: '1px solid #ddd', borderRadius: 6 }}>
+                  <input type="checkbox" checked={guestHouseServices.includes(s._id)} onChange={() => toggleGuestHouseService(s._id)} />
+                  <span style={{ fontWeight: 500 }}>{s.name}</span>
+                  {s.feature?.name ? <span style={{ fontSize: 12, color: '#666' }}>— {s.feature.name}</span> : null}
+                </label>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+              <Button variant="outline" onClick={() => setAssignGuestHouseOpen(false)}>Cancel</Button>
+              <Button onClick={saveGuestHouseServices} disabled={savingGuestHouseServices}>
+                {savingGuestHouseServices ? 'Saving...' : 'Save'}
+              </Button>
             </div>
           </div>
         </div>
