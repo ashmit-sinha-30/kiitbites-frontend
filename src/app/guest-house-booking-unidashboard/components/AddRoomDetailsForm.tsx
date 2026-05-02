@@ -95,7 +95,7 @@ export default function AddRoomDetailsForm() {
     if (!form.guestHouseId) return alert("Please select a guest house.");
     if (!coverImage || detailedImages.length === 0) return alert("Cover image and at least one detailed image are required.");
     if (!form.roomCount || Number(form.roomCount) < 1) return alert("Please enter a valid room count.");
-    if (form.price === "" || Number(form.price) < 0) return alert("Please enter a valid room price.");
+    if (form.price === "" || Number(form.price) < 0) return alert("Please enter a valid room price per night.");
 
     setSubmitting(true);
     try {
@@ -155,7 +155,7 @@ export default function AddRoomDetailsForm() {
     if (!editingRoom) return;
     if (!editGuestHouseId) return alert("Please select a parent guest house.");
     if (!editRoomCount || Number(editRoomCount) < 1) return alert("Room count must be at least 1");
-    if (editPrice === "" || Number(editPrice) < 0) return alert("Room price must be a valid non-negative number");
+    if (editPrice === "" || Number(editPrice) < 0) return alert("Room price per night must be a valid non-negative number");
     setSavingRoomId(editingRoom._id);
     try {
       const payload = new FormData();
@@ -242,7 +242,7 @@ export default function AddRoomDetailsForm() {
           />
         </Field>
 
-        <Field label="Price *">
+        <Field label="Price Per Night *">
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
             type="number"
@@ -302,7 +302,7 @@ export default function AddRoomDetailsForm() {
                   <div>
                     <p className="text-sm font-semibold text-slate-900">{room.roomName}</p>
                     <p className="text-xs text-slate-600">
-                      Count: {room.roomCount} | Price: ₹{Number(room.price || 0).toFixed(2)} | Detailed Images: {room.detailedImages?.length || 0}
+                      Count: {room.roomCount} | Price: ₹{Number(room.price || 0).toFixed(2)} / night | Detailed Images: {room.detailedImages?.length || 0}
                     </p>
                   </div>
                   <span className="text-xs text-slate-500">Click to edit</span>
@@ -366,7 +366,7 @@ export default function AddRoomDetailsForm() {
                 </Field>
               </div>
 
-              <Field label="Price *">
+              <Field label="Price Per Night *">
                 <input
                   className="w-full rounded-md border px-3 py-2 text-sm"
                   type="number"
