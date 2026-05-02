@@ -9,7 +9,8 @@ interface Props {
 
 export default function AddGuestHouseForm({ onCreated }: Props) {
   const [submitting, setSubmitting] = useState(false);
-  const [images, setImages] = useState<File[]>([]);
+  const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [additionalImages, setAdditionalImages] = useState<File[]>([]);
   const [form, setForm] = useState({
     name: "",
     totalRooms: "",
@@ -30,8 +31,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (images.length === 0) {
-      alert("Please upload at least one guest house image.");
+    if (!coverImage) {
+      alert("Please upload a guest house cover image.");
       return;
     }
     if (form.password.length < 8) {
@@ -55,7 +56,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
       payload.append("password", form.password);
       payload.append("description", form.description.trim());
       payload.append("amenities", form.amenities);
-      images.forEach((image) => payload.append("images", image));
+      payload.append("coverImage", coverImage);
+      additionalImages.forEach((image) => payload.append("additionalImages", image));
 
       const res = await api.post("/api/guest-house", payload, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -77,7 +79,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
         description: "",
         amenities: "",
       });
-      setImages([]);
+      setCoverImage(null);
+      setAdditionalImages([]);
       onCreated?.();
       alert("Guest house created successfully");
     } catch (error: unknown) {
@@ -191,14 +194,25 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
         </div>
 
         <div className="md:col-span-2">
-          <Field label="Guest House Images *">
+          <Field label="Guest House Image (Cover) *">
+            <input
+              className="w-full rounded-md border px-3 py-2 text-sm"
+              type="file"
+              accept="image/*"
+              required
+              onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
+            />
+          </Field>
+        </div>
+
+        <div className="md:col-span-2">
+          <Field label="Additional Images (Optional)">
             <input
               className="w-full rounded-md border px-3 py-2 text-sm"
               type="file"
               accept="image/*"
               multiple
-              required
-              onChange={(e) => setImages(Array.from(e.target.files || []))}
+              onChange={(e) => setAdditionalImages(Array.from(e.target.files || []))}
             />
           </Field>
         </div>

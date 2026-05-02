@@ -13,6 +13,7 @@ interface RoomItem {
   guestHouseId?: { _id?: string; name?: string } | string;
   roomName: string;
   roomCount: number;
+  price: number;
   services: string[];
   isActive: boolean;
   coverImage?: string;
@@ -26,8 +27,10 @@ export default function AddRoomDetailsForm() {
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [savingRoomId, setSavingRoomId] = useState<string | null>(null);
   const [editingRoom, setEditingRoom] = useState<RoomItem | null>(null);
+  const [editGuestHouseId, setEditGuestHouseId] = useState("");
   const [editRoomName, setEditRoomName] = useState("");
   const [editRoomCount, setEditRoomCount] = useState("");
+  const [editPrice, setEditPrice] = useState("");
   const [editServices, setEditServices] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
   const [editCoverImage, setEditCoverImage] = useState<File | null>(null);
@@ -38,6 +41,7 @@ export default function AddRoomDetailsForm() {
     guestHouseId: "",
     roomName: "",
     roomCount: "",
+    price: "",
     services: "",
   });
   const [coverImage, setCoverImage] = useState<File | null>(null);
@@ -91,6 +95,7 @@ export default function AddRoomDetailsForm() {
     if (!form.guestHouseId) return alert("Please select a guest house.");
     if (!coverImage || detailedImages.length === 0) return alert("Cover image and at least one detailed image are required.");
     if (!form.roomCount || Number(form.roomCount) < 1) return alert("Please enter a valid room count.");
+    if (form.price === "" || Number(form.price) < 0) return alert("Please enter a valid room price.");
 
     setSubmitting(true);
     try {
@@ -98,6 +103,7 @@ export default function AddRoomDetailsForm() {
       payload.append("guestHouseId", form.guestHouseId);
       payload.append("roomName", form.roomName.trim());
       payload.append("roomCount", form.roomCount);
+      payload.append("price", form.price);
       payload.append("services", form.services);
       payload.append("coverImage", coverImage);
       detailedImages.forEach((image) => payload.append("detailedImage", image));
@@ -107,7 +113,7 @@ export default function AddRoomDetailsForm() {
       });
       if (!res.data?.success) throw new Error(res.data?.message || "Failed to add room details");
 
-      setForm((prev) => ({ ...prev, roomName: "", roomCount: "", services: "" }));
+      setForm((prev) => ({ ...prev, roomName: "", roomCount: "", price: "", services: "" }));
       setCoverImage(null);
       setDetailedImages([]);
       const refreshed = await api.get(`/api/guest-house-rooms?guestHouseId=${form.guestHouseId}`);
@@ -122,9 +128,15 @@ export default function AddRoomDetailsForm() {
   };
 
   const openEditModal = (room: RoomItem) => {
+    const currentGuestHouseId =
+      typeof room.guestHouseId === "string"
+        ? room.guestHouseId
+        : room.guestHouseId?._id || "";
     setEditingRoom(room);
+    setEditGuestHouseId(currentGuestHouseId);
     setEditRoomName(room.roomName || "");
     setEditRoomCount(String(room.roomCount || ""));
+    setEditPrice(String(room.price ?? ""));
     setEditServices((room.services || []).join(", "));
     setEditIsActive(room.isActive);
     setEditCoverImage(null);
@@ -141,12 +153,16 @@ export default function AddRoomDetailsForm() {
 
   const updateRoom = async () => {
     if (!editingRoom) return;
+    if (!editGuestHouseId) return alert("Please select a parent guest house.");
     if (!editRoomCount || Number(editRoomCount) < 1) return alert("Room count must be at least 1");
+    if (editPrice === "" || Number(editPrice) < 0) return alert("Room price must be a valid non-negative number");
     setSavingRoomId(editingRoom._id);
     try {
       const payload = new FormData();
+      payload.append("guestHouseId", editGuestHouseId);
       payload.append("roomName", editRoomName.trim());
       payload.append("roomCount", editRoomCount);
+      payload.append("price", editPrice);
       payload.append("services", editServices);
       payload.append("isActive", String(editIsActive));
       payload.append("replaceDetailedImages", String(replaceDetailedImages));
@@ -226,6 +242,18 @@ export default function AddRoomDetailsForm() {
           />
         </Field>
 
+        <Field label="Price *">
+          <input
+            className="w-full rounded-md border px-3 py-2 text-sm"
+            type="number"
+            min={0}
+            step="0.01"
+            value={form.price}
+            onChange={(e) => updateField("price", e.target.value)}
+            required
+          />
+        </Field>
+
         <Field label="Cover Image *">
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
@@ -274,7 +302,7 @@ export default function AddRoomDetailsForm() {
                   <div>
                     <p className="text-sm font-semibold text-slate-900">{room.roomName}</p>
                     <p className="text-xs text-slate-600">
-                      Count: {room.roomCount} | Detailed Images: {room.detailedImages?.length || 0}
+                      Count: {room.roomCount} | Price: ₹{Number(room.price || 0).toFixed(2)} | Detailed Images: {room.detailedImages?.length || 0}
                     </p>
                   </div>
                   <span className="text-xs text-slate-500">Click to edit</span>
@@ -294,6 +322,22 @@ export default function AddRoomDetailsForm() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field label="Parent Guest House *">
+                <select
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  value={editGuestHouseId}
+                  onChange={(e) => setEditGuestHouseId(e.target.value)}
+                  required
+                >
+                  <option value="">Select guest house</option>
+                  {guestHouses.map((house) => (
+                    <option key={house._id} value={house._id}>
+                      {house.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
               <Field label="Room Name *">
                 <input
                   className="w-full rounded-md border px-3 py-2 text-sm"
@@ -321,6 +365,17 @@ export default function AddRoomDetailsForm() {
                   />
                 </Field>
               </div>
+
+              <Field label="Price *">
+                <input
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                />
+              </Field>
 
               <Field label="Replace Cover Image">
                 <input

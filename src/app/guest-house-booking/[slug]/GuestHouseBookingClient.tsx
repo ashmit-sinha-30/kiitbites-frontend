@@ -13,6 +13,8 @@ interface GuestHouse {
   location: string;
   managerName?: string;
   description?: string;
+  coverImage?: string;
+  additionalImages?: string[];
   images?: string[];
 }
 
@@ -20,6 +22,7 @@ interface RoomType {
   _id: string;
   roomName: string;
   roomCount: number;
+  price: number;
   coverImage: string;
   detailedImages: string[];
   services: string[];
@@ -122,10 +125,21 @@ export default function GuestHouseBookingClient() {
                       selectedGuestHouse?._id === house._id ? "border-slate-900" : "border-slate-200"
                     }`}
                   >
-                    <p className="text-sm font-semibold text-slate-900">{house.name}</p>
-                    <p className="mt-1 text-xs text-slate-600">
-                      Rooms: {house.totalRooms} | Location: {house.location}
-                    </p>
+                    <div className="flex items-start gap-3">
+                      {(house.coverImage || house.images?.[0]) ? (
+                        <img
+                          src={house.coverImage || house.images?.[0]}
+                          alt={house.name}
+                          className="h-16 w-20 rounded-md object-cover"
+                        />
+                      ) : null}
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{house.name}</p>
+                        <p className="mt-1 text-xs text-slate-600">
+                          Rooms: {house.totalRooms} | Location: {house.location}
+                        </p>
+                      </div>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -145,12 +159,21 @@ export default function GuestHouseBookingClient() {
               <p className="mt-3 text-sm text-slate-500">No room types configured yet.</p>
             ) : (
               <div className="mt-4 space-y-4">
+                {(selectedGuestHouse.coverImage || selectedGuestHouse.images?.[0]) ? (
+                  <img
+                    src={selectedGuestHouse.coverImage || selectedGuestHouse.images?.[0]}
+                    alt={selectedGuestHouse.name}
+                    className="h-44 w-full rounded-xl object-cover"
+                  />
+                ) : null}
                 {rooms.map((room) => (
                   <div key={room._id} className="rounded-xl border p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{room.roomName}</p>
-                        <p className="text-xs text-slate-600">Available units: {room.roomCount}</p>
+                        <p className="text-xs text-slate-600">
+                          Available units: {room.roomCount} | Price: ₹{Number(room.price || 0).toFixed(2)}
+                        </p>
                       </div>
                       {room.coverImage ? (
                         <img

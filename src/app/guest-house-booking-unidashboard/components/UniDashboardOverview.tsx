@@ -13,6 +13,8 @@ interface GuestHouse {
   managerEmail?: string;
   description?: string;
   amenities?: string[];
+  coverImage?: string;
+  additionalImages?: string[];
   images?: string[];
   isActive: boolean;
   createdAt: string;
@@ -32,7 +34,8 @@ export default function UniDashboardOverview({ refreshKey = 0 }: Props) {
   const [loading, setLoading] = useState(true);
   const [guestHouses, setGuestHouses] = useState<GuestHouse[]>([]);
   const [editingGuestHouse, setEditingGuestHouse] = useState<GuestHouse | null>(null);
-  const [editImages, setEditImages] = useState<File[]>([]);
+  const [editCoverImage, setEditCoverImage] = useState<File | null>(null);
+  const [editAdditionalImages, setEditAdditionalImages] = useState<File[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
   const [summary, setSummary] = useState<Summary>({
     totalGuestHouses: 0,
@@ -96,15 +99,17 @@ export default function UniDashboardOverview({ refreshKey = 0 }: Props) {
       payload.append("description", String(formData.get("description") || ""));
       payload.append("amenities", String(formData.get("amenities") || ""));
       payload.append("isActive", String(formData.get("isActive") === "on"));
-      payload.append("replaceImages", "false");
-      editImages.forEach((image) => payload.append("images", image));
+      payload.append("replaceAdditionalImages", String(formData.get("replaceAdditionalImages") === "on"));
+      if (editCoverImage) payload.append("coverImage", editCoverImage);
+      editAdditionalImages.forEach((image) => payload.append("additionalImages", image));
 
       const res = await api.put(`/api/guest-house/${editingGuestHouse._id}`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       if (!res.data?.success) throw new Error(res.data?.message || "Failed to update guest house");
       setEditingGuestHouse(null);
-      setEditImages([]);
+      setEditCoverImage(null);
+      setEditAdditionalImages([]);
       await loadGuestHouses();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
@@ -137,7 +142,8 @@ export default function UniDashboardOverview({ refreshKey = 0 }: Props) {
                   <th className="py-2 pr-4 font-medium">Rooms</th>
                   <th className="py-2 pr-4 font-medium">Contact</th>
                   <th className="py-2 pr-4 font-medium">Location</th>
-                  <th className="py-2 pr-4 font-medium">Images</th>
+                  <th className="py-2 pr-4 font-medium">Cover Image</th>
+                  <th className="py-2 pr-4 font-medium">Additional Images</th>
                   <th className="py-2 pr-4 font-medium">Manager</th>
                   <th className="py-2 pr-0 font-medium">Status</th>
                   <th className="py-2 pr-0 font-medium">Actions</th>
@@ -150,7 +156,14 @@ export default function UniDashboardOverview({ refreshKey = 0 }: Props) {
                     <td className="py-3 pr-4">{item.totalRooms}</td>
                     <td className="py-3 pr-4">{item.contactNumber}</td>
                     <td className="py-3 pr-4">{item.location}</td>
-                    <td className="py-3 pr-4">{item.images?.length || 0}</td>
+                    <td className="py-3 pr-4">
+                      {item.coverImage ? (
+                        <img src={item.coverImage} alt={item.name} className="h-10 w-14 rounded object-cover border" />
+                      ) : (
+                        <span className="text-xs text-slate-500">No image</span>
+                      )}
+                    </td>
+                    <td className="py-3 pr-4">{item.additionalImages?.length || 0}</td>
                     <td className="py-3 pr-4">{item.managerName || "—"}</td>
                     <td className="py-3 pr-0">
                       <span
@@ -222,15 +235,43 @@ export default function UniDashboardOverview({ refreshKey = 0 }: Props) {
                 </Field>
               </div>
               <div className="md:col-span-2">
-                <Field label="Add More Images">
+                <Field label="Guest House Image (Cover)">
+                  {editingGuestHouse.coverImage ? (
+                    <img
+                      src={editingGuestHouse.coverImage}
+                      alt={`${editingGuestHouse.name} cover`}
+                      className="mb-2 h-24 w-36 rounded-md border object-cover"
+                    />
+                  ) : null}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    onChange={(e) => setEditCoverImage(e.target.files?.[0] || null)}
+                  />
+                </Field>
+              </div>
+              <div className="md:col-span-2">
+                <Field label="Additional Images (Optional)">
+                  {(editingGuestHouse.additionalImages?.length || 0) > 0 ? (
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {(editingGuestHouse.additionalImages || []).map((url, index) => (
+                        <img key={`${url}-${index}`} src={url} alt={`Additional ${index + 1}`} className="h-16 w-24 rounded border object-cover" />
+                      ))}
+                    </div>
+                  ) : null}
                   <input
                     type="file"
                     accept="image/*"
                     multiple
                     className="w-full rounded-md border px-3 py-2 text-sm"
-                    onChange={(e) => setEditImages(Array.from(e.target.files || []))}
+                    onChange={(e) => setEditAdditionalImages(Array.from(e.target.files || []))}
                   />
                 </Field>
+                <label className="mt-2 inline-flex items-center gap-2 text-xs text-slate-600">
+                  <input type="checkbox" name="replaceAdditionalImages" />
+                  Replace existing additional images
+                </label>
               </div>
               <div className="md:col-span-2">
                 <label className="inline-flex items-center gap-2 text-sm text-slate-700">
