@@ -100,6 +100,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
         <Field label="Guest House Name *">
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
+            placeholder="e.g. Sunrise Campus Guest House"
+            title="Official name shown to visitors"
             value={form.name}
             onChange={(e) => updateField("name", e.target.value)}
             required
@@ -111,6 +113,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
             className="w-full rounded-md border px-3 py-2 text-sm"
             type="number"
             min={1}
+            placeholder="e.g. 20"
+            title="Total physical rooms in this property"
             value={form.totalRooms}
             onChange={(e) => updateField("totalRooms", e.target.value)}
             required
@@ -120,6 +124,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
         <Field label="Contact Number *">
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
+            placeholder="e.g. +91 9876543210"
+            title="Front desk or enquiry line"
             value={form.contactNumber}
             onChange={(e) => updateField("contactNumber", e.target.value)}
             required
@@ -129,6 +135,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
         <Field label="Location *">
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
+            placeholder="e.g. Block A, near main gate"
+            title="Address or landmark on campus"
             value={form.location}
             onChange={(e) => updateField("location", e.target.value)}
             required
@@ -138,6 +146,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
         <Field label="Manager Name">
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
+            placeholder="e.g. Rajesh Kumar"
+            title="Optional on-site manager name"
             value={form.managerName}
             onChange={(e) => updateField("managerName", e.target.value)}
           />
@@ -147,6 +157,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
             type="email"
+            placeholder="e.g. manager@college.edu"
+            title="Optional manager email"
             value={form.managerEmail}
             onChange={(e) => updateField("managerEmail", e.target.value)}
           />
@@ -156,6 +168,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
             type="email"
+            placeholder="e.g. gh.login@your-university.edu"
+            title="Used by guest house staff to log in"
             value={form.email}
             onChange={(e) => updateField("email", e.target.value)}
             required
@@ -166,6 +180,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
             type="password"
+            placeholder="At least 8 characters"
+            title="Minimum 8 characters"
             value={form.password}
             onChange={(e) => updateField("password", e.target.value)}
             required
@@ -176,6 +192,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
             type="password"
+            placeholder="Repeat the same password"
+            title="Must match login password"
             value={form.confirmPassword}
             onChange={(e) => updateField("confirmPassword", e.target.value)}
             required
@@ -199,9 +217,11 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
               className="w-full rounded-md border px-3 py-2 text-sm"
               type="file"
               accept="image/*"
+              title="Main photo shown on listings — required"
               required
               onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
             />
+            <span className="mt-1 block text-[11px] text-slate-500">Pick one image — this is the main photo visitors see first.</span>
           </Field>
         </div>
 
@@ -212,8 +232,10 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
               type="file"
               accept="image/*"
               multiple
+              title="Extra gallery photos — optional"
               onChange={(e) => setAdditionalImages(Array.from(e.target.files || []))}
             />
+            <span className="mt-1 block text-[11px] text-slate-500">Optional — select multiple files for a gallery.</span>
           </Field>
         </div>
 
@@ -222,6 +244,8 @@ export default function AddGuestHouseForm({ onCreated }: Props) {
             <textarea
               className="w-full rounded-md border px-3 py-2 text-sm"
               rows={4}
+              placeholder="Brief description for visitors: facilities, check-in notes, etc."
+              title="Shown on public listing where applicable"
               value={form.description}
               onChange={(e) => updateField("description", e.target.value)}
             />

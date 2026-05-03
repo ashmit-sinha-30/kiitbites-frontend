@@ -207,31 +207,83 @@ export default function UniDashboardOverview({ refreshKey = 0 }: Props) {
             </div>
             <form className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={updateGuestHouse}>
               <Field label="Guest House Name *">
-                <input name="name" className="w-full rounded-md border px-3 py-2 text-sm" defaultValue={editingGuestHouse.name} required />
+                <input
+                  name="name"
+                  placeholder="e.g. Sunrise Campus Guest House"
+                  title="Name shown to visitors"
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  defaultValue={editingGuestHouse.name}
+                  required
+                />
               </Field>
               <Field label="Number of Rooms *">
-                <input name="totalRooms" type="number" min={1} className="w-full rounded-md border px-3 py-2 text-sm" defaultValue={editingGuestHouse.totalRooms} required />
+                <input
+                  name="totalRooms"
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 20"
+                  title="Total rooms in this property"
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  defaultValue={editingGuestHouse.totalRooms}
+                  required
+                />
               </Field>
               <Field label="Contact Number *">
-                <input name="contactNumber" className="w-full rounded-md border px-3 py-2 text-sm" defaultValue={editingGuestHouse.contactNumber} required />
+                <input
+                  name="contactNumber"
+                  placeholder="e.g. +91 9876543210"
+                  title="Enquiry phone"
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  defaultValue={editingGuestHouse.contactNumber}
+                  required
+                />
               </Field>
               <Field label="Location *">
-                <input name="location" className="w-full rounded-md border px-3 py-2 text-sm" defaultValue={editingGuestHouse.location} required />
+                <input
+                  name="location"
+                  placeholder="e.g. Block A, near hostel 3"
+                  title="Where to find the guest house"
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  defaultValue={editingGuestHouse.location}
+                  required
+                />
               </Field>
               <Field label="Manager Name">
-                <input name="managerName" className="w-full rounded-md border px-3 py-2 text-sm" defaultValue={editingGuestHouse.managerName || ""} />
+                <input
+                  name="managerName"
+                  placeholder="e.g. Rajesh Kumar"
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  defaultValue={editingGuestHouse.managerName || ""}
+                />
               </Field>
               <Field label="Manager Email">
-                <input name="managerEmail" type="email" className="w-full rounded-md border px-3 py-2 text-sm" defaultValue={editingGuestHouse.managerEmail || ""} />
+                <input
+                  name="managerEmail"
+                  type="email"
+                  placeholder="e.g. manager@college.edu"
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  defaultValue={editingGuestHouse.managerEmail || ""}
+                />
               </Field>
               <div className="md:col-span-2">
                 <Field label="Amenities (comma separated)">
-                  <input name="amenities" className="w-full rounded-md border px-3 py-2 text-sm" defaultValue={(editingGuestHouse.amenities || []).join(", ")} />
+                  <input
+                    name="amenities"
+                    placeholder="e.g. WiFi, Parking, AC"
+                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    defaultValue={(editingGuestHouse.amenities || []).join(", ")}
+                  />
                 </Field>
               </div>
               <div className="md:col-span-2">
                 <Field label="Description">
-                  <textarea name="description" rows={4} className="w-full rounded-md border px-3 py-2 text-sm" defaultValue={editingGuestHouse.description || ""} />
+                  <textarea
+                    name="description"
+                    rows={4}
+                    placeholder="Short description for visitors…"
+                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    defaultValue={editingGuestHouse.description || ""}
+                  />
                 </Field>
               </div>
               <div className="md:col-span-2">
@@ -246,9 +298,11 @@ export default function UniDashboardOverview({ refreshKey = 0 }: Props) {
                   <input
                     type="file"
                     accept="image/*"
+                    title="New cover image — optional"
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     onChange={(e) => setEditCoverImage(e.target.files?.[0] || null)}
                   />
+                  <span className="mt-1 block text-[11px] text-slate-500">Leave empty to keep current cover.</span>
                 </Field>
               </div>
               <div className="md:col-span-2">
@@ -264,9 +318,11 @@ export default function UniDashboardOverview({ refreshKey = 0 }: Props) {
                     type="file"
                     accept="image/*"
                     multiple
+                    title="Append or replace gallery images"
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     onChange={(e) => setEditAdditionalImages(Array.from(e.target.files || []))}
                   />
+                  <span className="mt-1 block text-[11px] text-slate-500">Select files to add; tick below to replace all.</span>
                 </Field>
                 <label className="mt-2 inline-flex items-center gap-2 text-xs text-slate-600">
                   <input type="checkbox" name="replaceAdditionalImages" />

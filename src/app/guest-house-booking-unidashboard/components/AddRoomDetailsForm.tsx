@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import api from "@/utils/apiUtils";
+import PhysicalRoomsEditor from "./PhysicalRoomsEditor";
 
 interface GuestHouseOption {
   _id: string;
@@ -46,6 +47,8 @@ export default function AddRoomDetailsForm() {
   });
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [detailedImages, setDetailedImages] = useState<File[]>([]);
+  const [roomsMapRefresh, setRoomsMapRefresh] = useState(0);
+  const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadGuestHouses = async () => {
@@ -118,6 +121,7 @@ export default function AddRoomDetailsForm() {
       setDetailedImages([]);
       const refreshed = await api.get(`/api/guest-house-rooms?guestHouseId=${form.guestHouseId}`);
       if (refreshed.data?.success) setRooms(refreshed.data.data || []);
+      setRoomsMapRefresh((n) => n + 1);
       alert("Room details added successfully");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
@@ -175,6 +179,7 @@ export default function AddRoomDetailsForm() {
       if (!res.data?.success) throw new Error(res.data?.message || "Failed to update room");
       const refreshed = await api.get(`/api/guest-house-rooms?guestHouseId=${form.guestHouseId}`);
       if (refreshed.data?.success) setRooms(refreshed.data.data || []);
+      setRoomsMapRefresh((n) => n + 1);
       closeEditModal();
       alert("Room updated successfully");
     } catch (error: unknown) {
@@ -185,11 +190,33 @@ export default function AddRoomDetailsForm() {
     }
   };
 
+  const deleteRoom = async (room: RoomItem) => {
+    const explain =
+      room.isActive === false
+        ? "Remove this deactivated room type permanently? (Only if the server has no blocking records.)"
+        : "Delete this room type? If any active bookings use it, it will be deactivated instead of removed.";
+    if (!window.confirm(explain)) return;
+    setDeletingRoomId(room._id);
+    try {
+      const res = await api.delete(`/api/guest-house-rooms/${room._id}`);
+      if (!res.data?.success) throw new Error(res.data?.message || "Failed to delete room");
+      alert(String(res.data?.message || "Updated"));
+      const refreshed = await api.get(`/api/guest-house-rooms?guestHouseId=${form.guestHouseId}`);
+      if (refreshed.data?.success) setRooms(refreshed.data.data || []);
+      setRoomsMapRefresh((n) => n + 1);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      alert(err.response?.data?.message || err.message || "Failed to delete room");
+    } finally {
+      setDeletingRoomId(null);
+    }
+  };
+
   return (
     <div className="rounded-2xl border bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">Add Room Details</h2>
       <p className="mt-1 text-sm text-slate-600">
-        Select a guest house and define room information with images and room services.
+        Define room types with photos and pricing, delete or deactivate types when needed, then map floors and physical units below for allocation on the guest-house dashboard.
       </p>
 
       <form className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
@@ -200,22 +227,31 @@ export default function AddRoomDetailsForm() {
             onChange={(e) => updateField("guestHouseId", e.target.value)}
             required
             disabled={loadingGuestHouses || guestHouses.length === 0}
+            title="Which property these room types belong to"
           >
             {guestHouses.length === 0 ? (
-              <option value="">No guest houses available</option>
+              <option value="">No guest houses available — add one first</option>
             ) : (
-              guestHouses.map((house) => (
-                <option key={house._id} value={house._id}>
-                  {house.name}
+              <>
+                <option value="" disabled>
+                  Select guest house…
                 </option>
-              ))
+                {guestHouses.map((house) => (
+                  <option key={house._id} value={house._id}>
+                    {house.name}
+                  </option>
+                ))}
+              </>
             )}
           </select>
+          <span className="mt-1 block text-[11px] text-slate-500">Choose the parent guest house for this room type.</span>
         </Field>
 
         <Field label="Room Name *">
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
+            placeholder="e.g. Deluxe Suite, Standard Twin"
+            title="Label shown to guests (single name for this room category)"
             value={form.roomName}
             onChange={(e) => updateField("roomName", e.target.value)}
             required
@@ -227,6 +263,8 @@ export default function AddRoomDetailsForm() {
             className="w-full rounded-md border px-3 py-2 text-sm"
             type="number"
             min={1}
+            placeholder="e.g. 5"
+            title="Physical rooms of this exact type (capacity check)"
             value={form.roomCount}
             onChange={(e) => updateField("roomCount", e.target.value)}
             required
@@ -236,7 +274,8 @@ export default function AddRoomDetailsForm() {
         <Field label="Room Services (comma separated)">
           <input
             className="w-full rounded-md border px-3 py-2 text-sm"
-            placeholder="WiFi, TV, AC, Balcony"
+            placeholder="e.g. WiFi, TV, AC, Balcony"
+            title="Comma-separated amenities for this room type"
             value={form.services}
             onChange={(e) => updateField("services", e.target.value)}
           />
@@ -248,6 +287,8 @@ export default function AddRoomDetailsForm() {
             type="number"
             min={0}
             step="0.01"
+            placeholder="e.g. 2500"
+            title="Price in ₹ per room per night"
             value={form.price}
             onChange={(e) => updateField("price", e.target.value)}
             required
@@ -259,9 +300,11 @@ export default function AddRoomDetailsForm() {
             className="w-full rounded-md border px-3 py-2 text-sm"
             type="file"
             accept="image/*"
+            title="Main thumbnail for this room type"
             required
             onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
           />
+          <span className="mt-1 block text-[11px] text-slate-500">One image — shown first in lists.</span>
         </Field>
 
         <Field label="Detailed Images *">
@@ -270,9 +313,11 @@ export default function AddRoomDetailsForm() {
             type="file"
             accept="image/*"
             multiple
+            title="Gallery photos for this room type"
             required
             onChange={(e) => setDetailedImages(Array.from(e.target.files || []))}
           />
+          <span className="mt-1 block text-[11px] text-slate-500">One or more images — interior, bathroom, etc.</span>
         </Field>
 
         <div className="md:col-span-2 flex justify-end">
@@ -287,7 +332,10 @@ export default function AddRoomDetailsForm() {
       </form>
 
       <div className="mt-8">
-        <h3 className="text-base font-semibold text-slate-900">Existing Room Entries (Editable)</h3>
+        <h3 className="text-base font-semibold text-slate-900">Existing room types</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          Edit pricing and images, or delete. Types with bookings are deactivated instead of removed.
+        </p>
         <div className="mt-3 space-y-3">
           {rooms.length === 0 ? (
             <p className="text-sm text-slate-500">No rooms added yet for this guest house.</p>
@@ -295,23 +343,50 @@ export default function AddRoomDetailsForm() {
             rooms.map((room) => (
               <div
                 key={room._id}
-                className="cursor-pointer rounded-lg border p-3 hover:bg-slate-50"
-                onClick={() => openEditModal(room)}
+                className={`rounded-lg border p-3 ${room.isActive === false ? "border-amber-200 bg-amber-50/40" : "bg-white"}`}
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">{room.roomName}</p>
-                    <p className="text-xs text-slate-600">
-                      Count: {room.roomCount} | Price: ₹{Number(room.price || 0).toFixed(2)} / night | Detailed Images: {room.detailedImages?.length || 0}
+                    {room.isActive === false ? (
+                      <span className="mt-1 inline-block rounded bg-amber-200 px-2 py-0.5 text-[10px] font-medium uppercase text-amber-900">
+                        Inactive
+                      </span>
+                    ) : null}
+                    <p className="mt-1 text-xs text-slate-600">
+                      Count: {room.roomCount} | Price: ₹{Number(room.price || 0).toFixed(2)} / night | Gallery:{" "}
+                      {room.detailedImages?.length || 0}
                     </p>
                   </div>
-                  <span className="text-xs text-slate-500">Click to edit</span>
+                  <div className="flex flex-shrink-0 gap-2">
+                    <button
+                      type="button"
+                      className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50"
+                      onClick={() => openEditModal(room)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deletingRoomId === room._id}
+                      className="rounded-md border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                      onClick={() => void deleteRoom(room)}
+                    >
+                      {deletingRoomId === room._id ? "…" : "Delete"}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      <PhysicalRoomsEditor
+        guestHouseId={form.guestHouseId}
+        roomTypes={rooms.filter((r) => r.isActive !== false).map((r) => ({ _id: r._id, roomName: r.roomName }))}
+        refreshToken={roomsMapRefresh}
+      />
 
       {editingRoom && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -328,8 +403,9 @@ export default function AddRoomDetailsForm() {
                   value={editGuestHouseId}
                   onChange={(e) => setEditGuestHouseId(e.target.value)}
                   required
+                  title="Move this room type to another guest house if needed"
                 >
-                  <option value="">Select guest house</option>
+                  <option value="">— Select guest house —</option>
                   {guestHouses.map((house) => (
                     <option key={house._id} value={house._id}>
                       {house.name}
@@ -341,6 +417,8 @@ export default function AddRoomDetailsForm() {
               <Field label="Room Name *">
                 <input
                   className="w-full rounded-md border px-3 py-2 text-sm"
+                  placeholder="e.g. Deluxe Suite"
+                  title="Room category name shown to guests"
                   value={editRoomName}
                   onChange={(e) => setEditRoomName(e.target.value)}
                 />
@@ -351,6 +429,8 @@ export default function AddRoomDetailsForm() {
                   className="w-full rounded-md border px-3 py-2 text-sm"
                   type="number"
                   min={1}
+                  placeholder="e.g. 10"
+                  title="Count of physical rooms of this type"
                   value={editRoomCount}
                   onChange={(e) => setEditRoomCount(e.target.value)}
                 />
@@ -360,6 +440,8 @@ export default function AddRoomDetailsForm() {
                 <Field label="Room Services (comma separated)">
                   <input
                     className="w-full rounded-md border px-3 py-2 text-sm"
+                    placeholder="e.g. WiFi, TV, AC"
+                    title="Comma-separated services"
                     value={editServices}
                     onChange={(e) => setEditServices(e.target.value)}
                   />
@@ -372,6 +454,8 @@ export default function AddRoomDetailsForm() {
                   type="number"
                   min={0}
                   step="0.01"
+                  placeholder="e.g. 2500"
+                  title="₹ per room per night"
                   value={editPrice}
                   onChange={(e) => setEditPrice(e.target.value)}
                 />
@@ -382,8 +466,10 @@ export default function AddRoomDetailsForm() {
                   className="w-full rounded-md border px-3 py-2 text-sm"
                   type="file"
                   accept="image/*"
+                  title="Upload only if you want a new cover photo"
                   onChange={(e) => setEditCoverImage(e.target.files?.[0] || null)}
                 />
+                <span className="mt-1 block text-[11px] text-slate-500">Leave empty to keep the current cover.</span>
               </Field>
 
               <Field label="Add/Replace Detailed Images">
@@ -392,8 +478,10 @@ export default function AddRoomDetailsForm() {
                   type="file"
                   accept="image/*"
                   multiple
+                  title="Add more photos or replace all if checked below"
                   onChange={(e) => setEditDetailedImages(Array.from(e.target.files || []))}
                 />
+                <span className="mt-1 block text-[11px] text-slate-500">Optional — tick replace below to swap all gallery images.</span>
               </Field>
 
               <div className="md:col-span-2">

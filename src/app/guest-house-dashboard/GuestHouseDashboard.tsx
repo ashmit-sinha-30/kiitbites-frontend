@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/utils/apiUtils";
+import GuestHouseBookingsPanel from "./GuestHouseBookingsPanel";
 
 type Service = {
   _id: string;
@@ -81,11 +82,14 @@ export default function GuestHouseDashboard() {
   const renderMainContent = () => {
     if (activeSegment === "dashboard") {
       return (
-        <div className="space-y-4">
-          <h1 className="text-2xl font-bold">Guest House Dashboard</h1>
-          <p className="text-gray-600">
-            Welcome {guestHouseName}. Your assigned services are shown in the sidebar and loaded dynamically.
-          </p>
+        <div className="space-y-8">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-gray-900">Guest House Dashboard</h1>
+            <p className="text-gray-600">
+              Welcome, {guestHouseName}. Review every booking, guest contact details, and assign room numbers for your guests.
+            </p>
+          </div>
+          <GuestHouseBookingsPanel />
         </div>
       );
     }
