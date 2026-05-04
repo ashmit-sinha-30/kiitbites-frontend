@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/utils/apiUtils";
 import GuestHouseBookingsPanel from "./GuestHouseBookingsPanel";
+import PhysicalRoomsEditor from "@/app/guest-house-booking-unidashboard/components/PhysicalRoomsEditor";
 
 type Service = {
   _id: string;
@@ -90,6 +91,20 @@ export default function GuestHouseDashboard() {
             </p>
           </div>
           <GuestHouseBookingsPanel />
+        </div>
+      );
+    }
+
+    if (activeSegment === "room-map") {
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-gray-900">Room map & CRM</h1>
+            <p className="text-gray-600">
+              Configure floors, room slots, housekeeping status, and notes for {guestHouseName}. Bookings stay under Dashboard.
+            </p>
+          </div>
+          <PhysicalRoomsEditor guestHouseId={guestHouseId} />
         </div>
       );
     }

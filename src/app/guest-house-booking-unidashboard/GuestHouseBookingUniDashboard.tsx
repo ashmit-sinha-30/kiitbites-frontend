@@ -9,6 +9,7 @@ import Sidebar from "./components/Sidebar";
 import UniDashboardOverview from "./components/UniDashboardOverview";
 import AddGuestHouseForm from "./components/AddGuestHouseForm";
 import AddRoomDetailsForm from "./components/AddRoomDetailsForm";
+import FloorPlanService from "./components/FloorPlanService";
 
 interface ServiceItem {
   _id: string;
@@ -100,6 +101,7 @@ export default function GuestHouseBookingUniDashboard() {
     }));
     return [
       ...serviceSegments,
+      { key: "floor-plan", label: "Floor Plan", icon: <></> },
       { key: "profile", label: "Manage Profile", icon: <></> },
       { key: "logout", label: "Logout", icon: <></> },
     ];
@@ -157,6 +159,8 @@ export default function GuestHouseBookingUniDashboard() {
               This section is intentionally separate from food-ordering profile flows.
             </p>
           </div>
+        ) : activeSegment === "floor-plan" ? (
+          <FloorPlanService />
         ) : activeService ? (
           <div className="space-y-6">
             <section className="rounded-2xl border bg-white p-6 shadow-sm">

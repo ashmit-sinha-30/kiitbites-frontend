@@ -161,7 +161,7 @@ function AssignUnitsRow({
             <div>
               <p className="text-sm font-semibold text-slate-900">Pick physical units</p>
               <p className="text-xs text-slate-600">
-                Stay overlap: {checkInLabel} → {checkOutLabel}. Choose {roomsBooked} unit(s); busy units are blocked by other bookings.
+                Stay overlap: {checkInLabel} → {checkOutLabel}. Choose {roomsBooked} unit(s); occupied units are blocked by other bookings.
               </p>
             </div>
             <button type="button" className="text-xs text-slate-500 hover:text-slate-800" onClick={onClose}>
@@ -196,10 +196,10 @@ function AssignUnitsRow({
                             ? "border-slate-900 bg-slate-900 text-white"
                             : "border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
                       }`}
-                      title={blocked ? "Assigned to another booking for these dates" : "Tap to toggle"}
+                      title={blocked ? "Occupied by another booking for these dates" : "Tap to toggle"}
                     >
                       Fl {u.floor} · {u.unitLabel}
-                      {!blocked ? " · free" : ""}
+                      {!blocked ? " · available" : ""}
                     </button>
                   );
                 })}
@@ -343,8 +343,8 @@ export default function GuestHouseBookingsPanel() {
           <div>
             <h3 className="text-sm font-semibold text-slate-900">Property layout snapshot</h3>
             <p className="text-xs text-slate-600">
-              Pick one calendar night to see which units look busy vs free. Only bookings where rooms were assigned with the{" "}
-              <strong>unit picker</strong> count—manual labels don&apos;t block units here.
+              Pick one calendar night to see which units look occupied vs available. Only bookings where rooms were assigned with the{" "}
+              <strong>unit picker</strong> count—manual labels don&apos;t reserve units here.
             </p>
           </div>
           <label className="flex items-center gap-2 text-xs text-slate-600">
@@ -364,10 +364,10 @@ export default function GuestHouseBookingsPanel() {
             <MiniStat label="Floors" value={String(summ.floorCount)} />
             <MiniStat label="Physical units" value={String(summ.totalUnits)} />
             {summ.freeOnPreviewNight !== undefined ? (
-              <MiniStat label="Free that night" value={String(summ.freeOnPreviewNight)} />
+              <MiniStat label="Available that night" value={String(summ.freeOnPreviewNight)} />
             ) : null}
             {summ.busyOnPreviewNight !== undefined ? (
-              <MiniStat label="Busy that night" value={String(summ.busyOnPreviewNight)} />
+              <MiniStat label="Occupied that night" value={String(summ.busyOnPreviewNight)} />
             ) : null}
           </div>
         ) : (
@@ -507,7 +507,7 @@ export default function GuestHouseBookingsPanel() {
                           className="mb-2 rounded-md border border-slate-300 px-2 py-1 text-xs font-medium hover:bg-slate-50"
                           onClick={() => setAllocateForId((prev) => (prev === b._id ? null : b._id))}
                         >
-                          {allocateForId === b._id ? "Hide unit picker" : "Pick units (free/busy)"}
+                          {allocateForId === b._id ? "Hide unit picker" : "Pick units (available / occupied)"}
                         </button>
                         <input
                           type="text"

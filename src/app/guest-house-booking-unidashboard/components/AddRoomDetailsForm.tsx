@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import api from "@/utils/apiUtils";
-import PhysicalRoomsEditor from "./PhysicalRoomsEditor";
 
 interface GuestHouseOption {
   _id: string;
@@ -47,7 +46,6 @@ export default function AddRoomDetailsForm() {
   });
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [detailedImages, setDetailedImages] = useState<File[]>([]);
-  const [roomsMapRefresh, setRoomsMapRefresh] = useState(0);
   const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -121,7 +119,6 @@ export default function AddRoomDetailsForm() {
       setDetailedImages([]);
       const refreshed = await api.get(`/api/guest-house-rooms?guestHouseId=${form.guestHouseId}`);
       if (refreshed.data?.success) setRooms(refreshed.data.data || []);
-      setRoomsMapRefresh((n) => n + 1);
       alert("Room details added successfully");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
@@ -179,7 +176,6 @@ export default function AddRoomDetailsForm() {
       if (!res.data?.success) throw new Error(res.data?.message || "Failed to update room");
       const refreshed = await api.get(`/api/guest-house-rooms?guestHouseId=${form.guestHouseId}`);
       if (refreshed.data?.success) setRooms(refreshed.data.data || []);
-      setRoomsMapRefresh((n) => n + 1);
       closeEditModal();
       alert("Room updated successfully");
     } catch (error: unknown) {
@@ -203,7 +199,6 @@ export default function AddRoomDetailsForm() {
       alert(String(res.data?.message || "Updated"));
       const refreshed = await api.get(`/api/guest-house-rooms?guestHouseId=${form.guestHouseId}`);
       if (refreshed.data?.success) setRooms(refreshed.data.data || []);
-      setRoomsMapRefresh((n) => n + 1);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       alert(err.response?.data?.message || err.message || "Failed to delete room");
@@ -382,11 +377,9 @@ export default function AddRoomDetailsForm() {
         </div>
       </div>
 
-      <PhysicalRoomsEditor
-        guestHouseId={form.guestHouseId}
-        roomTypes={rooms.filter((r) => r.isActive !== false).map((r) => ({ _id: r._id, roomName: r.roomName }))}
-        refreshToken={roomsMapRefresh}
-      />
+      <p className="mt-8 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/60 p-4 text-sm text-indigo-950">
+        Map physical slots and paint room categories in the <strong>Floor Plan</strong> service (touch-friendly grid).
+      </p>
 
       {editingRoom && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
