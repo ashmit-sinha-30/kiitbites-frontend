@@ -157,7 +157,7 @@ export default function AddRoomDetailsForm() {
   });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
-  const [dialogVariant, setDialogVariant] = useState<"info" | "error">("info");
+  const [dialogVariant, setDialogVariant] = useState<"info" | "error" | "confirm">("info");
   const [pendingDeleteRoom, setPendingDeleteRoom] = useState<RoomItem | null>(null);
 
   const showInfo = (message: string) => {
