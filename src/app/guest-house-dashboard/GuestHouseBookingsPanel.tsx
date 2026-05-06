@@ -22,6 +22,9 @@ export type ManagerBooking = {
   guestEmail?: string;
   guestPhone: string;
   status: string;
+  lifecycleStatus?: "booked" | "checked_in" | "checked_out" | "no_show";
+  actualCheckInAt?: string | null;
+  actualCheckOutAt?: string | null;
   paymentStatus: string;
   assignedRoomNumbers?: string;
   assignedPhysicalRoomIds?: string[];
@@ -155,7 +158,7 @@ function AssignUnitsRow({
 
   return (
     <tr className="border-b border-gray-100 bg-slate-50">
-      <td colSpan={8} className="px-3 py-4">
+      <td colSpan={9} className="px-3 py-4">
         <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -254,6 +257,20 @@ export default function GuestHouseBookingsPanel() {
       busyOnPreviewNight?: number;
     };
   } | null>(null);
+  const [ops, setOps] = useState<{
+    today: {
+      arrivals: number;
+      departures: number;
+      checkedIn: number;
+      checkedOut: number;
+      pendingCheckIn: number;
+      pendingCheckOut: number;
+      noShow: number;
+    };
+    live: { inHouseNow: number; dirtyOverdue: number; maintenanceBlocked: number };
+  } | null>(null);
+  const [opsLoading, setOpsLoading] = useState(true);
+  const [opsLogs, setOpsLogs] = useState<{ message: string; createdAt: string }[]>([]);
 
   const loadInventory = useCallback(async () => {
     try {
@@ -274,6 +291,42 @@ export default function GuestHouseBookingsPanel() {
   useEffect(() => {
     void loadInventory();
   }, [loadInventory]);
+
+  const loadOps = useCallback(async () => {
+    try {
+      setOpsLoading(true);
+      const res = await api.get("/api/guest-house-bookings/manager/ops-overview");
+      const json = res.data;
+      if (!json.success) throw new Error(json.message || "Failed");
+      setOps(json.data);
+    } catch {
+      setOps(null);
+    } finally {
+      setOpsLoading(false);
+    }
+  }, []);
+
+  const loadOpsLogs = useCallback(async () => {
+    try {
+      const res = await api.get("/api/guest-house-bookings/manager/ops-logs", {
+        params: { limit: 20 },
+      });
+      const list = (res.data?.data || []) as { message?: string; createdAt?: string }[];
+      setOpsLogs(
+        list.map((l) => ({
+          message: l.message || "",
+          createdAt: l.createdAt || "",
+        }))
+      );
+    } catch {
+      setOpsLogs([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadOps();
+    void loadOpsLogs();
+  }, [loadOps, loadOpsLogs]);
 
   const load = useCallback(async () => {
     try {
@@ -326,9 +379,27 @@ export default function GuestHouseBookingsPanel() {
       if (!res.data?.success) throw new Error(res.data?.message || "Save failed");
       await load();
       await loadInventory();
+      await loadOps();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { message?: string } }; message?: string };
       alert(err.response?.data?.message || err.message || "Could not save room assignment");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const updateLifecycle = async (bookingId: string, lifecycleStatus: "booked" | "checked_in" | "checked_out" | "no_show") => {
+    try {
+      setSavingId(bookingId);
+      const res = await api.patch(`/api/guest-house-bookings/manager/bookings/${bookingId}/lifecycle`, {
+        lifecycleStatus,
+      });
+      if (!res.data?.success) throw new Error(res.data?.message || "Update failed");
+      await load();
+      await loadOps();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      alert(err.response?.data?.message || err.message || "Could not update lifecycle");
     } finally {
       setSavingId(null);
     }
@@ -442,6 +513,41 @@ export default function GuestHouseBookingsPanel() {
         </div>
       </div>
 
+      <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
+        <h3 className="text-sm font-semibold text-slate-900">Ops core dashboard</h3>
+        {opsLoading ? (
+          <p className="mt-2 text-xs text-slate-500">Loading operational KPIs…</p>
+        ) : ops ? (
+          <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-5">
+            <MiniStat label="Arrivals today" value={String(ops.today.arrivals)} />
+            <MiniStat label="Pending check-in" value={String(ops.today.pendingCheckIn)} />
+            <MiniStat label="Departures today" value={String(ops.today.departures)} />
+            <MiniStat label="Pending check-out" value={String(ops.today.pendingCheckOut)} />
+            <MiniStat label="In-house now" value={String(ops.live.inHouseNow)} />
+            <MiniStat label="No-show today" value={String(ops.today.noShow)} />
+            <MiniStat label="Dirty overdue" value={String(ops.live.dirtyOverdue)} />
+            <MiniStat label="Maint/blocked" value={String(ops.live.maintenanceBlocked)} />
+          </div>
+        ) : (
+          <p className="mt-2 text-xs text-amber-700">Could not load operational KPIs.</p>
+        )}
+        {opsLogs.length > 0 ? (
+          <div className="mt-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Recent actions</p>
+            <ul className="mt-1 space-y-1 text-[11px] text-slate-600">
+              {opsLogs.slice(0, 5).map((log, idx) => (
+                <li key={idx}>
+                  {log.createdAt ? new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"} —{" "}
+                  {log.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          null
+        )}
+      </div>
+
       {error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div>
       ) : null}
@@ -462,6 +568,7 @@ export default function GuestHouseBookingsPanel() {
                 <th className="px-3 py-2">Guests</th>
                 <th className="px-3 py-2">Amount</th>
                 <th className="px-3 py-2">Payment</th>
+                <th className="px-3 py-2">Lifecycle</th>
                 <th className="px-3 py-2 min-w-[220px]">Assignment</th>
               </tr>
             </thead>
@@ -500,6 +607,35 @@ export default function GuestHouseBookingsPanel() {
                       <td className="px-3 py-2">
                         <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">{b.paymentStatus}</span>
                         <div className="text-xs text-gray-400">{b.status}</div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="mb-1 text-xs font-medium text-slate-700">{b.lifecycleStatus || "booked"}</div>
+                        <div className="flex flex-wrap gap-1">
+                          <button
+                            type="button"
+                            onClick={() => void updateLifecycle(b._id, "checked_in")}
+                            disabled={savingId === b._id}
+                            className="rounded border px-1.5 py-0.5 text-[10px] hover:bg-slate-50 disabled:opacity-40"
+                          >
+                            Check-in
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void updateLifecycle(b._id, "checked_out")}
+                            disabled={savingId === b._id}
+                            className="rounded border px-1.5 py-0.5 text-[10px] hover:bg-slate-50 disabled:opacity-40"
+                          >
+                            Check-out
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void updateLifecycle(b._id, "no_show")}
+                            disabled={savingId === b._id}
+                            className="rounded border px-1.5 py-0.5 text-[10px] hover:bg-slate-50 disabled:opacity-40"
+                          >
+                            No-show
+                          </button>
+                        </div>
                       </td>
                       <td className="px-3 py-2">
                         <button

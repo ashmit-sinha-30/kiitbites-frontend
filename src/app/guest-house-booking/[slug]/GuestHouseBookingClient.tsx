@@ -3,6 +3,8 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import api from "@/utils/apiUtils";
+import GuestServiceRequestsPanel from "./GuestServiceRequestsPanel";
+import InRoomFoodOrderPanel from "./InRoomFoodOrderPanel";
 
 interface GuestHouse {
   _id: string;
@@ -15,6 +17,11 @@ interface GuestHouse {
   coverImage?: string;
   additionalImages?: string[];
   images?: string[];
+  guestExperienceSettings?: {
+    inRoomFoodEnabled?: boolean;
+    inRoomFoodMenuNote?: string;
+    allowServiceRequests?: boolean;
+  };
 }
 
 interface RoomType {
@@ -80,9 +87,33 @@ export default function GuestHouseBookingClient() {
     roomTypeName?: string;
     checkInDate: string;
     checkOutDate: string;
+    lifecycleStatus?: "booked" | "checked_in" | "checked_out" | "no_show";
+    actualCheckInAt?: string | null;
+    actualCheckOutAt?: string | null;
+    guestExperienceSettings?: {
+      inRoomFoodEnabled?: boolean;
+      inRoomFoodMenuNote?: string;
+      allowServiceRequests?: boolean;
+    };
     bookingId: string;
   } | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileBookings, setProfileBookings] = useState<
+    Array<{
+      bookingId: string;
+      guestHouseName?: string;
+      roomTypeName?: string;
+      checkInDate: string;
+      checkOutDate: string;
+      lifecycleStatus: string;
+      assignedRoomNumbers: string;
+      totalPrice: number;
+    }>
+  >([]);
 
   const [loadingGuestHouses, setLoadingGuestHouses] = useState(true);
   const [loadingRooms, setLoadingRooms] = useState(false);
@@ -90,6 +121,74 @@ export default function GuestHouseBookingClient() {
   const [selectedGuestHouse, setSelectedGuestHouse] = useState<GuestHouse | null>(null);
   const [rooms, setRooms] = useState<RoomType[]>([]);
   const [roomBookingDrafts, setRoomBookingDrafts] = useState<Record<string, RoomBookingDraft>>({});
+  type BedVariant = "single" | "double";
+  // const EM_DASH = "\u2014";
+  const parseRoomBedVariant = (roomName: string): { baseCategory: string; bedType: BedVariant | null } => {
+    const name = String(roomName || "").trim();
+    if (!name) return { baseCategory: "", bedType: null };
+
+    // Prefer strict compound format: "<Base> — Single bedroom" (supports —, –, -).
+    const compound = /^(.+?)\s*[—–\-]\s*(Single bedroom|Double bedroom)\s*$/i.exec(name);
+    if (compound) {
+      const baseCategory = compound[1].trim();
+      const bedType: BedVariant = /^single/i.test(compound[2]) ? "single" : "double";
+      return { baseCategory: baseCategory || name, bedType };
+    }
+
+    const lower = name.toLowerCase();
+    if (lower === "single bedroom") return { baseCategory: "Single bedroom", bedType: "single" };
+    if (lower === "double bedroom") return { baseCategory: "Double bedroom", bedType: "double" };
+    if (lower.includes("single bedroom")) return { baseCategory: name.replace(/single bedroom/gi, "").trim() || name, bedType: "single" };
+    if (lower.includes("double bedroom")) return { baseCategory: name.replace(/double bedroom/gi, "").trim() || name, bedType: "double" };
+
+    // Back-compat: roomName without explicit bed suffix (e.g. just "Suites")
+    return { baseCategory: name, bedType: null };
+  };
+
+  const [selectedBedTypeByBase, setSelectedBedTypeByBase] = useState<Record<string, BedVariant>>({});
+
+  const roomGroups = useMemo(() => {
+    type RoomGroup = { baseCategory: string; variants: { single?: RoomType; double?: RoomType } };
+    const map = new Map<string, RoomGroup["variants"]>();
+
+    const hasStandaloneSuitesBase = rooms.some((r) => {
+      const parsed = parseRoomBedVariant(r.roomName || "");
+      return /^suites\b/i.test(parsed.baseCategory) && parsed.bedType === null;
+    });
+
+    for (const room of rooms) {
+      const parsed = parseRoomBedVariant(room.roomName || "");
+      if (!parsed.baseCategory) continue;
+
+      // Heuristic UX merge:
+      // If we have a base "Suites" roomType (without explicit single/double),
+      // treat standalone "Single bedroom"/"Double bedroom" roomTypes as variants of it.
+      let effectiveBase = parsed.baseCategory;
+      if (hasStandaloneSuitesBase && parsed.bedType) {
+        if (/^single bedroom$/i.test(effectiveBase)) effectiveBase = "Suites";
+        if (/^double bedroom$/i.test(effectiveBase)) effectiveBase = "Suites";
+      }
+
+      if (!parsed.bedType) {
+        // Back-compat: if a roomType isn't explicitly tagged as single/double (e.g. just "Suites"),
+        // treat it as toggleable for UX (both toggles point to the same underlying roomType id).
+        if (!map.has(effectiveBase)) map.set(effectiveBase, {});
+        const variants = map.get(effectiveBase)!;
+        variants.single = room;
+        variants.double = room;
+        continue;
+      }
+
+      if (!map.has(effectiveBase)) map.set(effectiveBase, {});
+      const variants = map.get(effectiveBase)!;
+      variants[parsed.bedType] = room;
+    }
+
+    return Array.from(map.entries()).map(([baseCategory, variants]) => ({
+      baseCategory,
+      variants,
+    }));
+  }, [rooms]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -121,6 +220,27 @@ export default function GuestHouseBookingClient() {
       setLookupError(err.response?.data?.message || err.message || "Could not find that booking.");
     } finally {
       setLookupLoading(false);
+    }
+  };
+
+  const showDialog = (message: string) => {
+    setDialogMessage(message);
+    setDialogOpen(true);
+  };
+
+  const loadProfileBookings = async () => {
+    const phone = profilePhone.trim();
+    if (!phone) return;
+    try {
+      setProfileLoading(true);
+      const res = await api.get("/api/guest-house-bookings/public/bookings-by-contact", {
+        params: { guestPhone: phone },
+      });
+      setProfileBookings(Array.isArray(res.data?.data) ? res.data.data : []);
+    } catch {
+      setProfileBookings([]);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -189,13 +309,16 @@ export default function GuestHouseBookingClient() {
           drafts[room._id] = emptyDraft();
         });
         setRoomBookingDrafts(drafts);
+        setSelectedBedTypeByBase({});
       } else {
         setRooms([]);
         setRoomBookingDrafts({});
+        setSelectedBedTypeByBase({});
       }
     } catch {
       setRooms([]);
       setRoomBookingDrafts({});
+      setSelectedBedTypeByBase({});
     } finally {
       setLoadingRooms(false);
     }
@@ -344,8 +467,8 @@ export default function GuestHouseBookingClient() {
             if (bid && typeof window !== "undefined") {
               sessionStorage.setItem(LAST_BOOKING_STORAGE_KEY, bid);
             }
-            alert(
-              `Booking confirmed. Paid ₹${Number(v.data?.totalPrice ?? 0).toFixed(2)}.\nBooking id: ${bid}\nSave this id — use it with your phone on “Look up room assignment” below once your room is assigned.`
+            showDialog(
+              `Booking confirmed. Paid ₹${Number(v.data?.totalPrice ?? 0).toFixed(2)}.\nBooking id: ${bid}\nSave this id and use it below to check room assignment and request services.`
             );
             updateDraft(room._id, {
               loadingPay: false,
@@ -355,7 +478,7 @@ export default function GuestHouseBookingClient() {
             await checkAvailability(room);
           } catch (e: unknown) {
             const err = e as { response?: { data?: { message?: string } }; message?: string };
-            alert(err.response?.data?.message || err.message || "Payment verification failed");
+            showDialog(err.response?.data?.message || err.message || "Payment verification failed");
             updateDraft(room._id, { loadingPay: false });
           }
         },
@@ -442,14 +565,92 @@ export default function GuestHouseBookingClient() {
                 Check-in: {new Date(lookupResult.checkInDate).toLocaleDateString()} · Check-out:{" "}
                 {new Date(lookupResult.checkOutDate).toLocaleDateString()}
               </p>
+              <p className="mt-1 text-slate-700">
+                Status:{" "}
+                <span className="font-medium">
+                  {(lookupResult.lifecycleStatus || "booked").replace("_", " ")}
+                </span>
+              </p>
               <p className="mt-3 text-base font-semibold text-slate-900">
                 Assigned room(s):{" "}
                 {lookupResult.assignedRoomNumbers?.trim()
                   ? lookupResult.assignedRoomNumbers
                   : "Not assigned yet — check back later."}
               </p>
+              <GuestServiceRequestsPanel
+                bookingId={lookupResult.bookingId}
+                guestPhone={lookupPhone}
+                allowFood={lookupResult.guestExperienceSettings?.inRoomFoodEnabled === true}
+                allowServiceRequests={lookupResult.guestExperienceSettings?.allowServiceRequests !== false}
+                foodMenuNote={lookupResult.guestExperienceSettings?.inRoomFoodMenuNote || ""}
+              />
+              <InRoomFoodOrderPanel
+                bookingId={lookupResult.bookingId}
+                guestPhone={lookupPhone}
+                enabled={lookupResult.guestExperienceSettings?.inRoomFoodEnabled === true}
+              />
             </div>
           ) : null}
+        </section>
+
+        <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900">My Guest House Booking Profile</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Enter your booking phone to view all your guesthouse stays and assigned rooms.
+          </p>
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <div className="min-w-[220px]">
+              <label className="mb-0.5 block text-xs font-medium text-slate-600">Phone number</label>
+              <input
+                type="tel"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                placeholder="e.g. 9876543210"
+                value={profilePhone}
+                onChange={(e) => setProfilePhone(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => void loadProfileBookings()}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              disabled={profileLoading}
+            >
+              {profileLoading ? "Loading..." : "Load my bookings"}
+            </button>
+          </div>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-[760px] w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-slate-500">
+                  <th className="py-2 pr-3">Guest House</th>
+                  <th className="py-2 pr-3">Room Type</th>
+                  <th className="py-2 pr-3">Stay</th>
+                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2">Assigned Room</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profileBookings.map((b) => (
+                  <tr key={b.bookingId} className="border-b last:border-b-0">
+                    <td className="py-2 pr-3">{b.guestHouseName || "Guest House"}</td>
+                    <td className="py-2 pr-3">{b.roomTypeName || "Room"}</td>
+                    <td className="py-2 pr-3">
+                      {new Date(b.checkInDate).toLocaleDateString()} - {new Date(b.checkOutDate).toLocaleDateString()}
+                    </td>
+                    <td className="py-2 pr-3">{b.lifecycleStatus}</td>
+                    <td className="py-2">{b.assignedRoomNumbers || "Not assigned yet"}</td>
+                  </tr>
+                ))}
+                {!profileLoading && profileBookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-3 text-center text-slate-500">
+                      No bookings loaded.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -511,209 +712,307 @@ export default function GuestHouseBookingClient() {
                     className="h-44 w-full rounded-xl object-cover"
                   />
                 ) : null}
-                {rooms.map((room) => (
-                  <div key={room._id} className="rounded-xl border p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{room.roomName}</p>
-                        <p className="text-xs text-slate-600">
-                          Units of this type: {room.roomCount} | ₹{Number(room.price || 0).toFixed(2)} / night
-                        </p>
+                {roomGroups.map((group) => {
+                  const defaultBed: BedVariant = group.variants.single ? "single" : "double";
+                  const selectedBed = selectedBedTypeByBase[group.baseCategory] || defaultBed;
+                  const variantRoom: RoomType | undefined =
+                    (selectedBed === "single" ? group.variants.single : group.variants.double) ||
+                    group.variants.single ||
+                    group.variants.double;
+
+                  if (!variantRoom) return null;
+
+                  const showToggle = Boolean(group.variants.single && group.variants.double);
+                  const setBed = (bed: BedVariant) => {
+                    if (bed === selectedBed) return;
+                    const prevRoom =
+                      (selectedBed === "single" ? group.variants.single : group.variants.double) ||
+                      group.variants.single ||
+                      group.variants.double;
+                    const nextRoom =
+                      (bed === "single" ? group.variants.single : group.variants.double) ||
+                      group.variants.single ||
+                      group.variants.double;
+
+                    if (prevRoom && nextRoom && prevRoom._id !== nextRoom._id && roomBookingDrafts[prevRoom._id]) {
+                      const old = roomBookingDrafts[prevRoom._id];
+                      const base = emptyDraft();
+                      setRoomBookingDrafts((prev) => ({
+                        ...prev,
+                        [nextRoom._id]: {
+                          ...base,
+                          checkInDate: old.checkInDate,
+                          checkOutDate: old.checkOutDate,
+                          roomsRequested: old.roomsRequested,
+                          adultsCount: old.adultsCount,
+                          kidsCount: old.kidsCount,
+                          guestName: old.guestName,
+                          guestEmail: old.guestEmail,
+                          guestPhone: old.guestPhone,
+                        },
+                      }));
+                    }
+
+                    setSelectedBedTypeByBase((p) => ({ ...p, [group.baseCategory]: bed }));
+                  };
+
+                  return (
+                    <div key={group.baseCategory} className="rounded-xl border p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{group.baseCategory}</p>
+                          <p className="text-xs text-slate-600">
+                            Bed: {selectedBed === "single" ? "Single bedroom" : "Double bedroom"} · Units of this type: {variantRoom.roomCount} | ₹
+                            {Number(variantRoom.price || 0).toFixed(2)} / night
+                          </p>
+                        </div>
+                        {variantRoom.coverImage ? (
+                          <img
+                            src={variantRoom.coverImage}
+                            alt={variantRoom.roomName}
+                            className="h-16 w-20 rounded-md object-cover"
+                          />
+                        ) : null}
                       </div>
-                      {room.coverImage ? (
-                        <img
-                          src={room.coverImage}
-                          alt={room.roomName}
-                          className="h-16 w-20 rounded-md object-cover"
-                        />
+
+                      {variantRoom.services?.length ? (
+                        <p className="mt-2 text-xs text-slate-600">Services: {variantRoom.services.join(", ")}</p>
+                      ) : null}
+
+                      {showToggle ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={!group.variants.single}
+                            onClick={() => setBed("single")}
+                            className={`rounded px-3 py-1 text-xs font-medium ${
+                              selectedBed === "single" ? "bg-black text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            } disabled:opacity-50`}
+                          >
+                            Single bedroom
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!group.variants.double}
+                            onClick={() => setBed("double")}
+                            className={`rounded px-3 py-1 text-xs font-medium ${
+                              selectedBed === "double" ? "bg-black text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            } disabled:opacity-50`}
+                          >
+                            Double bedroom
+                          </button>
+                        </div>
+                      ) : null}
+
+                      <p className="mt-2 text-[11px] text-slate-500">
+                        Fill dates first, then guest counts. Children = age under 14. “Rooms” = how many units of this bed type.
+                      </p>
+
+                      <div className="mt-3 space-y-3">
+                        <div>
+                          <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Stay dates</p>
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <div>
+                              <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`checkin-${variantRoom._id}`}>
+                                Check-in (first night)
+                              </label>
+                              <input
+                                id={`checkin-${variantRoom._id}`}
+                                type="date"
+                                title="First night of your stay"
+                                aria-label="Check-in date"
+                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                value={roomBookingDrafts[variantRoom._id]?.checkInDate || ""}
+                                onChange={(e) => updateDraft(variantRoom._id, { checkInDate: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`checkout-${variantRoom._id}`}>
+                                Check-out (morning you leave)
+                              </label>
+                              <input
+                                id={`checkout-${variantRoom._id}`}
+                                type="date"
+                                title="Morning you leave (not charged as a night)"
+                                aria-label="Check-out date"
+                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                value={roomBookingDrafts[variantRoom._id]?.checkOutDate || ""}
+                                onChange={(e) => updateDraft(variantRoom._id, { checkOutDate: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Rooms & guests</p>
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            <div>
+                              <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`rooms-${variantRoom._id}`}>
+                                Rooms (this type)
+                              </label>
+                              <input
+                                id={`rooms-${variantRoom._id}`}
+                                type="number"
+                                min={1}
+                                placeholder="e.g. 1"
+                                title="Number of rooms of this bed type"
+                                aria-label="Number of rooms to book"
+                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                value={roomBookingDrafts[variantRoom._id]?.roomsRequested || "1"}
+                                onChange={(e) => updateDraft(variantRoom._id, { roomsRequested: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`adults-${variantRoom._id}`}>
+                                Adults
+                              </label>
+                              <input
+                                id={`adults-${variantRoom._id}`}
+                                type="number"
+                                min={0}
+                                placeholder="e.g. 2"
+                                title="Guests aged 14 or older"
+                                aria-label="Number of adults"
+                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                value={roomBookingDrafts[variantRoom._id]?.adultsCount ?? "1"}
+                                onChange={(e) => updateDraft(variantRoom._id, { adultsCount: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`kids-${variantRoom._id}`}>
+                                Kids (under 14)
+                              </label>
+                              <input
+                                id={`kids-${variantRoom._id}`}
+                                type="number"
+                                min={0}
+                                placeholder="e.g. 0"
+                                title="Children under 14 years old"
+                                aria-label="Number of children under 14"
+                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                value={roomBookingDrafts[variantRoom._id]?.kidsCount ?? "0"}
+                                onChange={(e) => updateDraft(variantRoom._id, { kidsCount: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Lead guest / contact</p>
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            <div>
+                              <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`name-${variantRoom._id}`}>
+                                Full name
+                              </label>
+                              <input
+                                id={`name-${variantRoom._id}`}
+                                type="text"
+                                placeholder="e.g. Priya Sharma"
+                                title="Primary guest name for this booking"
+                                aria-label="Full name"
+                                autoComplete="name"
+                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                value={roomBookingDrafts[variantRoom._id]?.guestName || ""}
+                                onChange={(e) => updateDraft(variantRoom._id, { guestName: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`email-${variantRoom._id}`}>
+                                Email (optional)
+                              </label>
+                              <input
+                                id={`email-${variantRoom._id}`}
+                                type="email"
+                                placeholder="e.g. you@email.com"
+                                title="For booking confirmation"
+                                aria-label="Email address optional"
+                                autoComplete="email"
+                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                value={roomBookingDrafts[variantRoom._id]?.guestEmail || ""}
+                                onChange={(e) => updateDraft(variantRoom._id, { guestEmail: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`phone-${variantRoom._id}`}>
+                                Phone (required)
+                              </label>
+                              <input
+                                id={`phone-${variantRoom._id}`}
+                                type="tel"
+                                placeholder="e.g. 9876543210"
+                                title="Mobile number for contact"
+                                aria-label="Phone number"
+                                autoComplete="tel"
+                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                value={roomBookingDrafts[variantRoom._id]?.guestPhone || ""}
+                                onChange={(e) => updateDraft(variantRoom._id, { guestPhone: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="rounded bg-slate-200 px-3 py-1 text-xs font-medium hover:bg-slate-300"
+                          disabled={roomBookingDrafts[variantRoom._id]?.loadingAvailability}
+                          onClick={() => void checkAvailability(variantRoom)}
+                        >
+                          {roomBookingDrafts[variantRoom._id]?.loadingAvailability ? "Checking..." : "Check availability & price"}
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded bg-slate-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+                          disabled={
+                            !roomBookingDrafts[variantRoom._id]?.canBook ||
+                            roomBookingDrafts[variantRoom._id]?.loadingPay ||
+                            roomBookingDrafts[variantRoom._id]?.loadingAvailability
+                          }
+                          onClick={() => void payAndBook(variantRoom)}
+                        >
+                          {roomBookingDrafts[variantRoom._id]?.loadingPay ? "Opening payment..." : "Pay & book (Razorpay)"}
+                        </button>
+                      </div>
+
+                      {roomBookingDrafts[variantRoom._id]?.availabilityMessage ? (
+                        <p className="mt-2 text-xs text-slate-700">{roomBookingDrafts[variantRoom._id]?.availabilityMessage}</p>
+                      ) : null}
+                      {roomBookingDrafts[variantRoom._id]?.pricingMessage ? (
+                        <p className="mt-1 text-xs font-medium text-slate-900">{roomBookingDrafts[variantRoom._id]?.pricingMessage}</p>
                       ) : null}
                     </div>
-                    {room.services?.length ? (
-                      <p className="mt-2 text-xs text-slate-600">Services: {room.services.join(", ")}</p>
-                    ) : null}
-
-                    <p className="mt-2 text-[11px] text-slate-500">
-                      Fill dates first, then guest counts. Children = age under 14. “Rooms” = how many units of this room type.
-                    </p>
-
-                    <div className="mt-3 space-y-3">
-                      <div>
-                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Stay dates</p>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          <div>
-                            <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`checkin-${room._id}`}>
-                              Check-in (first night)
-                            </label>
-                            <input
-                              id={`checkin-${room._id}`}
-                              type="date"
-                              title="First night of your stay"
-                              aria-label="Check-in date"
-                              className="w-full rounded-md border px-2 py-1.5 text-xs"
-                              value={roomBookingDrafts[room._id]?.checkInDate || ""}
-                              onChange={(e) => updateDraft(room._id, { checkInDate: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`checkout-${room._id}`}>
-                              Check-out (morning you leave)
-                            </label>
-                            <input
-                              id={`checkout-${room._id}`}
-                              type="date"
-                              title="Morning you leave (not charged as a night)"
-                              aria-label="Check-out date"
-                              className="w-full rounded-md border px-2 py-1.5 text-xs"
-                              value={roomBookingDrafts[room._id]?.checkOutDate || ""}
-                              onChange={(e) => updateDraft(room._id, { checkOutDate: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Rooms & guests</p>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                          <div>
-                            <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`rooms-${room._id}`}>
-                              Rooms (this type)
-                            </label>
-                            <input
-                              id={`rooms-${room._id}`}
-                              type="number"
-                              min={1}
-                              placeholder="e.g. 1"
-                              title="Number of rooms of this room type"
-                              aria-label="Number of rooms to book"
-                              className="w-full rounded-md border px-2 py-1.5 text-xs"
-                              value={roomBookingDrafts[room._id]?.roomsRequested || "1"}
-                              onChange={(e) => updateDraft(room._id, { roomsRequested: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`adults-${room._id}`}>
-                              Adults
-                            </label>
-                            <input
-                              id={`adults-${room._id}`}
-                              type="number"
-                              min={0}
-                              placeholder="e.g. 2"
-                              title="Guests aged 14 or older"
-                              aria-label="Number of adults"
-                              className="w-full rounded-md border px-2 py-1.5 text-xs"
-                              value={roomBookingDrafts[room._id]?.adultsCount ?? "1"}
-                              onChange={(e) => updateDraft(room._id, { adultsCount: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`kids-${room._id}`}>
-                              Kids (under 14)
-                            </label>
-                            <input
-                              id={`kids-${room._id}`}
-                              type="number"
-                              min={0}
-                              placeholder="e.g. 0"
-                              title="Children under 14 years old"
-                              aria-label="Number of children under 14"
-                              className="w-full rounded-md border px-2 py-1.5 text-xs"
-                              value={roomBookingDrafts[room._id]?.kidsCount ?? "0"}
-                              onChange={(e) => updateDraft(room._id, { kidsCount: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Lead guest / contact</p>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                          <div>
-                            <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`name-${room._id}`}>
-                              Full name
-                            </label>
-                            <input
-                              id={`name-${room._id}`}
-                              type="text"
-                              placeholder="e.g. Priya Sharma"
-                              title="Primary guest name for this booking"
-                              aria-label="Full name"
-                              autoComplete="name"
-                              className="w-full rounded-md border px-2 py-1.5 text-xs"
-                              value={roomBookingDrafts[room._id]?.guestName || ""}
-                              onChange={(e) => updateDraft(room._id, { guestName: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`email-${room._id}`}>
-                              Email (optional)
-                            </label>
-                            <input
-                              id={`email-${room._id}`}
-                              type="email"
-                              placeholder="e.g. you@email.com"
-                              title="For booking confirmation"
-                              aria-label="Email address optional"
-                              autoComplete="email"
-                              className="w-full rounded-md border px-2 py-1.5 text-xs"
-                              value={roomBookingDrafts[room._id]?.guestEmail || ""}
-                              onChange={(e) => updateDraft(room._id, { guestEmail: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <label className="mb-0.5 block text-[11px] text-slate-600" htmlFor={`phone-${room._id}`}>
-                              Phone (required)
-                            </label>
-                            <input
-                              id={`phone-${room._id}`}
-                              type="tel"
-                              placeholder="e.g. 9876543210"
-                              title="Mobile number for contact"
-                              aria-label="Phone number"
-                              autoComplete="tel"
-                              className="w-full rounded-md border px-2 py-1.5 text-xs"
-                              value={roomBookingDrafts[room._id]?.guestPhone || ""}
-                              onChange={(e) => updateDraft(room._id, { guestPhone: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className="rounded bg-slate-200 px-3 py-1 text-xs font-medium hover:bg-slate-300"
-                        disabled={roomBookingDrafts[room._id]?.loadingAvailability}
-                        onClick={() => void checkAvailability(room)}
-                      >
-                        {roomBookingDrafts[room._id]?.loadingAvailability ? "Checking..." : "Check availability & price"}
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded bg-slate-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
-                        disabled={
-                          !roomBookingDrafts[room._id]?.canBook ||
-                          roomBookingDrafts[room._id]?.loadingPay ||
-                          roomBookingDrafts[room._id]?.loadingAvailability
-                        }
-                        onClick={() => void payAndBook(room)}
-                      >
-                        {roomBookingDrafts[room._id]?.loadingPay ? "Opening payment..." : "Pay & book (Razorpay)"}
-                      </button>
-                    </div>
-
-                    {roomBookingDrafts[room._id]?.availabilityMessage ? (
-                      <p className="mt-2 text-xs text-slate-700">{roomBookingDrafts[room._id]?.availabilityMessage}</p>
-                    ) : null}
-                    {roomBookingDrafts[room._id]?.pricingMessage ? (
-                      <p className="mt-1 text-xs font-medium text-slate-900">{roomBookingDrafts[room._id]?.pricingMessage}</p>
-                    ) : null}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
+        </div>
+        <AppDialog open={dialogOpen} message={dialogMessage} onClose={() => setDialogOpen(false)} />
+      </div>
+    </div>
+  );
+}
+
+function AppDialog({
+  open,
+  message,
+  onClose,
+}: {
+  open: boolean;
+  message: string;
+  onClose: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+        <h3 className="text-base font-semibold text-slate-900">Notification</h3>
+        <p className="mt-2 whitespace-pre-line text-sm text-slate-700">{message}</p>
+        <div className="mt-4 flex justify-end">
+          <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white" onClick={onClose}>
+            OK
+          </button>
         </div>
       </div>
     </div>

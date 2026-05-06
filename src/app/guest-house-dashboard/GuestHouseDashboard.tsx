@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import api from "@/utils/apiUtils";
 import GuestHouseBookingsPanel from "./GuestHouseBookingsPanel";
 import PhysicalRoomsEditor from "@/app/guest-house-booking-unidashboard/components/PhysicalRoomsEditor";
+import AmenitiesLaundryTracker from "./AmenitiesLaundryTracker";
+import YieldRulesManager from "./YieldRulesManager";
+import GuestServiceDeskPanel from "./GuestServiceDeskPanel";
+import InRoomFoodManagerPanel from "./InRoomFoodManagerPanel";
 
 type Service = {
   _id: string;
@@ -26,6 +30,12 @@ export default function GuestHouseDashboard() {
   const [guestHouseName, setGuestHouseName] = useState("Guest House");
   const [guestHouseId, setGuestHouseId] = useState("");
   const [services, setServices] = useState<Service[]>([]);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSettings, setProfileSettings] = useState({
+    inRoomFoodEnabled: false,
+    inRoomFoodMenuNote: "",
+    allowServiceRequests: true,
+  });
 
   useEffect(() => {
     const init = async () => {
@@ -41,6 +51,17 @@ export default function GuestHouseDashboard() {
         setGuestHouseId(assignmentData.guestHouseId);
         setGuestHouseName(assignmentData.guestHouseName || "Guest House");
         setServices(Array.isArray(assignmentData.services) ? assignmentData.services : []);
+        try {
+          const settingsRes = await api.get("/api/guest-house-bookings/manager/profile-settings");
+          const settings = settingsRes.data?.data?.guestExperienceSettings || {};
+          setProfileSettings({
+            inRoomFoodEnabled: settings.inRoomFoodEnabled === true,
+            inRoomFoodMenuNote: settings.inRoomFoodMenuNote || "",
+            allowServiceRequests: settings.allowServiceRequests !== false,
+          });
+        } catch {
+          // keep defaults
+        }
       } catch {
         router.push("/guest-house-login");
       } finally {
@@ -61,6 +82,10 @@ export default function GuestHouseDashboard() {
 
     return [
       { key: "dashboard", label: "Dashboard" },
+      { key: "amenities-laundry", label: "Amenities & Laundry" },
+      { key: "yield-rules", label: "Dynamic Pricing" },
+      { key: "service-desk", label: "Service Desk" },
+      { key: "in-room-food", label: "In-room Food" },
       { key: "profile", label: "Profile" },
       ...serviceSegments,
       { key: "logout", label: "Logout" },
@@ -116,7 +141,110 @@ export default function GuestHouseDashboard() {
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p><span className="font-semibold">Guest House:</span> {guestHouseName}</p>
             <p><span className="font-semibold">Guest House ID:</span> {guestHouseId}</p>
+            <div className="mt-4 space-y-2">
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={profileSettings.inRoomFoodEnabled}
+                  onChange={(e) =>
+                    setProfileSettings((p) => ({ ...p, inRoomFoodEnabled: e.target.checked }))
+                  }
+                />
+                Enable in-room food ordering
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={profileSettings.allowServiceRequests}
+                  onChange={(e) =>
+                    setProfileSettings((p) => ({ ...p, allowServiceRequests: e.target.checked }))
+                  }
+                />
+                Allow guest service requests
+              </label>
+              <div>
+                <p className="mb-1 text-xs text-gray-600">In-room food note/menu info</p>
+                <input
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  value={profileSettings.inRoomFoodMenuNote}
+                  onChange={(e) =>
+                    setProfileSettings((p) => ({ ...p, inRoomFoodMenuNote: e.target.value }))
+                  }
+                  placeholder="e.g. Order till 10:30 PM via reception"
+                />
+              </div>
+              <button
+                className="rounded-md bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+                disabled={profileSaving}
+                onClick={async () => {
+                  try {
+                    setProfileSaving(true);
+                    await api.patch("/api/guest-house-bookings/manager/profile-settings", profileSettings);
+                  } finally {
+                    setProfileSaving(false);
+                  }
+                }}
+              >
+                {profileSaving ? "Saving..." : "Save settings"}
+              </button>
+            </div>
           </div>
+        </div>
+      );
+    }
+
+    if (activeSegment === "amenities-laundry") {
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-gray-900">Amenities & Laundry</h1>
+            <p className="text-gray-600">
+              Track daily room-wise toiletries, bedsheets, blankets and other amenity movement.
+            </p>
+          </div>
+          <AmenitiesLaundryTracker />
+        </div>
+      );
+    }
+
+    if (activeSegment === "yield-rules") {
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-gray-900">Dynamic Pricing & Blackout</h1>
+            <p className="text-gray-600">
+              Manage date-range price overrides and blackout windows for each room type.
+            </p>
+          </div>
+          <YieldRulesManager />
+        </div>
+      );
+    }
+
+    if (activeSegment === "service-desk") {
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-gray-900">Guest Service Desk</h1>
+            <p className="text-gray-600">
+              Handle guest support tickets, assign actions, and resolve service requests.
+            </p>
+          </div>
+          <GuestServiceDeskPanel />
+        </div>
+      );
+    }
+
+    if (activeSegment === "in-room-food") {
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-gray-900">In-room Food Catalog & Orders</h1>
+            <p className="text-gray-600">
+              Manage menu items and fulfill in-room food orders. Guests can order only when enabled in Profile settings.
+            </p>
+          </div>
+          <InRoomFoodManagerPanel />
         </div>
       );
     }

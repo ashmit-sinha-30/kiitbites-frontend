@@ -2,6 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import api from "@/utils/apiUtils";
+import AmenitiesLaundryReadOnly from "./AmenitiesLaundryReadOnly";
+import OpsOverviewReadOnly from "./OpsOverviewReadOnly";
+import ServiceRequestsReadOnly from "./ServiceRequestsReadOnly";
 
 interface GuestHouse {
   _id: string;
@@ -126,6 +129,20 @@ export default function UniDashboardOverview({ refreshKey = 0 }: Props) {
         <StatCard title="Total Rooms" value={String(summary.totalRooms)} />
         <StatCard title="Active Properties" value={String(summary.activeGuestHouses)} />
       </section>
+
+      {guestHouses.length > 0 ? (
+        <AmenitiesLaundryReadOnly
+          guestHouses={guestHouses.map((gh) => ({ _id: gh._id, name: gh.name }))}
+        />
+      ) : null}
+
+      {guestHouses.length > 0 ? (
+        <OpsOverviewReadOnly guestHouses={guestHouses.map((gh) => ({ _id: gh._id, name: gh.name }))} />
+      ) : null}
+
+      {guestHouses.length > 0 ? (
+        <ServiceRequestsReadOnly guestHouses={guestHouses.map((gh) => ({ _id: gh._id, name: gh.name }))} />
+      ) : null}
 
       <section className="rounded-2xl border bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Guest House List</h2>

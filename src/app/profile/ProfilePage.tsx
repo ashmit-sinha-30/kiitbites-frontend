@@ -31,6 +31,21 @@ const UserProfile = () => {
   } | null>(null);
   const [isPersonalInfoOpen, setIsPersonalInfoOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isGuestHouseBookingsOpen, setIsGuestHouseBookingsOpen] = useState(true);
+  const [ghBookings, setGhBookings] = useState<
+    Array<{
+      bookingId: string;
+      guestHouseName?: string;
+      guestHouseLocation?: string;
+      roomTypeName?: string;
+      checkInDate: string;
+      checkOutDate: string;
+      lifecycleStatus: string;
+      assignedRoomNumbers: string;
+      totalPrice: number;
+    }>
+  >([]);
+  const [loadingGhBookings, setLoadingGhBookings] = useState(false);
 
   // ✅ Fetch user data
   useEffect(() => {
@@ -38,6 +53,20 @@ const UserProfile = () => {
       try {
         const res = await api.get("/api/user/auth/user");
         setUser(res.data);
+        const phone = String(res.data?.phone || "").trim();
+        if (phone) {
+          try {
+            setLoadingGhBookings(true);
+            const b = await api.get("/api/guest-house-bookings/public/bookings-by-contact", {
+              params: { guestPhone: phone },
+            });
+            setGhBookings(Array.isArray(b.data?.data) ? b.data.data : []);
+          } catch {
+            setGhBookings([]);
+          } finally {
+            setLoadingGhBookings(false);
+          }
+        }
       } catch (error: unknown) {
         const err = error as { response?: { status?: number } };
         if (err.response?.status === 401) {
@@ -110,6 +139,43 @@ const UserProfile = () => {
             </div>
             <div className={styles.infoItem}>
               <strong>Phone Number:</strong> +91 {user?.phone || "Loading..."}
+            </div>
+          </div>
+        </div>
+
+        {/* Guest house bookings section */}
+        <div className={styles.section}>
+          <div
+            className={styles.dropdownHeader}
+            onClick={() => setIsGuestHouseBookingsOpen((prev) => !prev)}
+          >
+            <Book className={styles.iconPurple} size={20} />
+            <span>Guest House Bookings</span>
+            {isGuestHouseBookingsOpen ? (
+              <ChevronUp className={styles.chevron} size={16} />
+            ) : (
+              <ChevronDown className={styles.chevron} size={16} />
+            )}
+          </div>
+          <div className={`${styles.dropdownContent} ${isGuestHouseBookingsOpen ? styles.open : ""}`}>
+            {loadingGhBookings ? (
+              <div className={styles.infoItem}>Loading guest house bookings...</div>
+            ) : ghBookings.length === 0 ? (
+              <div className={styles.infoItem}>No guest house bookings found for your phone.</div>
+            ) : (
+              ghBookings.slice(0, 10).map((b) => (
+                <div key={b.bookingId} className={styles.infoItem}>
+                  <strong>{b.guestHouseName || "Guest House"}</strong> — {b.roomTypeName || "Room"} —{" "}
+                  {new Date(b.checkInDate).toLocaleDateString()} to {new Date(b.checkOutDate).toLocaleDateString()}
+                  <div className={styles.infoItem}>
+                    <strong>Status:</strong> {b.lifecycleStatus} | <strong>Room:</strong>{" "}
+                    {b.assignedRoomNumbers || "Not assigned yet"} | <strong>Paid:</strong> ₹{Number(b.totalPrice || 0).toFixed(2)}
+                  </div>
+                </div>
+              ))
+            )}
+            <div className={styles.infoItem}>
+              <strong>Tip:</strong> To order in-room food or raise service requests, open the Guest House booking page from your university portal and use your booking id + phone lookup.
             </div>
           </div>
         </div>

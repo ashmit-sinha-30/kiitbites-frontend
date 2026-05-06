@@ -19,6 +19,7 @@ import {
   postEnsureFloorPlanPresets,
   postUniPhysicalLayout,
 } from "../lib/physicalRoomsApi";
+import AppDialog from "@/components/AppDialog";
 
 interface GuestHouseOption {
   _id: string;
@@ -110,6 +111,21 @@ export default function FloorPlanService() {
   const [presetBedroomCategoriesInput, setPresetBedroomCategoriesInput] = useState("");
   /** Which bedroom category row is active for Single/Double chips */
   const [selectedBedroomCategory, setSelectedBedroomCategory] = useState("General");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogVariant, setDialogVariant] = useState<"info" | "error">("info");
+
+  const showInfo = (message: string) => {
+    setDialogVariant("info");
+    setDialogMessage(message);
+    setDialogOpen(true);
+  };
+
+  const showError = (message: string) => {
+    setDialogVariant("error");
+    setDialogMessage(message);
+    setDialogOpen(true);
+  };
 
   const bedroomPaintMeta = useMemo(() => {
     const pairBy = new Map<string, { single?: RoomTypeOption; double?: RoomTypeOption }>();
@@ -302,14 +318,14 @@ export default function FloorPlanService() {
       if (!json.success) throw new Error(json.message || "Request failed");
       const skipped = json.data?.skipped?.length ? `\nSkipped: ${json.data.skipped.map((s) => `${s.roomName}: ${s.reason}`).join("; ")}` : "";
       if (!opts?.silent) {
-        alert(String(json.message || "Done") + skipped);
+        showInfo(String(json.message || "Bedroom types created.") + skipped);
       }
       await loadFloorData();
       return true;
     } catch (err: unknown) {
       const e2 = err as { response?: { data?: { message?: string } }; message?: string };
       const msg = e2.response?.data?.message || e2.message || "Could not create types";
-      if (!opts?.silent) alert(msg);
+      if (!opts?.silent) showError(msg);
       return false;
     } finally {
       setEnsuringPresets(false);
@@ -325,13 +341,13 @@ export default function FloorPlanService() {
       roomsOnFloor: Number(row.roomsOnFloor),
     }));
     if (floorsPayload.length === 0) {
-      return alert("Add at least one row (building level + number of guest rooms).");
+      return showError("Add at least one row (building level + number of guest rooms).");
     }
     try {
       setSyncingShell(true);
       const json = await postUniPhysicalLayout(guestHouseId, floorsPayload);
       if (!json.success) throw new Error(json.message || "Sync failed");
-      alert(String(json.message || "Rooms added to the map."));
+      showInfo(String(json.message || "Rooms added to the map."));
       await loadFloorData();
 
       try {
@@ -342,7 +358,7 @@ export default function FloorPlanService() {
         if (activeTypes.length === 0) {
           const ok = await ensureSingleDoubleTypes({ silent: true });
           if (!ok) {
-            alert(
+            showError(
               "Rooms are on the map, but Single/Double categories could not be created automatically (often guest-house capacity is full). Use “Create Single & Double bedroom types” above."
             );
           }
@@ -353,7 +369,7 @@ export default function FloorPlanService() {
       await loadFloorData();
     } catch (err: unknown) {
       const e2 = err as { response?: { data?: { message?: string } }; message?: string };
-      alert(e2.response?.data?.message || e2.message || "Could not generate rooms");
+      showError(e2.response?.data?.message || e2.message || "Could not generate rooms.");
     } finally {
       setSyncingShell(false);
     }
@@ -378,7 +394,7 @@ export default function FloorPlanService() {
       await loadFloorData();
     } catch (err: unknown) {
       const e2 = err as { response?: { data?: { message?: string } }; message?: string };
-      alert(e2.response?.data?.message || e2.message || "Could not update room");
+      showError(e2.response?.data?.message || e2.message || "Could not update room.");
     } finally {
       setPaintingId(null);
     }
@@ -431,7 +447,7 @@ export default function FloorPlanService() {
     const id = await ensureThenBedroomId(selectedBedroomCategory, kind);
     if (id) setBrush(id);
     else {
-      alert(
+      showError(
         `Could not enable ${kind === "single" ? "Single" : "Double"} bedroom for “${selectedBedroomCategory}”. Check guest-house capacity or Add room details.`
       );
     }
@@ -440,13 +456,13 @@ export default function FloorPlanService() {
   const paintCardSingle = async (u: PhysicalUnitRow) => {
     const id = await ensureThenBedroomId(selectedBedroomCategory, "single");
     if (id) await paintWithRoomType(u, id);
-    else alert(`Could not assign Single (${selectedBedroomCategory}) — check capacity or Add room details.`);
+    else showError(`Could not assign Single (${selectedBedroomCategory}) — check capacity or Add room details.`);
   };
 
   const paintCardDouble = async (u: PhysicalUnitRow) => {
     const id = await ensureThenBedroomId(selectedBedroomCategory, "double");
     if (id) await paintWithRoomType(u, id);
-    else alert(`Could not assign Double (${selectedBedroomCategory}) — check capacity or Add room details.`);
+    else showError(`Could not assign Double (${selectedBedroomCategory}) — check capacity or Add room details.`);
   };
 
   const openFloorSheet = (u: PhysicalUnitRow) => {
@@ -458,7 +474,7 @@ export default function FloorPlanService() {
     if (!guestHouseId || !floorSheet) return;
     const fl = Number(floorInput);
     if (!Number.isFinite(fl) || fl < -5 || fl > 200) {
-      return alert("Floor must be between -5 and 200");
+      return showError("Floor must be between -5 and 200.");
     }
     try {
       setSavingFloor(true);
@@ -468,7 +484,7 @@ export default function FloorPlanService() {
       await loadFloorData();
     } catch (err: unknown) {
       const e2 = err as { response?: { data?: { message?: string } }; message?: string };
-      alert(e2.response?.data?.message || e2.message || "Could not move floor");
+      showError(e2.response?.data?.message || e2.message || "Could not move floor.");
     } finally {
       setSavingFloor(false);
     }
@@ -960,6 +976,12 @@ export default function FloorPlanService() {
           </div>
         </div>
       ) : null}
+      <AppDialog
+        open={dialogOpen}
+        message={dialogMessage}
+        variant={dialogVariant}
+        onConfirm={() => setDialogOpen(false)}
+      />
     </div>
   );
 }
