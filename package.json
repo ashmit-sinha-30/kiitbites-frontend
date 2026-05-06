@@ -27,7 +27,7 @@
     "framer-motion": "^12.6.2",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.511.0",
-    "next": "^16.2.3",
+    "next": "^16.2.4",
     "nextjs-toploader": "^3.9.17",
     "node-fetch": "^3.3.2",
     "react": "^19.0.0",
@@ -64,7 +64,8 @@
     "glob": "^10.5.0",
     "flatted": "3.4.2",
     "picomatch": "4.0.4",
-    "yaml": "2.8.3"
+    "yaml": "2.8.3",
+    "postcss": "^8.5.11"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
