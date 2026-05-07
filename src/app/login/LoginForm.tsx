@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import styles from "./styles/Login.module.scss";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import api from "@/utils/apiUtils";
+import axios from "axios";
 import { TransitionOverlay } from "../components/shared/Skeleton/TransitionOverlay";
 // import GoogleLogin from "./GoogleLogin";
 
@@ -118,6 +119,12 @@ export default function LoginForm() {
 
   // Auto-refresh token on visit
   const checkSession = useCallback(async () => {
+    // On login page, unauthenticated state is expected.
+    // Skip refresh checks when there is clearly no local auth token.
+    if (!localStorage.getItem("token")) {
+      return;
+    }
+
     try {
       const res = await api.get("/api/user/auth/refresh");
 
@@ -135,9 +142,12 @@ export default function LoginForm() {
         console.log("⚠️ Unexpected response from server");
       }
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        return;
+      }
       console.error("❌ Error refreshing session:", error);
     }
-  }, [BACKEND_URL, router]);
+  }, [router]);
 
   // Refresh session on component mount - deferred to not block initial render
   useEffect(() => {

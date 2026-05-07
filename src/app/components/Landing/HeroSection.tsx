@@ -31,7 +31,7 @@ const HeroSection: React.FC = () => {
 
       const userData = userRes.data;
       if (!userData.uniID) {
-        router.push("/food");
+        router.push("/home");
         return;
       }
 

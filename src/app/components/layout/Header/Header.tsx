@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import api from "@/utils/apiUtils";
+import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { IoMdSearch } from "react-icons/io";
@@ -101,7 +102,9 @@ const Header: React.FC<HeaderProps> = ({
           setUserEmail(null);
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        if (!(axios.isAxiosError(error) && error.response?.status === 401)) {
+          console.error("Error fetching user data:", error);
+        }
         setUserFullName(null);
         setUserEmail(null);
       }
@@ -234,6 +237,7 @@ const Header: React.FC<HeaderProps> = ({
             alt="KAMPYN Logo"
             width={150} // adjust width as needed
             height={50} // adjust height as needed
+            style={{ height: "auto" }}
             className={styles.logoImage}
           />
         </Link>

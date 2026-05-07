@@ -1,70 +1,30 @@
 "use client";
-import React, { useState, useEffect, useRef, Suspense } from "react";
-import { ChevronDown } from "lucide-react";
+import React, { useState, useEffect, Suspense } from "react";
 import styles from "./styles/activeorder.module.scss";
 import api from "@/utils/apiUtils";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PageLoading from "../components/layout/PageLoading/PageLoading";
-import { OrderSkeleton } from "../components/skeleton/SkeletonLoader/SkeletonLoader";
+import OrderListView from "../components/order/OrderListView";
+import { BaseOrder, College, User } from "../components/order/orderTypes";
+import useCollegeFilter from "../components/order/useCollegeFilter";
+import OrderPageLayout from "../components/order/OrderPageLayout";
 
 
 
-interface OrderItem {
-  name: string;
-  price: number;
-  unit: string;
-  type: string;
-  quantity: number;
-}
-
-interface ActiveOrder {
-  _id: string;
-  orderId: string;
-  orderNumber: string;
-  orderType: string;
-  status: string;
-  createdAt: string;
-  collectorName: string;
-  collectorPhone: string;
-  address?: string;
-  total: number;
-  vendorId: {
-    _id: string;
-    fullName: string;
-    uniID?: string;
-    college?: {
-      _id: string;
-      fullName: string;
-    };
-  };
-  items: OrderItem[];
-}
-
-interface College {
-  _id: string;
-  fullName: string;
-  shortName: string;
-}
-
-interface User {
-  _id: string;
-  name: string;
-}
+type ActiveOrder = BaseOrder;
 
 
 const ActiveOrdersPageContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedCollege, setSelectedCollege] = useState<College | null>(null);
   const [colleges, setColleges] = useState<College[]>([]);
   const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { isDropdownOpen, setIsDropdownOpen, selectedCollege, dropdownRef, handleCollegeSelect } =
+    useCollegeFilter({ searchParams, colleges });
 
   // Fetch user details
   useEffect(() => {
@@ -134,229 +94,27 @@ const ActiveOrdersPageContent: React.FC = () => {
     fetchActiveOrders();
   }, [user?._id, selectedCollege, router]);
 
-  // Handle URL query parameter on initial load
-  useEffect(() => {
-    const collegeId = searchParams.get("college");
-    if (collegeId && colleges.length > 0) {
-      const college = colleges.find((c) => c._id === collegeId);
-      if (college) {
-        setSelectedCollege(college);
-      }
-    } else {
-      setSelectedCollege(null);
-      const params = new URLSearchParams(window.location.search);
-      params.delete("college");
-      window.history.pushState(null, "", `?${params.toString()}`);
-    }
-  }, [searchParams, colleges]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    if (isDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isDropdownOpen]);
-
-  const handleCollegeSelect = (college: College | null) => {
-    setSelectedCollege(college);
-    const params = new URLSearchParams(window.location.search);
-    if (college) {
-      params.set("college", college._id);
-    } else {
-      params.delete("college");
-    }
-    window.history.pushState(null, "", `?${params.toString()}`);
-    setIsDropdownOpen(false);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'delivered':
-        return '#10b981'; // green
-      case 'completed':
-        return '#3b82f6'; // blue
-      case 'inprogress':
-        return '#f59e0b'; // yellow
-      case 'ontheway':
-        return '#8b5cf6'; // purple
-      default:
-        return '#6b7280'; // gray
-    }
-  };
-
   return (
-    <div className={styles.container}>
-      <ToastContainer
-        position="bottom-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
+    <OrderPageLayout
+      title="Your Active Orders"
+      subtitle="Your Active Orders"
+      styles={styles}
+      isDropdownOpen={isDropdownOpen}
+      selectedCollege={selectedCollege}
+      colleges={colleges}
+      dropdownRef={dropdownRef}
+      onToggleDropdown={() => setIsDropdownOpen(!isDropdownOpen)}
+      onSelectCollege={handleCollegeSelect}
+    >
+      <OrderListView
+        orders={activeOrders}
+        loading={loading}
+        emptyTitle="No active orders found"
+        emptyDescription="You don't have any active orders at the moment. Start ordering to see your active orders here!"
+        onGoHome={() => router.push("/")}
+        styles={styles}
       />
-      <div className={styles.header}>
-        <h1>Your Active Orders</h1>
-      </div>
-
-      <div className={styles.dropdownContainer} ref={dropdownRef}>
-        <div className={styles.collegeField}>
-          <input
-            name="college"
-            value={selectedCollege ? selectedCollege.fullName : ""}
-            readOnly
-            placeholder="Select your college"
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          />
-          <ChevronDown
-            className={`${styles.dropdownIcon} ${isDropdownOpen ? styles.open : ''}`}
-            size={20}
-          />
-          <ul className={`${styles.collegeList} ${isDropdownOpen ? styles.show : ''}`}>
-            <li onClick={() => handleCollegeSelect(null)}>
-              All Colleges
-            </li>
-            {colleges.map((college) => (
-              <li
-                key={college._id}
-                onClick={() => handleCollegeSelect(college)}
-              >
-                {college.fullName}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className={styles.contentSection}>
-        <div className={styles.collegeHeader}>
-          <h2 className={styles.collegeName}>
-            {selectedCollege ? selectedCollege.fullName : "All Colleges"}
-          </h2>
-          <p className={styles.subTitle}>Your Active Orders</p>
-        </div>
-
-        {loading ? (
-          <OrderSkeleton />
-        ) : activeOrders.length === 0 ? (
-          <div className={styles.emptyState}>
-            <h2>No active orders found</h2>
-            <p>You don&apos;t have any active orders at the moment. Start ordering to see your active orders here!</p>
-            <button
-              className={styles.homeButton}
-              onClick={() => router.push('/')}
-            >
-              Go to Home
-            </button>
-          </div>
-        ) : (
-          <div className={styles.orderGrid}>
-            {activeOrders.map((order) => {
-              console.log('Order vendor data:', order.vendorId);
-              return (
-                <div key={order._id} className={styles.orderCard}>
-                  <div className={styles.cardLeft}>
-                    <div className={styles.orderHeader}>
-                      <div className={styles.orderInfo}>
-                        <h3 className={styles.orderId}>Order #{order.orderNumber}</h3>
-                        <p className={styles.orderDate}>{formatDate(order.createdAt)}</p>
-                      </div>
-                      <div className={styles.badgeRow}>
-                        <span
-                          className={styles.orderStatus}
-                          style={{ backgroundColor: getStatusColor(order.status) }}
-                        >
-                          {order.status}
-                        </span>
-                        <span className={styles.orderType}>
-                          {order.orderType}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={styles.vendorSource}>
-                      {order.vendorId && (
-                        <>
-                          <p className={styles.vendorName}>
-                            <strong>Vendor:</strong> {order.vendorId.fullName || "Unknown Vendor"}
-                          </p>
-                          {order.vendorId.college && (
-                            <p className={styles.collegeName}>
-                              <strong>College:</strong> {order.vendorId.college.fullName || "Unknown College"}
-                            </p>
-                          )}
-                        </>
-                      )}
-                    </div>
-
-                    <div className={styles.collectorInfo}>
-                      <h4 className={styles.collectorName}>{order.collectorName}</h4>
-                      <p className={styles.collectorPhone}>{order.collectorPhone}</p>
-                      {order.address && (
-                        <p className={styles.address}>{order.address}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={styles.cardRight}>
-                    <div className={styles.itemsList}>
-                      {order.items.map((item, index) => (
-                        <div key={index} className={styles.itemCard}>
-                          <div className={styles.itemInfo}>
-                            <h5 className={styles.itemName}>{item.name}</h5>
-                            <p className={styles.itemDetails}>
-                              ₹{item.price} per {item.unit} • {item.type}
-                            </p>
-                          </div>
-                          <span className={styles.itemQuantity}>
-                            x{item.quantity}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className={styles.orderFooter}>
-                      <div className={styles.orderTotal}>
-                        <p className={styles.totalAmount}>
-                          Total: ₹{order.total}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
+    </OrderPageLayout>
   );
 };
 

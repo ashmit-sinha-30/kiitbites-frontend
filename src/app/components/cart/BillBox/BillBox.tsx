@@ -1,9 +1,10 @@
-import React, { FormEvent, useState, useEffect } from "react";
+import React from "react";
 import { userApi } from "@/utils/apiUtils";
 import { toast } from "react-toastify";
-import { CartItem, OrderType, OrderData } from "../../../cart/types";
+import { CartItem, OrderData } from "../../../cart/types";
 import styles from "./BillBox.module.scss";
 import axios from "axios";
+import BillBoxForm from "../shared/BillBoxForm";
 
 interface RazorpayResponse {
   razorpay_order_id: string;
@@ -59,208 +60,7 @@ interface Props {
 }
 
 const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
-  const [orderType, setOrderType] = useState<OrderType>("delivery");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [charges, setCharges] = useState<{ packingCharge: number | null; deliveryCharge: number | null; platformFee: number | null }>({ packingCharge: null, deliveryCharge: null, platformFee: null });
-  const [vendorDeliverySettings, setVendorDeliverySettings] = useState<{ offersDelivery: boolean; deliveryPreparationTime: number } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch university charges and vendor delivery settings when component mounts
-  useEffect(() => {
-    const fetchChargesAndDeliverySettings = async () => {
-      setLoading(true);
-      try {
-        console.log("🔄 Fetching charges and delivery settings for userId:", userId);
-
-        // Get user's cart to find vendorId
-        const cartResponse = await userApi.get(`/cart/${userId}`);
-
-        console.log("📦 Cart response:", cartResponse.data);
-
-        if (cartResponse.data.vendorId) {
-          const vendorId = cartResponse.data.vendorId;
-
-          // Fetch vendor delivery settings
-          try {
-            const deliverySettingsResponse = await userApi.get(`/api/vendor/${vendorId}/delivery-settings`);
-
-            console.log("🚚 Delivery settings response:", deliverySettingsResponse.data);
-
-            if (deliverySettingsResponse.data.success) {
-              setVendorDeliverySettings(deliverySettingsResponse.data.data);
-            }
-          } catch (error) {
-            console.error("❌ Failed to fetch delivery settings:", error);
-            // If we can't fetch delivery settings, assume delivery is available
-            setVendorDeliverySettings({ offersDelivery: true, deliveryPreparationTime: 30 });
-          }
-
-          // Get vendor to find university
-          const vendorResponse = await userApi.get(`/api/item/getvendors/${vendorId}`);
-
-          console.log("🏪 Vendor response:", vendorResponse.data);
-
-          if (vendorResponse.data.uniID) {
-            // Get university charges
-            const chargesResponse = await userApi.get(`/api/university/charges/${vendorResponse.data.uniID}`);
-
-            console.log("💰 Charges response:", chargesResponse.data);
-
-            setCharges({
-              packingCharge: chargesResponse.data.packingCharge,
-              deliveryCharge: chargesResponse.data.deliveryCharge,
-              platformFee: chargesResponse.data.platformFee,
-            });
-          } else {
-            setCharges({ packingCharge: null, deliveryCharge: null, platformFee: null });
-          }
-        } else {
-          setCharges({ packingCharge: null, deliveryCharge: null, platformFee: null });
-        }
-      } catch (error) {
-        console.error("Failed to fetch charges and delivery settings:", error);
-        setCharges({ packingCharge: 5, deliveryCharge: 50, platformFee: 2 }); // fallback only if fetch fails
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChargesAndDeliverySettings();
-  }, [userId]);
-
-  // Auto-switch to takeaway if delivery is disabled
-  useEffect(() => {
-    if (vendorDeliverySettings && !vendorDeliverySettings.offersDelivery && orderType === "delivery") {
-      console.log("🔄 Web: Delivery disabled by vendor, switching to takeaway");
-      setOrderType("takeaway");
-    }
-  }, [vendorDeliverySettings, orderType]);
-
-  // Check if any Produce item in the cart is non-packable
-  const hasNonPackableProduce = items.some(
-    (i) => (i.category === "Produce") && i.packable === false
-  );
-
-  // Auto-switch to dine-in if non-packable produce items are in cart
-  useEffect(() => {
-    if (hasNonPackableProduce && orderType !== "dinein") {
-      console.log("🔄 Web: Non-packable produce in cart, switching to dine-in");
-      setOrderType("dinein");
-    }
-  }, [hasNonPackableProduce, orderType]);
-
-  // Debug logging
-  console.log("🔍 BillBox Debug:", {
-    items: items.map(i => ({
-      name: i.name,
-      category: i.category,
-      packable: i.packable,
-      quantity: i.quantity,
-      _id: i._id
-    })),
-    orderType,
-    charges,
-    packableItems: items.filter(i => i.packable === true)
-  });
-
-  // More robust packable item detection
-  // All produce items should be packable, and retail items based on their packable property
-  // This ensures that even if the database is missing the packable property for some items,
-  // produce items will always be treated as packable as per business requirements
-  const packableItems = items.filter((i) => {
-    // Produce items are always packable (even if packable property is missing)
-    if (i.category === "Produce") return true;
-    // Retail items are packable only if explicitly set to true
-    return i.packable === true;
-  });
-
-  // Ensure all produce items are marked as packable for consistency
-  const normalizedItems = items.map(item => ({
-    ...item,
-    packable: item.category === "Produce" ? true : (item.packable || false)
-  }));
-
-  console.log("📦 Packable items found:", packableItems.map(i => ({
-    name: i.name,
-    packable: i.packable,
-    quantity: i.quantity,
-    category: i.category,
-    _id: i._id
-  })));
-
-  console.log("🔧 Normalized items:", normalizedItems.map(i => ({
-    name: i.name,
-    category: i.category,
-    packable: i.packable,
-    quantity: i.quantity
-  })));
-
-  // Ensure charges are available with better fallbacks
-  const packingCharge = charges.packingCharge ?? 5; // Default ₹5 if not set
-  const deliveryCharge = charges.deliveryCharge ?? 50; // Default ₹50 if not set
-  const platformFee = charges.platformFee ?? 2; // University-specific platform fee, default ₹2
-
-  const itemTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-  // Calculate packaging charge - always apply for takeaway and delivery
-  // Apply packing charge to each packable item based on quantity
-  const packaging = orderType !== "dinein"
-    ? packableItems.reduce((sum, i) => sum + packingCharge * i.quantity, 0)
-    : 0;
-
-  const delivery = orderType === "delivery" ? deliveryCharge : 0;
-  const grandTotal = itemTotal + packaging + delivery + platformFee;
-
-  console.log("💰 BillBox Calculation:", {
-    itemTotal,
-    packaging,
-    delivery,
-    platformFee,
-    grandTotal,
-    packableItemsCount: packableItems.length,
-    packingChargePerItem: packingCharge,
-    deliveryCharge: deliveryCharge,
-    orderType,
-    willShowPackaging: orderType !== "dinein",
-    willShowDelivery: orderType === "delivery",
-    packagingBreakdown: packableItems.map(i => ({
-      name: i.name,
-      quantity: i.quantity,
-      packagingCost: packingCharge * i.quantity
-    }))
-  });
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-        <span>Loading bill details...</span>
-      </div>
-    );
-  }
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (
-      !name.trim() ||
-      !phone.trim() ||
-      (orderType === "delivery" && !address.trim())
-    ) {
-      toast.error("Please fill in all required fields.");
-      return;
-    }
-
-    const payload: OrderData = {
-      orderType,
-      collectorName: name,
-      collectorPhone: phone,
-      ...(orderType === "delivery" ? { address } : {}),
-    };
-
-    console.log("📦 Order payload:", payload);
-
+  const handleSubmit = async (payload: OrderData) => {
     let orderResp;
     try {
       orderResp = await userApi.post<OrderResponse>(`/order/${userId}`, payload);
@@ -282,13 +82,13 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
     console.log("💳 Frontend Razorpay options:", {
       orderId,
       razorpayOptions,
-      frontendCalculatedTotal: grandTotal
+      orderType: payload.orderType,
     });
 
     const options: RazorpayOptions = {
       ...razorpayOptions,
       description: "Complete your payment",
-      prefill: { name, contact: phone },
+      prefill: { name: payload.collectorName, contact: payload.collectorPhone },
       theme: { color: "#01796f" },
       handler: async (rzRes: RazorpayResponse) => {
         console.log("💳 Razorpay payment success:", rzRes);
@@ -358,140 +158,17 @@ const BillBox: React.FC<Props> = ({ userId, items, onOrder }) => {
   };
 
   return (
-    <form className={styles.container} onSubmit={handleSubmit}>
-      {/* Estimated Preparation Time at the top */}
-      {vendorDeliverySettings && (
-        <div className={styles.preparationTime} style={{ marginBottom: '0.5rem' }}>
-          <span>Estimated preparation time</span>
-          <span>{vendorDeliverySettings.deliveryPreparationTime} minutes</span>
-        </div>
-      )}
-      <div className={styles.segmentedControl}>
-        {(["takeaway", "delivery", "dinein"] as OrderType[])
-          .filter((t) => {
-            // Hide delivery option if vendor doesn't offer delivery
-            if (t === "delivery" && vendorDeliverySettings && !vendorDeliverySettings.offersDelivery) {
-              return false;
-            }
-            return true;
-          })
-          .map((t) => {
-            const isDisabledByPackable = hasNonPackableProduce && t !== "dinein";
-            return (
-              <button
-                key={t}
-                type="button"
-                className={orderType === t ? styles.active : styles.segment}
-                onClick={() => !isDisabledByPackable && setOrderType(t)}
-                style={isDisabledByPackable ? { opacity: 0.4, cursor: "not-allowed" } : {}}
-                disabled={isDisabledByPackable}
-              >
-                {t === "takeaway"
-                  ? "Takeaway"
-                  : t === "delivery"
-                    ? "Delivery"
-                    : "Dine In"}
-              </button>
-            );
-          })}
-      </div>
-      {hasNonPackableProduce && (
-        <p style={{ color: "#e67e22", fontSize: "0.82rem", marginTop: "0.25rem", marginBottom: "0.25rem" }}>
-          ⚠️ Dine In only — your cart contains non-packable items
-        </p>
-      )}
-
-      <input
-        className={styles.input}
-        placeholder="Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-      />
-      <input
-        className={styles.input}
-        placeholder="Phone"
-        type="tel"
-        maxLength={10}
-        pattern="[0-9]{10}"
-        value={phone}
-        onChange={(e) => {
-          const val = e.target.value.replace(/\D/g, "");
-          if (val.length <= 10) {
-            setPhone(val);
-          }
-        }}
-        required
-      />
-
-      {orderType === "delivery" && (
-        <textarea
-          className={styles.textarea}
-          placeholder="Delivery Address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          required
-        />
-      )}
-
-      <div className={styles.bill}>
-        <div className={styles.items}>
-          {items.map((i) => (
-            <div key={i._id} className={styles.line}>
-              <span>
-                {i.name} ×{i.quantity}
-              </span>
-              <span>₹{i.price * i.quantity}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className={styles.totalPack}>
-          {/* Show packaging breakdown for takeaway and delivery orders */}
-          {orderType !== "dinein" && packableItems.length > 0 && (
-            <>
-              {/* Show individual packaging charges for transparency */}
-              {packableItems.map((item) => (
-                <div key={item._id} className={styles.extra}>
-                  <span>Packaging - {item.name}</span>
-                  <span>₹{packingCharge * item.quantity}</span>
-                </div>
-              ))}
-              {/* Show total packaging summary */}
-              <div className={styles.extra}>
-                <span>Total Packaging ({packableItems.length} item{packableItems.length > 1 ? 's' : ''})</span>
-                <span>₹{packaging}</span>
-              </div>
-            </>
-          )}
-
-          {/* Always show delivery charge for delivery orders */}
-          {/* This ensures transparency even when delivery charge is ₹0 */}
-          {orderType === "delivery" && (
-            <div className={styles.extra}>
-              <span>Delivery Charge</span>
-              <span>₹{delivery}</span>
-            </div>
-          )}
-
-          <div className={styles.extra}>
-            <span>Platform Fee</span>
-            <span>₹{platformFee}</span>
-          </div>
-
-          <div className={styles.divider} />
-
-          <div className={styles.total}>
-            <strong>Total</strong>
-            <strong>₹{grandTotal}</strong>
-          </div>
-        </div>
-      </div>
-
-      <button type="submit" className={styles.button}>
-        Proceed to Payment
-      </button>
-    </form>
+    <BillBoxForm
+      userId={userId}
+      items={items}
+      styles={styles}
+      submitLabel="Proceed to Payment"
+      fetchData={async (url) => {
+        const response = await userApi.get(url);
+        return response.data;
+      }}
+      onSubmitOrder={handleSubmit}
+    />
   );
 };
 

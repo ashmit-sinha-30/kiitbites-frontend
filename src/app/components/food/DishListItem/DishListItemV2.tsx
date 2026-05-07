@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { FaHeart, FaRegHeart, FaTrash } from 'react-icons/fa';
-import { Loader2 } from 'lucide-react';
 import styles from './DishListItem.module.scss';
 import { FoodItem } from '@/app/food/[slug]/types'; // Assuming types are exported here or similar path
+import { getDishDescription, isDishInStock } from './dishListItemUtils';
+import DishQuantityControls from './DishQuantityControls';
 
 interface DishListItemProps {
     item: FoodItem;
@@ -34,21 +35,9 @@ const DishListItem: React.FC<DishListItemProps> = ({
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Truncate description logic
-    const description = item.description || "";
-    const MAX_LENGTH = 100;
-    const shouldTruncate = description.length > MAX_LENGTH;
-    const displayDescription = isExpanded || !shouldTruncate
-        ? description
-        : `${description.slice(0, MAX_LENGTH)}...`;
-
-    // Stock logic
-    // If retail, check item.quantity. If produce, check item.isAvailable.
-    // Actually the data structure for availability might vary, using what I saw in code.
-    // Retail: quantity > 0. Produce: isAvailable === 'Y'.
-    const inStock = item.type === 'retail'
-        ? (item.quantity !== undefined ? item.quantity > 0 : true)
-        : (item.isAvailable && item.isAvailable.toUpperCase() === 'Y');
+    const { description, shouldTruncate, truncatedDescription } = getDishDescription(item);
+    const displayDescription = isExpanded || !shouldTruncate ? description : truncatedDescription;
+    const inStock = isDishInStock(item);
 
     const isBoxed = variant === 'boxed';
 
@@ -112,44 +101,15 @@ const DishListItem: React.FC<DishListItemProps> = ({
                     </div>
                     {showActions && (
                         <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
-                            {quantity > 0 ? (
-                                <div className={styles.quantityControls}>
-                                    <button
-                                        className={`${styles.qtyBtn} ${styles.decrease}`}
-                                        onClick={() => onDecrease(item)}
-                                        disabled={isLoading}
-                                    >
-                                        -
-                                    </button>
-                                    <span className={styles.qtyValue}>
-                                        {isLoading ? <Loader2 className={styles.spinner} size={14} /> : quantity}
-                                    </span>
-                                    <button
-                                        className={`${styles.qtyBtn} ${styles.increase}`}
-                                        onClick={() => onIncrease(item)}
-                                        disabled={isLoading}
-                                    >
-                                        +
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    className={styles.addBtn}
-                                    onClick={() => onAdd(item)}
-                                    disabled={!inStock || isLoading}
-                                    style={{
-                                        opacity: (inStock && !isLoading) ? 1 : 0.5,
-                                        cursor: (inStock && !isLoading) ? 'pointer' : 'not-allowed',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '4px'
-                                    }}
-                                >
-                                    {isLoading && <Loader2 className={styles.spinner} size={14} />}
-                                    {isLoading ? 'Adding...' : 'Add +'}
-                                </button>
-                            )}
+                            <DishQuantityControls
+                                item={item}
+                                quantity={quantity}
+                                isLoading={isLoading}
+                                inStock={inStock}
+                                onAdd={onAdd}
+                                onIncrease={onIncrease}
+                                onDecrease={onDecrease}
+                            />
                             {onRemove && (
                                 <button
                                     className={styles.removeBtn}
