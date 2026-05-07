@@ -19,9 +19,7 @@ const VendorLoginPage: React.FC = () => {
       styles={styles}
       transitionOverlay={<VendorTransitionOverlay />}
       otpVerificationPath="/vendor-otp-verification"
-      onAfterSuccess={() => {
-        localStorage.setItem('vendorRole', 'seller');
-      }}
+      postLoginLocalStorage={[{ key: "vendorRole", value: "seller" }]}
     />
   );
 };

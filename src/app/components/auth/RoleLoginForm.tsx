@@ -25,7 +25,8 @@ interface RoleLoginFormProps {
   infoItems: string[];
   styles: Record<string, string>;
   transitionOverlay: React.ReactNode;
-  onAfterSuccess?: () => void;
+  /** Serializable alternative to a callback: applied on the client after a successful login. */
+  postLoginLocalStorage?: ReadonlyArray<{ key: string; value: string }>;
   otpVerificationPath?: string;
 }
 
@@ -39,7 +40,7 @@ const RoleLoginForm: React.FC<RoleLoginFormProps> = ({
   infoItems,
   styles,
   transitionOverlay,
-  onAfterSuccess,
+  postLoginLocalStorage,
   otpVerificationPath,
 }) => {
   const router = useRouter();
@@ -71,7 +72,9 @@ const RoleLoginForm: React.FC<RoleLoginFormProps> = ({
       }
 
       window.dispatchEvent(new Event("authChanged"));
-      onAfterSuccess?.();
+      postLoginLocalStorage?.forEach(({ key, value }) => {
+        localStorage.setItem(key, value);
+      });
       toast.success("Login successful!");
       setIsRedirecting(true);
       router.push(dashboardPath);
