@@ -171,6 +171,14 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       if (data.success) {
         setUniversity(data.data);
         setFilteredVendors(data.data.vendors);
+        const initialFeatureIds = Array.isArray(data.data.features)
+          ? data.data.features.map((f: { _id: string }) => f._id)
+          : [];
+        const initialServiceIds = Array.isArray(data.data.services)
+          ? data.data.services.map((s: { _id: string }) => s._id)
+          : [];
+        setSelectedFeatureIds(initialFeatureIds);
+        setSelectedServiceIds(initialServiceIds);
         try {
           const guestHouseRes = await api.get(`/admin/universities/${uniId}/guest-houses`);
           const guestHouseJson = guestHouseRes.data;
@@ -186,17 +194,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
           setGuestHouses([]);
           setFilteredGuestHouses([]);
         }
-        // Load current assignments
-        try {
-          const assignRes = await api.get(`/api/university/universities/${uniId}/assignments`);
-          const assignJson = assignRes.data;
-          if (assignJson.success) {
-            setSelectedFeatureIds(assignJson.data.features.map((f: { _id: string }) => f._id));
-            setSelectedServiceIds(assignJson.data.services.map((s: { _id: string }) => s._id));
-          }
-        } catch {
-          console.error('Failed to load assignments');
-        }
+        // Assignments are loaded from the admin university details response.
       } else {
         setError(data.message || 'Failed to fetch university details');
       }
@@ -231,8 +229,8 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
       setAssignOpen(true);
       // load allowed services for this uni
       const [allowedRes, vendorRes] = await Promise.all([
-        api.get(`/api/university/universities/${uniId}/allowed-services`),
-        api.get(`/api/university/universities/${uniId}/vendors/${vendorId}/services`),
+        api.get(`/admin/universities/${uniId}/allowed-services`),
+        api.get(`/admin/universities/${uniId}/vendors/${vendorId}/services`),
       ]);
       const allowedJson = allowedRes.data;
       const vendorJson = vendorRes.data;
@@ -275,7 +273,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
   const saveVendorServices = async () => {
     try {
       setSavingVendorServices(true);
-      const res = await api.patch(`/api/university/universities/${uniId}/vendors/${assignVendorId}/services`, {
+      const res = await api.patch(`/admin/universities/${uniId}/vendors/${assignVendorId}/services`, {
         services: vendorServices
       });
       const json = res.data;
@@ -316,7 +314,7 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
 
     setSelectedServiceIds(next);
     try {
-      await api.patch(`/api/university/universities/${uniId}/services`, {
+      await api.patch(`/admin/universities/${uniId}/services`, {
         services: next
       });
     } catch (e) {
@@ -591,21 +589,26 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                       <button
                         className="text-red-600"
                         onClick={async () => {
-                          const next = selectedFeatureIds.filter((id) => id !== fid);
-                          setSelectedFeatureIds(next);
-                          await api.patch(`/api/university/universities/${uniId}/features`, {
-                            features: next
-                          });
-                          // also remove any services that belong to removed feature from selected state
-                          const remainingServiceIds = selectedServiceIds.filter((sid) => {
-                            const svc = allServices.find((s) => s._id === sid);
-                            return svc ? next.includes(svc.feature._id) : false;
-                          });
-                          if (remainingServiceIds.length !== selectedServiceIds.length) {
-                            setSelectedServiceIds(remainingServiceIds);
-                            await api.patch(`/api/university/universities/${uniId}/services`, {
-                              services: remainingServiceIds
+                          try {
+                            const next = selectedFeatureIds.filter((id) => id !== fid);
+                            setSelectedFeatureIds(next);
+                            await api.patch(`/admin/universities/${uniId}/features`, {
+                              features: next
                             });
+                            // also remove any services that belong to removed feature from selected state
+                            const remainingServiceIds = selectedServiceIds.filter((sid) => {
+                              const svc = allServices.find((s) => s._id === sid);
+                              return svc ? next.includes(svc.feature._id) : false;
+                            });
+                            if (remainingServiceIds.length !== selectedServiceIds.length) {
+                              setSelectedServiceIds(remainingServiceIds);
+                              await api.patch(`/admin/universities/${uniId}/services`, {
+                                services: remainingServiceIds
+                              });
+                            }
+                          } catch (e) {
+                            console.error("Failed to update university feature assignments", e);
+                            setError("Failed to update feature assignments");
                           }
                         }}
                         aria-label="Remove feature"
@@ -631,12 +634,17 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
               <Button
                 disabled={!featureToAdd}
                 onClick={async () => {
-                  const next = Array.from(new Set([...selectedFeatureIds, featureToAdd]));
-                  setSelectedFeatureIds(next);
-                  setFeatureToAdd("");
-                  await api.patch(`/api/university/universities/${uniId}/features`, {
-                    features: next
-                  });
+                  try {
+                    const next = Array.from(new Set([...selectedFeatureIds, featureToAdd]));
+                    setSelectedFeatureIds(next);
+                    setFeatureToAdd("");
+                    await api.patch(`/admin/universities/${uniId}/features`, {
+                      features: next
+                    });
+                  } catch (e) {
+                    console.error("Failed to add feature assignment", e);
+                    setError("Failed to add feature assignment");
+                  }
                 }}
               >Add Feature</Button>
             </div>
@@ -682,11 +690,16 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
                       <button
                         className="text-red-600"
                         onClick={async () => {
-                          const next = selectedServiceIds.filter((id) => id !== sid);
-                          setSelectedServiceIds(next);
-                          await api.patch(`/api/university/universities/${uniId}/services`, {
-                            services: next
-                          });
+                          try {
+                            const next = selectedServiceIds.filter((id) => id !== sid);
+                            setSelectedServiceIds(next);
+                            await api.patch(`/admin/universities/${uniId}/services`, {
+                              services: next
+                            });
+                          } catch (e) {
+                            console.error("Failed to update university service assignments", e);
+                            setError("Failed to update service assignments");
+                          }
                         }}
                         aria-label="Remove service"
                       >×</button>
@@ -715,12 +728,17 @@ const CollegeDetails: React.FC<CollegeDetailsProps> = ({ uniId }) => {
               <Button
                 disabled={!serviceToAdd}
                 onClick={async () => {
-                  const next = Array.from(new Set([...selectedServiceIds, serviceToAdd]));
-                  setSelectedServiceIds(next);
-                  setServiceToAdd("");
-                  await api.patch(`/api/university/universities/${uniId}/services`, {
-                    services: next
-                  });
+                  try {
+                    const next = Array.from(new Set([...selectedServiceIds, serviceToAdd]));
+                    setSelectedServiceIds(next);
+                    setServiceToAdd("");
+                    await api.patch(`/admin/universities/${uniId}/services`, {
+                      services: next
+                    });
+                  } catch (e) {
+                    console.error("Failed to add service assignment", e);
+                    setError("Failed to add service assignment");
+                  }
                 }}
               >Add Service</Button>
             </div>

@@ -11,6 +11,34 @@ const isAdminRequest = (url: string) => {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
+const getForcedLoginRedirectForPath = (pathname: string): string | null => {
+    const path = (pathname || "").toLowerCase();
+    if (!path) return null;
+
+    // Vendor protected areas
+    if (path.includes("/vendordashboard") || path.includes("/vendordashboard")) {
+        return "/vendor-login";
+    }
+
+    // Guest-house manager protected area
+    if (path.includes("/guest-house-dashboard")) {
+        return "/guest-house-login";
+    }
+
+    // Uni protected areas (including auditorium + guest-house uni dashboards)
+    if (
+        path.includes("/food-ordering-unidashboard") ||
+        path.includes("/guest-house-booking-unidashboard") ||
+        path.includes("/auditorium-booking-unidashboard") ||
+        path.includes("/unidashboard") ||
+        path.includes("/unidashboard")
+    ) {
+        return "/uni-login";
+    }
+
+    return null;
+};
+
 /**
  * Get authentication headers. 
  * Note: Tokens are now handled via HTTP-only cookies.
@@ -47,6 +75,14 @@ api.interceptors.request.use(
     (config) => {
         // Attach Bearer token for cross-origin requests (cookies may be blocked by browsers)
         if (typeof window !== 'undefined') {
+            const pathname = window.location.pathname;
+            const forcedLogin = getForcedLoginRedirectForPath(pathname);
+            const hasToken = Boolean(localStorage.getItem("token") || localStorage.getItem("adminToken"));
+            if (forcedLogin && !hasToken && pathname !== forcedLogin) {
+                window.location.href = forcedLogin;
+                return Promise.reject(new axios.Cancel("Redirecting to role login"));
+            }
+
             const url = config.url || '';
             const isAdminRoute = isAdminRequest(url);
             const token = isAdminRoute ? localStorage.getItem('adminToken') : localStorage.getItem('token');
@@ -67,13 +103,20 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (typeof window !== 'undefined' && error.response && error.response.status === 401) {
-            // Check if we are in a dashboard area that requires authentication
             const pathname = window.location.pathname;
+            const forcedLogin = getForcedLoginRedirectForPath(pathname);
+            if (forcedLogin && pathname !== forcedLogin) {
+                window.location.href = forcedLogin;
+                return Promise.reject(error);
+            }
+
+            // Check if we are in a dashboard area that requires authentication
+            const currentPathname = window.location.pathname;
             // Restrict auto-redirects to admin and vendor dashboards only.
             // Uni dashboards and user pages handle 401s themselves.
             const isDashboardArea =
-                pathname.includes('admin-dashboard') ||
-                pathname.includes('vendordashboard');
+                currentPathname.includes('admin-dashboard') ||
+                currentPathname.includes('vendordashboard');
 
             if (isDashboardArea) {
                 const url = error.config?.url || '';
@@ -85,22 +128,22 @@ api.interceptors.response.use(
                 let shouldRedirect = false;
                 let targetLogin = '/login';
 
-                if (pathname.includes('admin-dashboard') && url.includes('/api/admin')) {
+                if (currentPathname.includes('admin-dashboard') && url.includes('/api/admin')) {
                     shouldRedirect = true;
                     targetLogin = '/admin-login';
-                } else if (pathname.includes('vendordashboard') && url.includes('/api/vendor')) {
+                } else if (currentPathname.includes('vendordashboard') && url.includes('/api/vendor')) {
                     shouldRedirect = true;
                     targetLogin = '/vendor-login';
-                } else if (pathname.includes('uniDashboard') && url.includes('/api/uni')) {
+                } else if (currentPathname.includes('uniDashboard') && url.includes('/api/uni')) {
                     shouldRedirect = true;
                     targetLogin = '/uni-login';
                 }
 
                 if (shouldRedirect) {
-                    console.warn(`Unauthorized ${url} access in ${pathname}. Redirecting to ${targetLogin}.`);
+                    console.warn(`Unauthorized ${url} access in ${currentPathname}. Redirecting to ${targetLogin}.`);
                     window.location.href = targetLogin;
                 } else {
-                    console.info(`Silent 401 on ${url} in ${pathname} (ignored by global interceptor)`);
+                    console.info(`Silent 401 on ${url} in ${currentPathname} (ignored by global interceptor)`);
                 }
             }
         }

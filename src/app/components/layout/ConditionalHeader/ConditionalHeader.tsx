@@ -25,6 +25,7 @@ const ConditionalHeader = () => {
     '/admin-dashboard',
     '/food-ordering-uniDashboard',
     '/guest-house-booking-unidashboard',
+    '/auditorium-booking-unidashboard',
     '/guest-house-dashboard',
     '/guest-house-login',
     '/guest-house-otp-verification',
