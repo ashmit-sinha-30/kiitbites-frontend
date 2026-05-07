@@ -10,7 +10,7 @@ const toSlug = (name: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const normalize = (value: string) => String(value || "").toLowerCase().replace(/[\s_-]+/g, " ").trim();
+const normalize = (value?: string | null) => String(value || "").toLowerCase().replace(/[\s_-]+/g, " ").trim();
 
 interface CollegeListItem {
   _id: string;
