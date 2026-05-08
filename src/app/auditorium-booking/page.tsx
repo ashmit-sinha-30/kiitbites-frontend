@@ -100,16 +100,16 @@ export default function AuditoriumBookingEntryPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] px-4 py-8 md:px-8">
+    <div className="min-h-screen bg-[#f7fbfa] px-4 py-8 md:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-[#d8ece8] bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Auditorium Booking</h1>
           <p className="mt-2 text-sm text-slate-600">
             Select a university where auditorium booking is enabled.
           </p>
         </div>
 
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-[#d8ece8] bg-white p-6 shadow-sm">
           {loading ? (
             <p className="text-sm text-slate-600">Loading universities...</p>
           ) : error ? (
@@ -125,7 +125,7 @@ export default function AuditoriumBookingEntryPage() {
                   key={uni._id}
                   type="button"
                   onClick={() => router.push(`/auditorium-booking/${uni.slug}?cid=${uni._id}`)}
-                  className="rounded-lg border border-slate-200 p-4 text-left transition hover:border-slate-900 hover:bg-slate-50"
+                  className="rounded-xl border border-slate-200 p-4 text-left transition hover:border-[#4ea199] hover:bg-[#f3fbf9]"
                 >
                   <p className="text-base font-semibold text-slate-900">{uni.fullName}</p>
                   <p className="mt-1 text-xs text-slate-600">

@@ -98,25 +98,25 @@ export default function InRoomFoodOrderPanel({
   if (!enabled) return null;
 
   return (
-    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+    <div className="mt-4 rounded-xl border border-[#d8ece8] bg-[#fcfefe] p-4">
       <h4 className="text-sm font-semibold text-slate-900">In-room Food Ordering</h4>
       {menuNote ? <p className="mt-1 text-xs text-slate-600">{menuNote}</p> : null}
       <div className="mt-2 flex gap-2">
-        <button className="rounded border px-3 py-1.5 text-xs" onClick={() => void load()} disabled={loading}>
+        <button className="rounded border border-[#cce5e0] px-3 py-1.5 text-xs text-[#2f6f66] hover:bg-[#f3fbf9]" onClick={() => void load()} disabled={loading}>
           {loading ? "Loading..." : "Refresh menu & orders"}
         </button>
       </div>
       {message ? <p className="mt-2 text-xs text-slate-700">{message}</p> : null}
 
       <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
-        <div className="rounded-lg border p-3">
+        <div className="rounded-lg border border-[#d8ece8] bg-white p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Menu</p>
           {items.length === 0 ? (
             <p className="mt-2 text-xs text-slate-500">No items available.</p>
           ) : (
             <div className="mt-2 space-y-2">
               {items.map((i) => (
-                <div key={i._id} className="flex items-start justify-between gap-2 rounded border px-2 py-2 text-xs">
+                <div key={i._id} className="flex items-start justify-between gap-2 rounded border border-[#d8ece8] px-2 py-2 text-xs">
                   <div>
                     <p className="font-medium text-slate-900">{i.name}</p>
                     <p className="text-slate-600">{i.category} · ₹{Number(i.price || 0).toFixed(2)}</p>
@@ -125,7 +125,7 @@ export default function InRoomFoodOrderPanel({
                   <input
                     type="number"
                     min={0}
-                    className="w-16 rounded border px-2 py-1"
+                    className="w-16 rounded border border-[#cce5e0] px-2 py-1 outline-none focus:border-[#4ea199]"
                     value={qty[i._id] ?? 0}
                     onChange={(e) => setQty((p) => ({ ...p, [i._id]: Number(e.target.value || 0) }))}
                   />
@@ -138,13 +138,13 @@ export default function InRoomFoodOrderPanel({
               Subtotal: <span className="font-semibold">₹{cart.subtotal.toFixed(2)}</span>
             </p>
             <input
-              className="mt-2 w-full rounded border px-2 py-1 text-xs"
+              className="mt-2 w-full rounded border border-[#cce5e0] px-2 py-1 text-xs outline-none focus:border-[#4ea199]"
               placeholder="Notes (optional) e.g. less spicy"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
             <button
-              className="mt-2 rounded bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-50"
+              className="mt-2 rounded bg-[#4ea199] px-3 py-1.5 text-xs text-white transition hover:bg-[#3e8e86] disabled:opacity-50"
               disabled={cart.lines.length === 0}
               onClick={() => void placeOrder()}
             >
@@ -153,14 +153,14 @@ export default function InRoomFoodOrderPanel({
           </div>
         </div>
 
-        <div className="rounded-lg border p-3">
+        <div className="rounded-lg border border-[#d8ece8] bg-white p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">My food orders</p>
           {orders.length === 0 ? (
             <p className="mt-2 text-xs text-slate-500">No orders yet.</p>
           ) : (
             <div className="mt-2 space-y-2">
               {orders.map((o) => (
-                <div key={o._id} className="rounded border px-2 py-2 text-xs">
+                <div key={o._id} className="rounded border border-[#d8ece8] px-2 py-2 text-xs">
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-slate-900">{o.status}</p>
                     <p className="text-slate-500">{new Date(o.createdAt).toLocaleString()}</p>

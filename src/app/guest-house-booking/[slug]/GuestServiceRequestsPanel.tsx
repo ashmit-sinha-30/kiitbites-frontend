@@ -71,7 +71,7 @@ export default function GuestServiceRequestsPanel({
   };
 
   return (
-    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+    <div className="mt-4 rounded-xl border border-[#d8ece8] bg-[#fcfefe] p-4">
       <h4 className="text-sm font-semibold text-slate-900">Need Help During Stay?</h4>
       <p className="mt-1 text-xs text-slate-600">Raise a request for housekeeping, maintenance, laundry, food, or transport.</p>
       {allowServiceRequests === false ? (
@@ -81,7 +81,7 @@ export default function GuestServiceRequestsPanel({
         <p className="mt-2 text-xs text-slate-700">In-room food info: {foodMenuNote}</p>
       ) : null}
       <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
-        <select className="rounded border px-2 py-1 text-sm" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}>
+        <select className="rounded border border-[#cce5e0] px-2 py-1 text-sm outline-none focus:border-[#4ea199]" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}>
           <option value="housekeeping">Housekeeping</option>
           <option value="laundry">Laundry</option>
           <option value="maintenance">Maintenance</option>
@@ -89,14 +89,14 @@ export default function GuestServiceRequestsPanel({
           <option value="transport">Transport</option>
           <option value="other">Other</option>
         </select>
-        <select className="rounded border px-2 py-1 text-sm" value={form.priority} onChange={(e) => setForm((p) => ({ ...p, priority: e.target.value }))}>
+        <select className="rounded border border-[#cce5e0] px-2 py-1 text-sm outline-none focus:border-[#4ea199]" value={form.priority} onChange={(e) => setForm((p) => ({ ...p, priority: e.target.value }))}>
           <option value="low">Low</option>
           <option value="medium">Medium</option>
           <option value="high">High</option>
           <option value="urgent">Urgent</option>
         </select>
         <input
-          className="rounded border px-2 py-1 text-sm md:col-span-2"
+          className="rounded border border-[#cce5e0] px-2 py-1 text-sm outline-none focus:border-[#4ea199] md:col-span-2"
           placeholder="Describe your request..."
           value={form.description}
           onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
@@ -104,13 +104,13 @@ export default function GuestServiceRequestsPanel({
       </div>
       <div className="mt-2 flex gap-2">
         <button
-          className="rounded bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-50"
+          className="rounded bg-[#4ea199] px-3 py-1.5 text-xs text-white transition hover:bg-[#3e8e86] disabled:opacity-50"
           onClick={() => void create()}
           disabled={!allowServiceRequests}
         >
           Submit Request
         </button>
-        <button className="rounded border px-3 py-1.5 text-xs" onClick={() => void load()}>
+        <button className="rounded border border-[#cce5e0] px-3 py-1.5 text-xs text-[#2f6f66] hover:bg-[#f3fbf9]" onClick={() => void load()}>
           {loading ? "Loading..." : "Refresh Requests"}
         </button>
       </div>
@@ -118,7 +118,7 @@ export default function GuestServiceRequestsPanel({
       {rows.length > 0 ? (
         <div className="mt-3 space-y-1">
           {rows.map((r) => (
-            <div key={r._id} className="rounded border px-2 py-1 text-xs">
+            <div key={r._id} className="rounded border border-[#d8ece8] bg-white px-2 py-1 text-xs">
               {r.category} · {r.priority} · <span className="font-medium">{r.status}</span> · {r.description}
             </div>
           ))}

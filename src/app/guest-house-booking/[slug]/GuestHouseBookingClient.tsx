@@ -501,16 +501,16 @@ export default function GuestHouseBookingClient() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] px-4 py-8 md:px-8">
+    <div className="min-h-screen bg-[#f7fbfa] px-4 py-8 md:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 rounded-2xl border bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-3xl border border-[#d8ece8] bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-slate-900">{pageTitle}</h1>
           <p className="mt-1 text-sm text-slate-600">
             Browse guest houses, pick dates, add guests, and pay securely with Razorpay.
           </p>
         </div>
 
-        <section className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+        <section className="mb-6 rounded-3xl border border-[#d8ece8] bg-[#f7fbfa] p-5 shadow-sm">
           <h2 className="text-base font-semibold text-slate-900">Look up room assignment</h2>
           <p className="mt-1 text-sm text-slate-600">
             After the guest house assigns your room, enter the booking id from your confirmation and the phone number you used when paying.
@@ -522,7 +522,7 @@ export default function GuestHouseBookingClient() {
               </label>
               <input
                 id="lookup-booking-id"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-[#cce5e0] bg-white px-3 py-2 text-sm outline-none focus:border-[#4ea199]"
                 placeholder="Paste booking id from confirmation"
                 value={lookupBookingId}
                 onChange={(e) => setLookupBookingId(e.target.value)}
@@ -536,7 +536,7 @@ export default function GuestHouseBookingClient() {
                 id="lookup-phone"
                 type="tel"
                 autoComplete="tel"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-[#cce5e0] bg-white px-3 py-2 text-sm outline-none focus:border-[#4ea199]"
                 placeholder="e.g. 9876543210"
                 value={lookupPhone}
                 onChange={(e) => setLookupPhone(e.target.value)}
@@ -546,7 +546,7 @@ export default function GuestHouseBookingClient() {
               type="button"
               onClick={() => void runBookingLookup()}
               disabled={lookupLoading}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-lg bg-[#4ea199] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#3e8e86] disabled:opacity-50"
             >
               {lookupLoading ? "Checking…" : "Check booking"}
             </button>
@@ -555,7 +555,7 @@ export default function GuestHouseBookingClient() {
             <p className="mt-3 text-sm text-red-600">{lookupError}</p>
           ) : null}
           {lookupResult ? (
-            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm">
+            <div className="mt-4 rounded-xl border border-[#d8ece8] bg-white p-4 text-sm">
               <p className="font-semibold text-slate-900">{lookupResult.guestName}</p>
               <p className="mt-1 text-slate-600">
                 {lookupResult.guestHouseName ? `${lookupResult.guestHouseName} · ` : null}
@@ -593,7 +593,7 @@ export default function GuestHouseBookingClient() {
           ) : null}
         </section>
 
-        <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="mb-6 rounded-3xl border border-[#d8ece8] bg-white p-5 shadow-sm">
           <h2 className="text-base font-semibold text-slate-900">My Guest House Booking Profile</h2>
           <p className="mt-1 text-sm text-slate-600">
             Enter your booking phone to view all your guesthouse stays and assigned rooms.
@@ -603,7 +603,7 @@ export default function GuestHouseBookingClient() {
               <label className="mb-0.5 block text-xs font-medium text-slate-600">Phone number</label>
               <input
                 type="tel"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-[#cce5e0] bg-white px-3 py-2 text-sm outline-none focus:border-[#4ea199]"
                 placeholder="e.g. 9876543210"
                 value={profilePhone}
                 onChange={(e) => setProfilePhone(e.target.value)}
@@ -612,7 +612,7 @@ export default function GuestHouseBookingClient() {
             <button
               type="button"
               onClick={() => void loadProfileBookings()}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-lg bg-[#4ea199] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#3e8e86] disabled:opacity-50"
               disabled={profileLoading}
             >
               {profileLoading ? "Loading..." : "Load my bookings"}
@@ -654,7 +654,7 @@ export default function GuestHouseBookingClient() {
         </section>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section className="rounded-2xl border bg-white p-5 shadow-sm">
+          <section className="rounded-3xl border border-[#d8ece8] bg-white p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Available Guest Houses</h2>
             {loadingGuestHouses ? (
               <p className="mt-3 text-sm text-slate-500">Loading guest houses...</p>
@@ -667,8 +667,8 @@ export default function GuestHouseBookingClient() {
                     key={house._id}
                     type="button"
                     onClick={() => void selectGuestHouse(house)}
-                    className={`w-full rounded-xl border p-4 text-left transition hover:bg-slate-50 ${
-                      selectedGuestHouse?._id === house._id ? "border-slate-900" : "border-slate-200"
+                    className={`w-full rounded-xl border p-4 text-left transition hover:bg-[#f3fbf9] ${
+                      selectedGuestHouse?._id === house._id ? "border-[#4ea199] bg-[#f3fbf9]" : "border-slate-200 hover:border-[#9ad0c8]"
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -692,7 +692,7 @@ export default function GuestHouseBookingClient() {
             )}
           </section>
 
-          <section className="rounded-2xl border bg-white p-5 shadow-sm">
+          <section className="rounded-3xl border border-[#d8ece8] bg-white p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">
               {selectedGuestHouse ? `Room Types - ${selectedGuestHouse.name}` : "Room Types"}
             </h2>
@@ -757,7 +757,7 @@ export default function GuestHouseBookingClient() {
                   };
 
                   return (
-                    <div key={group.baseCategory} className="rounded-xl border p-3">
+                    <div key={group.baseCategory} className="rounded-xl border border-[#d8ece8] bg-[#fcfefe] p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-slate-900">{group.baseCategory}</p>
@@ -786,7 +786,7 @@ export default function GuestHouseBookingClient() {
                             disabled={!group.variants.single}
                             onClick={() => setBed("single")}
                             className={`rounded px-3 py-1 text-xs font-medium ${
-                              selectedBed === "single" ? "bg-black text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                              selectedBed === "single" ? "bg-[#4ea199] text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             } disabled:opacity-50`}
                           >
                             Single bedroom
@@ -796,7 +796,7 @@ export default function GuestHouseBookingClient() {
                             disabled={!group.variants.double}
                             onClick={() => setBed("double")}
                             className={`rounded px-3 py-1 text-xs font-medium ${
-                              selectedBed === "double" ? "bg-black text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                              selectedBed === "double" ? "bg-[#4ea199] text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             } disabled:opacity-50`}
                           >
                             Double bedroom
@@ -821,7 +821,7 @@ export default function GuestHouseBookingClient() {
                                 type="date"
                                 title="First night of your stay"
                                 aria-label="Check-in date"
-                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                className="w-full rounded-md border border-[#cce5e0] px-2 py-1.5 text-xs outline-none focus:border-[#4ea199]"
                                 value={roomBookingDrafts[variantRoom._id]?.checkInDate || ""}
                                 onChange={(e) => updateDraft(variantRoom._id, { checkInDate: e.target.value })}
                               />
@@ -835,7 +835,7 @@ export default function GuestHouseBookingClient() {
                                 type="date"
                                 title="Morning you leave (not charged as a night)"
                                 aria-label="Check-out date"
-                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                className="w-full rounded-md border border-[#cce5e0] px-2 py-1.5 text-xs outline-none focus:border-[#4ea199]"
                                 value={roomBookingDrafts[variantRoom._id]?.checkOutDate || ""}
                                 onChange={(e) => updateDraft(variantRoom._id, { checkOutDate: e.target.value })}
                               />
@@ -857,7 +857,7 @@ export default function GuestHouseBookingClient() {
                                 placeholder="e.g. 1"
                                 title="Number of rooms of this bed type"
                                 aria-label="Number of rooms to book"
-                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                className="w-full rounded-md border border-[#cce5e0] px-2 py-1.5 text-xs outline-none focus:border-[#4ea199]"
                                 value={roomBookingDrafts[variantRoom._id]?.roomsRequested || "1"}
                                 onChange={(e) => updateDraft(variantRoom._id, { roomsRequested: e.target.value })}
                               />
@@ -873,7 +873,7 @@ export default function GuestHouseBookingClient() {
                                 placeholder="e.g. 2"
                                 title="Guests aged 14 or older"
                                 aria-label="Number of adults"
-                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                className="w-full rounded-md border border-[#cce5e0] px-2 py-1.5 text-xs outline-none focus:border-[#4ea199]"
                                 value={roomBookingDrafts[variantRoom._id]?.adultsCount ?? "1"}
                                 onChange={(e) => updateDraft(variantRoom._id, { adultsCount: e.target.value })}
                               />
@@ -889,7 +889,7 @@ export default function GuestHouseBookingClient() {
                                 placeholder="e.g. 0"
                                 title="Children under 14 years old"
                                 aria-label="Number of children under 14"
-                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                className="w-full rounded-md border border-[#cce5e0] px-2 py-1.5 text-xs outline-none focus:border-[#4ea199]"
                                 value={roomBookingDrafts[variantRoom._id]?.kidsCount ?? "0"}
                                 onChange={(e) => updateDraft(variantRoom._id, { kidsCount: e.target.value })}
                               />
@@ -911,7 +911,7 @@ export default function GuestHouseBookingClient() {
                                 title="Primary guest name for this booking"
                                 aria-label="Full name"
                                 autoComplete="name"
-                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                className="w-full rounded-md border border-[#cce5e0] px-2 py-1.5 text-xs outline-none focus:border-[#4ea199]"
                                 value={roomBookingDrafts[variantRoom._id]?.guestName || ""}
                                 onChange={(e) => updateDraft(variantRoom._id, { guestName: e.target.value })}
                               />
@@ -927,7 +927,7 @@ export default function GuestHouseBookingClient() {
                                 title="For booking confirmation"
                                 aria-label="Email address optional"
                                 autoComplete="email"
-                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                className="w-full rounded-md border border-[#cce5e0] px-2 py-1.5 text-xs outline-none focus:border-[#4ea199]"
                                 value={roomBookingDrafts[variantRoom._id]?.guestEmail || ""}
                                 onChange={(e) => updateDraft(variantRoom._id, { guestEmail: e.target.value })}
                               />
@@ -943,7 +943,7 @@ export default function GuestHouseBookingClient() {
                                 title="Mobile number for contact"
                                 aria-label="Phone number"
                                 autoComplete="tel"
-                                className="w-full rounded-md border px-2 py-1.5 text-xs"
+                                className="w-full rounded-md border border-[#cce5e0] px-2 py-1.5 text-xs outline-none focus:border-[#4ea199]"
                                 value={roomBookingDrafts[variantRoom._id]?.guestPhone || ""}
                                 onChange={(e) => updateDraft(variantRoom._id, { guestPhone: e.target.value })}
                               />
@@ -955,7 +955,7 @@ export default function GuestHouseBookingClient() {
                       <div className="mt-2 flex flex-wrap gap-2">
                         <button
                           type="button"
-                          className="rounded bg-slate-200 px-3 py-1 text-xs font-medium hover:bg-slate-300"
+                          className="rounded bg-[#dff3ef] px-3 py-1 text-xs font-medium text-[#2f6f66] hover:bg-[#cdeae4]"
                           disabled={roomBookingDrafts[variantRoom._id]?.loadingAvailability}
                           onClick={() => void checkAvailability(variantRoom)}
                         >
@@ -963,7 +963,7 @@ export default function GuestHouseBookingClient() {
                         </button>
                         <button
                           type="button"
-                          className="rounded bg-slate-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+                          className="rounded bg-[#4ea199] px-3 py-1 text-xs font-medium text-white hover:bg-[#3e8e86] disabled:opacity-60"
                           disabled={
                             !roomBookingDrafts[variantRoom._id]?.canBook ||
                             roomBookingDrafts[variantRoom._id]?.loadingPay ||
