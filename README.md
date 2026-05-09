@@ -3,116 +3,128 @@
 *Project under **EXSOLVIA** - Excellence in Software Solutions*
 
 ## Introduction
-**KAMPYN** is a comprehensive food ordering and inventory management platform designed specifically for university campuses. Built with modern web technologies, it provides an intuitive, responsive, and feature-rich experience for students, faculty, and food vendors.
+
+**KAMPYN** is a campus-focused platform for food ordering, vendor and university dashboards, payments, guest-house flows, auditorium booking, and related admin tools. The UI is a **Next.js** application with role-specific dashboards and integrations for Razorpay.
 
 ## Tech Stack
-- **Framework:** Next.js 14 with App Router
+
+- **Framework:** Next.js 16 (App Router)
+- **Runtime:** React 19
 - **Language:** TypeScript
-- **Styling:** SCSS Modules
-- **UI Components:** Custom component library
-- **State Management:** React Context API
-- **Authentication:** JWT with Google OAuth
-- **Payment Integration:** Razorpay SDK
+- **Styling:** Tailwind CSS, SCSS, Radix UI primitives, Framer Motion
+- **Charts / UX:** Recharts, Lucide / React Icons
+- **HTTP:** Axios (central API helpers in `src/utils/apiUtils.ts`)
+- **Auth:** JWT-backed flows with `@react-oauth/google`
+- **Payments:** Razorpay (via backend + public key configuration)
+- **Analytics:** Vercel Analytics & Speed Insights (when deployed on Vercel)
 
 ## Features
-- **User Authentication** - Multi-method login with Google OAuth
-- **Food Ordering** - Multi-vendor ordering with real-time tracking
-- **Inventory Management** - Real-time stock updates and alerts
-- **Payment Processing** - Secure payment integration with multiple methods
-- **Admin Dashboard** - Comprehensive management tools
-- **Responsive Design** - Mobile-first approach with modern UI
+
+- Multi-role experiences (students, vendors, universities, admins, guest house, auditorium booking)
+- Food ordering, carts, favourites, and vendor dashboards
+- Payments and invoices (integration with backend Razorpay routes)
+- Admin tooling (monitoring, platform fees, help messages, rate limits, etc.)
+- Responsive layouts and shared cart / billing components
 
 ## Quick Start
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn package manager
+
+- **Node.js** 18 or newer (aligned with Next.js / React requirements)
+- **npm** (or another compatible package manager)
 
 ### Installation
+
+From this repository’s frontend folder:
+
 ```bash
-# Clone repository
 git clone https://github.com/exsolvia/kampyn-frontend.git
 cd kampyn-frontend
 
-# Install dependencies
 npm install
+```
 
-# Configure environment
-cp .env.example .env.local
-# Edit .env.local with your configuration
+Create **`.env.local`** in the project root (Next.js reads this automatically). Use at least the variables in [Environment variables](#environment-variables) below.
 
-# Start development server
+Start the dev server (uses **Turbopack**):
+
+```bash
 npm run dev
 ```
 
-Application will be available at `http://localhost:3000`
+The app runs at **http://localhost:3000**.
 
-## Environment Variables
-```env
-NEXT_PUBLIC_BACKEND_URL=http://localhost:5001
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
-NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_id
-NEXT_PUBLIC_APP_NAME=KAMPYN
-```
+If you use the **KAMPYN monorepo** layout instead of cloning only this repo, open `kampyn-frontend` from the workspace root and follow the same steps.
+
+### Backend pairing
+
+Point **`NEXT_PUBLIC_BACKEND_URL`** at your API origin (for example `http://localhost:5001` when running `kampyn-backend` locally). In development, `next.config.ts` also rewrites `/api/*` to `http://localhost:5001/api/*` so direct `/api/...` calls can reach the backend without CORS issues for that path pattern.
+
+## Environment variables
+
+Define these in **`.env.local`** (never commit secrets).
+
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_BACKEND_URL` | Base URL of the KAMPYN backend (no trailing slash), e.g. `http://localhost:5001` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth Web client ID for Sign in with Google |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Razorpay **Key ID** (publishable) |
+| `NEXT_PUBLIC_RAZORPAY_KEY_SECRET` | Used where the client config expects it (prefer backend-only secrets for production) |
+| `NEXT_PUBLIC_APP_NAME` | Display name (defaults to `KAMPYN` in code if unset) |
+| `NEXT_PUBLIC_APP_VERSION` | Optional version string for UI/config |
+| `NEXT_PUBLIC_DIRECT_RAZORPAY_API` | Set to `true` to enable direct Razorpay API behaviour where implemented |
+| `NEXT_PUBLIC_RAZORPAY_FALLBACK` | Set to `false` to disable fallback behaviour (see `src/config/environment.ts`) |
+
+## NPM scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Next.js dev server with Turbopack |
+| `npm run build` | Production build (runs `postbuild` → `next-sitemap`) |
+| `npm start` | Serve production build |
+| `npm run lint` | ESLint via Next.js |
+| `npm run sitemap` | Regenerate sitemap (`next-sitemap`) |
+
+**Husky** and **lint-staged** run ESLint on staged files when configured in your checkout.
 
 ## Documentation
-- [Documentation Overview](./docs/README.md)
-- [Development Guide](./docs/DEVELOPMENT_GUIDE.md)
-- [Component Library](./docs/COMPONENT_LIBRARY.md)
-- [Security Guide](./docs/SECURITY.md)
 
-## Development Workflow
+- [Documentation overview](./docs/README.md)
+- [Development guide](./docs/DEVELOPMENT_GUIDE.md)
+- [Component library](./docs/COMPONENT_LIBRARY.md)
+- [Security guide](./docs/SECURITY.md)
 
-### Branch Naming Convention
+## Development workflow
+
+### Branch naming
+
 - **Features:** `feature/feature-description`
-- **Bug Fixes:** `fix/bug-description`
+- **Bug fixes:** `fix/bug-description`
 - **Hotfixes:** `hotfix/critical-fix-description`
 
-### Commit Message Format
+### Commit messages (Conventional Commits)
+
 ```bash
-# Feature development
 git commit -m "feat: implement user authentication system"
-
-# Bug fixes
 git commit -m "fix: resolve payment validation issue"
-
-# Documentation updates
 git commit -m "docs: update component documentation"
 ```
 
-## Build & Deployment
-
-### Development
-   ```bash
-   npm run dev
-   ```
-
-### Production Build
-```bash
-npm run build
-npm start
-```
-
-### Static Export
-```bash
-npm run export
-```
-
 ## Contributing
-1. Fork the repository
+
+1. Fork or branch from the appropriate repo
 2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m 'feat: add new feature'`)
-4. Push to your branch (`git push origin feature/your-feature`)
-5. Open a pull request
+3. Commit with clear messages
+4. Push and open a pull request
 
 ## License
+
 This project is licensed under the MIT License.
 
 ## Support & Contact
+
 - **Contact:** [contact@kampyn.com](mailto:contact@kampyn.com)
 
 ---
 
 **© 2026 EXSOLVIA. All rights reserved.**
-
-
