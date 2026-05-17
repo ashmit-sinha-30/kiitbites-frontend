@@ -16,7 +16,7 @@ const getForcedLoginRedirectForPath = (pathname: string): string | null => {
     if (!path) return null;
 
     // Vendor protected areas
-    if (path.includes("/vendordashboard") || path.includes("/vendordashboard")) {
+    if (path.includes("/vendordashboard")) {
         return "/vendor-login";
     }
 
